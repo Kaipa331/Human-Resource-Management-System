@@ -65,6 +65,9 @@
     "vaul": "1.1.2",
     "@supabase/supabase-js": "^2.45.4"
   },
+  "overrides": {
+    "tar": "7.5.12"
+  },
   "devDependencies": {
     "@tailwindcss/vite": "4.1.12",
     "@vitejs/plugin-react": "4.7.0",
@@ -85,7 +88,8 @@
   },
   "pnpm": {
     "overrides": {
-      "vite": "6.3.5"
+      "vite": "6.3.5",
+      "tar": "7.5.12"
     }
   }
 }
