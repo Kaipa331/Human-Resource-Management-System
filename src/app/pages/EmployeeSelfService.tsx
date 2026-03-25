@@ -9,8 +9,8 @@ export function EmployeeSelfService() {
 
   const profileData = {
     employeeId: 'EMP001',
-    name: user.name || 'John Doe',
-    email: 'john.doe@company.com',
+    name: user.name || 'Precious Kaipa',
+    email: 'precious.kaipa@company.com',
     phone: '+265 991 234 567',
     department: user.department || 'IT',
     position: 'Software Engineer',
@@ -18,7 +18,7 @@ export function EmployeeSelfService() {
     reportingTo: 'Sarah Williams (HR Manager)',
     location: 'Lilongwe Office',
     address: '123 City Center, Area 47, Lilongwe',
-    emergencyContact: 'Jane Doe - +265 991 987 654'
+    emergencyContact: 'Precious Kaipa - +265 991 987 654'
   };
 
   const leaveBalance = {

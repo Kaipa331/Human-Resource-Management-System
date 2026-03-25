@@ -1,7 +1,7 @@
 -- Seed Employees
 INSERT INTO public.employees (employee_id, name, email, phone, department, position, status, join_date, salary)
 VALUES 
-  ('EMP001', 'Alex Johnson', 'alex.j@company.com', '+265 991 123 456', 'IT', 'Senior Developer', 'Active', '2023-01-15', 1200000),
+  ('EMP001', 'Precious Kaipa', 'precious.kaipa@company.com', '+265 991 123 456', 'IT', 'Senior Developer', 'Active', '2023-01-15', 1200000),
   ('EMP002', 'Sarah Phiri', 'sarah.p@company.com', '+265 882 234 567', 'HR', 'HR Manager', 'Active', '2023-03-10', 950000),
   ('EMP003', 'David Banda', 'david.b@company.com', '+265 999 345 678', 'Finance', 'Accountant', 'Active', '2023-06-20', 850000),
   ('EMP004', 'Maria Chanza', 'maria.c@company.com', '+265 888 456 789', 'Sales', 'Sales Executive', 'Active', '2023-08-05', 600000),

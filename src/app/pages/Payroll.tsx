@@ -46,7 +46,7 @@ export function Payroll() {
   const employeePayroll = [
     {
       employeeId: 'EMP001',
-      name: 'John Doe',
+      name: 'Precious Kaipa',
       department: 'IT',
       basicSalary: 850000,
       allowances: 150000,

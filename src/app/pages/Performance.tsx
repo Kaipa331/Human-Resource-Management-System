@@ -15,7 +15,7 @@ export function Performance() {
   const [reviews, setReviews] = useState([
     {
       id: 'REV001',
-      employeeName: 'John Doe',
+      employeeName: 'Precious Kaipa',
       employeeId: 'EMP001',
       period: 'Q1 2026',
       reviewer: 'HR Manager',

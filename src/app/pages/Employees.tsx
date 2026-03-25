@@ -159,7 +159,7 @@ export function Employees() {
                 <Input
                   value={newEmployee.name}
                   onChange={(e) => setNewEmployee({ ...newEmployee, name: e.target.value })}
-                  placeholder="John Doe"
+                  placeholder="Precious Kaipa"
                 />
               </div>
               <div>

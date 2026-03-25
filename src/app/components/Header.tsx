@@ -64,7 +64,7 @@ export function Header({ user, setUser, toggleSidebar }: HeaderProps) {
                 <DropdownMenuItem>
                   <div className="flex flex-col gap-1">
                     <p className="font-medium text-sm">Leave Request Pending</p>
-                    <p className="text-xs text-gray-500">John Doe requested annual leave</p>
+                    <p className="text-xs text-gray-500">Precious Kaipa requested annual leave</p>
                   </div>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
