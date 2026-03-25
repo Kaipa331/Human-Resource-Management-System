@@ -30,6 +30,9 @@ CREATE TABLE IF NOT EXISTS public.attendance (
     location TEXT
 );
 
+ALTER TABLE public.attendance ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all access to attendance" ON public.attendance FOR ALL USING (true);
+
 -- Leave Requests Table
 CREATE TABLE IF NOT EXISTS public.leave_requests (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -40,6 +43,9 @@ CREATE TABLE IF NOT EXISTS public.leave_requests (
     reason TEXT,
     status TEXT DEFAULT 'Pending' -- Pending, Approved, Rejected
 );
+
+ALTER TABLE public.leave_requests ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all access to leave_requests" ON public.leave_requests FOR ALL USING (true);
 
 -- Payroll Table
 CREATE TABLE IF NOT EXISTS public.payroll (
@@ -52,3 +58,6 @@ CREATE TABLE IF NOT EXISTS public.payroll (
     net_pay NUMERIC,
     status TEXT DEFAULT 'Paid'
 );
+
+ALTER TABLE public.payroll ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all access to payroll" ON public.payroll FOR ALL USING (true);

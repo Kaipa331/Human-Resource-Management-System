@@ -1,120 +1,225 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
-import { Calendar, Check, X, Clock } from 'lucide-react';
+import { Calendar, Check, X, Clock, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { Label } from '../components/ui/label';
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { toast } from 'sonner';
+import { supabase } from '../../lib/supabase';
+
+interface LeaveRequest {
+  id: string;
+  employee_id: string;
+  employee_name: string;
+  type: string;
+  start_date: string;
+  end_date: string;
+  days: number;
+  reason: string;
+  status: string;
+}
 
 export function LeaveManagement() {
   const user = JSON.parse(localStorage.getItem('hrms_user') || '{}');
   const canApprove = user?.role === 'HR' || user?.role === 'Admin' || user?.role === 'Manager';
 
-  const [leaveRequests, setLeaveRequests] = useState([
-    {
-      id: 'LV001',
-      employeeName: 'John Doe',
-      employeeId: 'EMP001',
-      type: 'Annual Leave',
-      startDate: '2026-03-20',
-      endDate: '2026-03-25',
-      days: 5,
-      reason: 'Family vacation',
-      status: 'Pending',
-      appliedDate: '2026-03-10'
-    },
-    {
-      id: 'LV002',
-      employeeName: 'Sarah Williams',
-      employeeId: 'EMP002',
-      type: 'Sick Leave',
-      startDate: '2026-03-15',
-      endDate: '2026-03-16',
-      days: 2,
-      reason: 'Medical appointment',
-      status: 'Approved',
-      appliedDate: '2026-03-12'
-    },
-    {
-      id: 'LV003',
-      employeeName: 'Michael Brown',
-      employeeId: 'EMP003',
-      type: 'Annual Leave',
-      startDate: '2026-04-01',
-      endDate: '2026-04-10',
-      days: 9,
-      reason: 'Personal travel',
-      status: 'Pending',
-      appliedDate: '2026-03-13'
-    },
-  ]);
+  const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [currentEmployeeId, setCurrentEmployeeId] = useState<string | null>(null);
 
   const [newLeave, setNewLeave] = useState({
     type: '',
     startDate: '',
     endDate: '',
-    reason: ''
+    reason: '',
   });
 
-  const leaveBalance = {
-    annual: { total: 21, used: 8, remaining: 13 },
-    sick: { total: 10, used: 2, remaining: 8 },
+  // Leave balance computed from data
+  const [leaveBalance, setLeaveBalance] = useState({
+    annual: { total: 21, used: 0, remaining: 21 },
+    sick: { total: 10, used: 0, remaining: 10 },
     emergency: { total: 3, used: 0, remaining: 3 },
+  });
+
+  useEffect(() => {
+    initializeLeave();
+  }, []);
+
+  const initializeLeave = async () => {
+    try {
+      setLoading(true);
+
+      // Get first employee as current user
+      const { data: emp } = await supabase
+        .from('employees')
+        .select('id')
+        .limit(1)
+        .single();
+
+      if (emp) {
+        setCurrentEmployeeId(emp.id);
+        await fetchLeaveBalance(emp.id);
+      }
+
+      await fetchLeaveRequests();
+    } catch (error) {
+      console.error('Error initializing leave management', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleApprove = (id: string) => {
-    setLeaveRequests(leaveRequests.map(req => 
-      req.id === id ? { ...req, status: 'Approved' } : req
-    ));
-    toast.success('Leave request approved');
-  };
+  const fetchLeaveRequests = async () => {
+    const { data, error } = await supabase
+      .from('leave_requests')
+      .select('*')
+      .order('id', { ascending: false });
 
-  const handleReject = (id: string) => {
-    setLeaveRequests(leaveRequests.map(req => 
-      req.id === id ? { ...req, status: 'Rejected' } : req
-    ));
-    toast.success('Leave request rejected');
-  };
-
-  const handleSubmitLeave = () => {
-    if (!newLeave.type || !newLeave.startDate || !newLeave.endDate) {
-      toast.error('Please fill in all fields');
+    if (error) {
+      toast.error('Error fetching leave requests');
       return;
     }
 
-    const start = new Date(newLeave.startDate);
-    const end = new Date(newLeave.endDate);
-    const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    // Enrich with employee names
+    const enriched: LeaveRequest[] = await Promise.all(
+      (data || []).map(async (req) => {
+        const { data: emp } = await supabase
+          .from('employees')
+          .select('name')
+          .eq('id', req.employee_id)
+          .single();
 
-    const leaveId = `LV${String(leaveRequests.length + 1).padStart(3, '0')}`;
-    setLeaveRequests([...leaveRequests, {
-      id: leaveId,
-      employeeName: user.name,
-      employeeId: 'EMP001',
-      type: newLeave.type,
-      startDate: newLeave.startDate,
-      endDate: newLeave.endDate,
-      days,
-      reason: newLeave.reason,
-      status: 'Pending',
-      appliedDate: new Date().toISOString().split('T')[0]
-    }]);
-    setNewLeave({ type: '', startDate: '', endDate: '', reason: '' });
+        const start = new Date(req.start_date);
+        const end = new Date(req.end_date);
+        const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+
+        return {
+          id: req.id,
+          employee_id: req.employee_id,
+          employee_name: emp?.name || 'Unknown',
+          type: req.type,
+          start_date: req.start_date,
+          end_date: req.end_date,
+          days,
+          reason: req.reason || '',
+          status: req.status,
+        };
+      })
+    );
+
+    setLeaveRequests(enriched);
+  };
+
+  const fetchLeaveBalance = async (employeeId: string) => {
+    const { data: approvedLeaves } = await supabase
+      .from('leave_requests')
+      .select('type, start_date, end_date')
+      .eq('employee_id', employeeId)
+      .eq('status', 'Approved');
+
+    let annualUsed = 0;
+    let sickUsed = 0;
+    let emergencyUsed = 0;
+
+    (approvedLeaves || []).forEach((lv) => {
+      const days = Math.ceil(
+        (new Date(lv.end_date).getTime() - new Date(lv.start_date).getTime()) / (1000 * 60 * 60 * 24)
+      ) + 1;
+
+      if (lv.type === 'Annual Leave') annualUsed += days;
+      else if (lv.type === 'Sick Leave') sickUsed += days;
+      else if (lv.type === 'Emergency Leave') emergencyUsed += days;
+    });
+
+    setLeaveBalance({
+      annual: { total: 21, used: annualUsed, remaining: 21 - annualUsed },
+      sick: { total: 10, used: sickUsed, remaining: 10 - sickUsed },
+      emergency: { total: 3, used: emergencyUsed, remaining: 3 - emergencyUsed },
+    });
+  };
+
+  const handleApprove = async (id: string) => {
+    const { error } = await supabase
+      .from('leave_requests')
+      .update({ status: 'Approved' })
+      .eq('id', id);
+
+    if (error) {
+      toast.error('Error approving leave');
+      return;
+    }
+    toast.success('Leave request approved');
+    await fetchLeaveRequests();
+    if (currentEmployeeId) await fetchLeaveBalance(currentEmployeeId);
+  };
+
+  const handleReject = async (id: string) => {
+    const { error } = await supabase
+      .from('leave_requests')
+      .update({ status: 'Rejected' })
+      .eq('id', id);
+
+    if (error) {
+      toast.error('Error rejecting leave');
+      return;
+    }
+    toast.success('Leave request rejected');
+    await fetchLeaveRequests();
+  };
+
+  const handleSubmitLeave = async () => {
+    if (!newLeave.type || !newLeave.startDate || !newLeave.endDate) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    if (!currentEmployeeId) {
+      toast.error('No employee found. Please add employees first.');
+      return;
+    }
+
+    const { error } = await supabase
+      .from('leave_requests')
+      .insert([{
+        employee_id: currentEmployeeId,
+        type: newLeave.type,
+        start_date: newLeave.startDate,
+        end_date: newLeave.endDate,
+        reason: newLeave.reason,
+        status: 'Pending',
+      }]);
+
+    if (error) {
+      toast.error('Error submitting leave: ' + error.message);
+      return;
+    }
+
     toast.success('Leave request submitted');
+    setNewLeave({ type: '', startDate: '', endDate: '', reason: '' });
+    setDialogOpen(false);
+    await fetchLeaveRequests();
   };
 
   const getStatusColor = (status: string) => {
-    switch(status) {
+    switch (status) {
       case 'Approved': return 'bg-green-100 text-green-800';
       case 'Rejected': return 'bg-red-100 text-red-800';
       case 'Pending': return 'bg-yellow-100 text-yellow-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -123,7 +228,7 @@ export function LeaveManagement() {
           <h1 className="text-3xl font-bold text-gray-900">Leave Management</h1>
           <p className="text-gray-500 mt-1">Track and manage employee leave requests</p>
         </div>
-        <Dialog>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Calendar className="w-4 h-4 mr-2" />
@@ -206,8 +311,8 @@ export function LeaveManagement() {
                 <span className="font-bold text-blue-600">{leaveBalance.annual.remaining} days</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2 mt-4">
-                <div 
-                  className="bg-blue-600 h-2 rounded-full" 
+                <div
+                  className="bg-blue-600 h-2 rounded-full"
                   style={{ width: `${(leaveBalance.annual.used / leaveBalance.annual.total) * 100}%` }}
                 />
               </div>
@@ -235,8 +340,8 @@ export function LeaveManagement() {
                 <span className="font-bold text-green-600">{leaveBalance.sick.remaining} days</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2 mt-4">
-                <div 
-                  className="bg-green-600 h-2 rounded-full" 
+                <div
+                  className="bg-green-600 h-2 rounded-full"
                   style={{ width: `${(leaveBalance.sick.used / leaveBalance.sick.total) * 100}%` }}
                 />
               </div>
@@ -264,8 +369,8 @@ export function LeaveManagement() {
                 <span className="font-bold text-orange-600">{leaveBalance.emergency.remaining} days</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2 mt-4">
-                <div 
-                  className="bg-orange-600 h-2 rounded-full" 
+                <div
+                  className="bg-orange-600 h-2 rounded-full"
                   style={{ width: `${(leaveBalance.emergency.used / leaveBalance.emergency.total) * 100}%` }}
                 />
               </div>
@@ -281,12 +386,12 @@ export function LeaveManagement() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {leaveRequests.map((request) => (
+            {leaveRequests.length > 0 ? leaveRequests.map((request) => (
               <div key={request.id} className="border rounded-lg p-4">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3">
-                      <h3 className="font-semibold">{request.employeeName}</h3>
+                      <h3 className="font-semibold">{request.employee_name}</h3>
                       <Badge className={getStatusColor(request.status)}>
                         {request.status}
                       </Badge>
@@ -296,20 +401,19 @@ export function LeaveManagement() {
                         <strong>Type:</strong> {request.type}
                       </p>
                       <p className="text-sm text-gray-600">
-                        <strong>Period:</strong> {request.startDate} to {request.endDate} ({request.days} days)
+                        <strong>Period:</strong> {request.start_date} to {request.end_date} ({request.days} days)
                       </p>
-                      <p className="text-sm text-gray-600">
-                        <strong>Reason:</strong> {request.reason}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        Applied on {request.appliedDate}
-                      </p>
+                      {request.reason && (
+                        <p className="text-sm text-gray-600">
+                          <strong>Reason:</strong> {request.reason}
+                        </p>
+                      )}
                     </div>
                   </div>
                   {canApprove && request.status === 'Pending' && (
                     <div className="flex gap-2">
-                      <Button 
-                        size="sm" 
+                      <Button
+                        size="sm"
                         variant="outline"
                         onClick={() => handleApprove(request.id)}
                         className="text-green-600 hover:text-green-700"
@@ -317,8 +421,8 @@ export function LeaveManagement() {
                         <Check className="w-4 h-4 mr-1" />
                         Approve
                       </Button>
-                      <Button 
-                        size="sm" 
+                      <Button
+                        size="sm"
                         variant="outline"
                         onClick={() => handleReject(request.id)}
                         className="text-red-600 hover:text-red-700"
@@ -330,7 +434,9 @@ export function LeaveManagement() {
                   )}
                 </div>
               </div>
-            ))}
+            )) : (
+              <p className="text-gray-400 text-center py-4">No leave requests found.</p>
+            )}
           </div>
         </CardContent>
       </Card>
