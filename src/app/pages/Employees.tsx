@@ -94,7 +94,12 @@ export function Employees() {
       const { error } = await supabase
         .from('employees')
         .insert([{
-          ...newEmployee,
+          name: newEmployee.name,
+          email: newEmployee.email,
+          phone: newEmployee.phone,
+          department: newEmployee.department,
+          position: newEmployee.position,
+          join_date: newEmployee.joinDate || new Date().toISOString().split('T')[0],
           employee_id: empId,
           status: 'Active',
           salary: typeof newEmployee.salary === 'string' ? parseFloat(newEmployee.salary.replace(/[^\d.]/g, '')) : newEmployee.salary
