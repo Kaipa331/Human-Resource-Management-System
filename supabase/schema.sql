@@ -14,10 +14,14 @@ CREATE TABLE IF NOT EXISTS public.employees (
 );
 
 -- Enable RLS
-ALTER TABLE public.employees ENABLE ROW LEVEL SECURITY;
+DO $$ BEGIN
+    ALTER TABLE public.employees ENABLE ROW LEVEL SECURITY;
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 -- Create policy to allow all for now (Can be restricted later)
-CREATE POLICY "Allow all access to employees" ON public.employees FOR ALL USING (true);
+DO $$ BEGIN
+    CREATE POLICY "Allow all access to employees" ON public.employees FOR ALL USING (true);
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 -- Attendance Table
 CREATE TABLE IF NOT EXISTS public.attendance (
@@ -30,8 +34,13 @@ CREATE TABLE IF NOT EXISTS public.attendance (
     location TEXT
 );
 
-ALTER TABLE public.attendance ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow all access to attendance" ON public.attendance FOR ALL USING (true);
+DO $$ BEGIN
+    ALTER TABLE public.attendance ENABLE ROW LEVEL SECURITY;
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
+DO $$ BEGIN
+    CREATE POLICY "Allow all access to attendance" ON public.attendance FOR ALL USING (true);
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 -- Leave Requests Table
 CREATE TABLE IF NOT EXISTS public.leave_requests (
@@ -44,8 +53,13 @@ CREATE TABLE IF NOT EXISTS public.leave_requests (
     status TEXT DEFAULT 'Pending' -- Pending, Approved, Rejected
 );
 
-ALTER TABLE public.leave_requests ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow all access to leave_requests" ON public.leave_requests FOR ALL USING (true);
+DO $$ BEGIN
+    ALTER TABLE public.leave_requests ENABLE ROW LEVEL SECURITY;
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
+DO $$ BEGIN
+    CREATE POLICY "Allow all access to leave_requests" ON public.leave_requests FOR ALL USING (true);
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 -- Payroll Table
 CREATE TABLE IF NOT EXISTS public.payroll (
@@ -59,5 +73,10 @@ CREATE TABLE IF NOT EXISTS public.payroll (
     status TEXT DEFAULT 'Paid'
 );
 
-ALTER TABLE public.payroll ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow all access to payroll" ON public.payroll FOR ALL USING (true);
+DO $$ BEGIN
+    ALTER TABLE public.payroll ENABLE ROW LEVEL SECURITY;
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
+DO $$ BEGIN
+    CREATE POLICY "Allow all access to payroll" ON public.payroll FOR ALL USING (true);
+EXCEPTION WHEN OTHERS THEN NULL; END $$;

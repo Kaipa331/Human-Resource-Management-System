@@ -1,4 +1,4 @@
-import { Bell, Settings, LogOut, User } from 'lucide-react';
+import { Bell, Settings, LogOut, User, Menu } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { Button } from './ui/button';
 import {
@@ -14,9 +14,10 @@ import { Badge } from './ui/badge';
 interface HeaderProps {
   user: any;
   setUser: (user: any) => void;
+  toggleSidebar: () => void;
 }
 
-export function Header({ user, setUser }: HeaderProps) {
+export function Header({ user, setUser, toggleSidebar }: HeaderProps) {
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -26,13 +27,23 @@ export function Header({ user, setUser }: HeaderProps) {
   };
 
   return (
-    <header className="bg-white border-b border-gray-200 px-6 py-4">
+    <header className="bg-white border-b border-gray-200 px-4 md:px-6 py-4">
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-800">
-            Welcome, {user?.name}
-          </h2>
-          <p className="text-sm text-gray-500">{user?.role} • {user?.department}</p>
+        <div className="flex items-center gap-4">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="lg:hidden" 
+            onClick={toggleSidebar}
+          >
+            <Menu className="w-6 h-6" />
+          </Button>
+          <div>
+            <h2 className="text-lg md:text-xl font-semibold text-gray-800 line-clamp-1">
+              Welcome, {user?.name}
+            </h2>
+            <p className="hidden md:block text-sm text-gray-500">{user?.role} • {user?.department}</p>
+          </div>
         </div>
 
         <div className="flex items-center gap-4">

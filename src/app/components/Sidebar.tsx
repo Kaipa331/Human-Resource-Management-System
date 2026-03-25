@@ -9,14 +9,18 @@ import {
   TrendingUp, 
   GraduationCap, 
   FileText,
-  UserCircle
+  UserCircle,
+  X
 } from 'lucide-react';
+import { Button } from './ui/button';
 
 interface SidebarProps {
   user: any;
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
 }
 
-export function Sidebar({ user }: SidebarProps) {
+export function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
   const isHRorAdmin = user?.role === 'HR' || user?.role === 'Admin';
   const isManager = user?.role === 'Manager';
 
@@ -34,10 +38,23 @@ export function Sidebar({ user }: SidebarProps) {
   ];
 
   return (
-    <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
-      <div className="p-6 border-b border-gray-200">
-        <h1 className="text-2xl font-bold text-blue-600">e-HRMS</h1>
-        <p className="text-sm text-gray-500 mt-1">Human Resource System</p>
+    <div className={`
+      fixed inset-y-0 left-0 z-30 w-64 bg-white border-r border-gray-200 flex flex-col transition-transform duration-300 transform
+      lg:relative lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+    `}>
+      <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-blue-600">e-HRMS</h1>
+          <p className="text-sm text-gray-500 mt-1">Human Resource System</p>
+        </div>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="lg:hidden" 
+          onClick={() => setIsOpen(false)}
+        >
+          <X className="w-6 h-6" />
+        </Button>
       </div>
       
       <nav className="flex-1 p-4 overflow-y-auto">

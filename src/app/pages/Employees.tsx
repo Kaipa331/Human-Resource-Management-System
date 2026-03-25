@@ -257,57 +257,60 @@ export function Employees() {
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Employee ID</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Department</TableHead>
-                  <TableHead>Position</TableHead>
-                  <TableHead>Contact</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredEmployees.map((employee) => (
-                  <TableRow key={employee.id}>
-                    <TableCell className="font-medium">{employee.employee_id}</TableCell>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{employee.name}</p>
-                        <p className="text-sm text-gray-500">{employee.email}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell>{employee.department}</TableCell>
-                    <TableCell>{employee.position}</TableCell>
-                    <TableCell className="text-sm">{employee.phone}</TableCell>
-                    <TableCell>
-                      <Badge variant={employee.status === 'Active' ? 'default' : 'secondary'}>
-                        {employee.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="icon">
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon">
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => handleDeleteEmployee(employee.id)}
-                        >
-                          <Trash2 className="w-4 h-4 text-red-500" />
-                        </Button>
-                      </div>
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Employee ID</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead className="hidden md:table-cell">Department</TableHead>
+                    <TableHead className="hidden lg:table-cell">Position</TableHead>
+                    <TableHead className="hidden sm:table-cell">Contact</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredEmployees.map((employee) => (
+                    <TableRow key={employee.id}>
+                      <TableCell className="font-medium">{employee.employee_id}</TableCell>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium text-sm md:text-base">{employee.name}</p>
+                          <p className="text-xs md:text-sm text-gray-500">{employee.email}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">{employee.department}</TableCell>
+                      <TableCell className="hidden lg:table-cell">{employee.position}</TableCell>
+                      <TableCell className="hidden sm:table-cell text-sm">{employee.phone}</TableCell>
+                      <TableCell>
+                        <Badge variant={employee.status === 'Active' ? 'default' : 'secondary'} className="text-[10px] md:text-xs">
+                          {employee.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1 md:gap-2">
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => handleDeleteEmployee(employee.id)}
+                          >
+                            <Trash2 className="w-4 h-4 text-red-500" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
