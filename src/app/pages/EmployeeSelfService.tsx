@@ -1,8 +1,32 @@
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
-import { User, Mail, Phone, MapPin, Building, Calendar, Download, Edit, Clock, FileText } from 'lucide-react';
+import { Mail, Phone, Building, Calendar, Download, Edit, Clock, FileText, PlusCircle, Loader2, AlertCircle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
+import { Label } from '../components/ui/label';
+import { Input } from '../components/ui/input';
+import { Textarea } from '../components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { toast } from 'sonner';
+import { supabase } from '../../lib/supabase';
+
+interface LeaveRequest {
+  id: string;
+  type: string;
+  start_date: string;
+  end_date: string;
+  days: number;
+  reason: string;
+  status: string;
+}
+
+interface LeaveBalance {
+  annual: { total: number; used: number; remaining: number };
+  sick: { total: number; used: number; remaining: number };
+  emergency: { total: number; used: number; remaining: number };
+}
 
 export function EmployeeSelfService() {
   const user = JSON.parse(localStorage.getItem('hrms_user') || '{}');
@@ -10,7 +34,7 @@ export function EmployeeSelfService() {
   const profileData = {
     employeeId: 'EMP001',
     name: user.name || 'Precious Kaipa',
-    email: 'precious.kaipa@company.com',
+    email: user.email || 'precious.kaipa@company.com',
     phone: '+265 991 234 567',
     department: user.department || 'IT',
     position: 'Software Engineer',
@@ -18,13 +42,7 @@ export function EmployeeSelfService() {
     reportingTo: 'Sarah Williams (HR Manager)',
     location: 'Lilongwe Office',
     address: '123 City Center, Area 47, Lilongwe',
-    emergencyContact: 'Precious Kaipa - +265 991 987 654'
-  };
-
-  const leaveBalance = {
-    annual: { total: 21, used: 8, remaining: 13 },
-    sick: { total: 10, used: 2, remaining: 8 },
-    emergency: { total: 3, used: 0, remaining: 3 },
+    emergencyContact: 'Precious Kaipa - +265 991 987 654',
   };
 
   const recentPayslips = [
@@ -48,14 +66,150 @@ export function EmployeeSelfService() {
     { name: 'ID Copy', type: 'PDF', uploadDate: '2024-01-15', size: '156 KB' },
   ];
 
-  const getStatusColor = (status: string) => {
-    switch(status) {
+  // ─── Leave state ────────────────────────────────────────────────────────────
+  const [employeeDbId, setEmployeeDbId] = useState<string | null>(null);
+  const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
+  const [leaveBalance, setLeaveBalance] = useState<LeaveBalance>({
+    annual: { total: 21, used: 0, remaining: 21 },
+    sick: { total: 10, used: 0, remaining: 10 },
+    emergency: { total: 3, used: 0, remaining: 3 },
+  });
+  const [leaveLoading, setLeaveLoading] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [newLeave, setNewLeave] = useState({ type: '', startDate: '', endDate: '', reason: '' });
+
+  useEffect(() => {
+    loadLeaveData();
+  }, []);
+
+  const loadLeaveData = async () => {
+    setLeaveLoading(true);
+    try {
+      // Try to find the employee by the logged-in user's email
+      const emailToQuery = user.email || profileData.email;
+      const { data: emp } = await supabase
+        .from('employees')
+        .select('id')
+        .eq('email', emailToQuery)
+        .single();
+
+      // Fallback: use the first employee if no match
+      const { data: empFallback } = !emp
+        ? await supabase.from('employees').select('id').limit(1).single()
+        : { data: null };
+
+      const resolvedId = emp?.id || empFallback?.id || null;
+      setEmployeeDbId(resolvedId);
+
+      if (resolvedId) {
+        await Promise.all([fetchLeaveRequests(resolvedId), fetchLeaveBalance(resolvedId)]);
+      }
+    } catch (err) {
+      console.error('Error loading leave data', err);
+    } finally {
+      setLeaveLoading(false);
+    }
+  };
+
+  const fetchLeaveRequests = async (empId: string) => {
+    const { data, error } = await supabase
+      .from('leave_requests')
+      .select('*')
+      .eq('employee_id', empId)
+      .order('id', { ascending: false });
+
+    if (error) { toast.error('Failed to load leave history'); return; }
+
+    const enriched: LeaveRequest[] = (data || []).map((req) => {
+      const start = new Date(req.start_date);
+      const end = new Date(req.end_date);
+      const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      return { id: req.id, type: req.type, start_date: req.start_date, end_date: req.end_date, days, reason: req.reason || '', status: req.status };
+    });
+
+    setLeaveRequests(enriched);
+  };
+
+  const fetchLeaveBalance = async (empId: string) => {
+    const { data: approved } = await supabase
+      .from('leave_requests')
+      .select('type, start_date, end_date')
+      .eq('employee_id', empId)
+      .eq('status', 'Approved');
+
+    let annualUsed = 0, sickUsed = 0, emergencyUsed = 0;
+    (approved || []).forEach((lv) => {
+      const days = Math.ceil((new Date(lv.end_date).getTime() - new Date(lv.start_date).getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      if (lv.type === 'Annual Leave') annualUsed += days;
+      else if (lv.type === 'Sick Leave') sickUsed += days;
+      else if (lv.type === 'Emergency Leave') emergencyUsed += days;
+    });
+
+    setLeaveBalance({
+      annual: { total: 21, used: annualUsed, remaining: 21 - annualUsed },
+      sick: { total: 10, used: sickUsed, remaining: 10 - sickUsed },
+      emergency: { total: 3, used: emergencyUsed, remaining: 3 - emergencyUsed },
+    });
+  };
+
+  const handleSubmitLeave = async () => {
+    if (!newLeave.type || !newLeave.startDate || !newLeave.endDate) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    if (new Date(newLeave.endDate) < new Date(newLeave.startDate)) {
+      toast.error('End date cannot be before start date');
+      return;
+    }
+    if (!employeeDbId) {
+      toast.error('Employee record not found. Please contact HR.');
+      return;
+    }
+
+    setSubmitting(true);
+    const { error } = await supabase.from('leave_requests').insert([{
+      employee_id: employeeDbId,
+      type: newLeave.type,
+      start_date: newLeave.startDate,
+      end_date: newLeave.endDate,
+      reason: newLeave.reason,
+      status: 'Pending',
+    }]);
+
+    setSubmitting(false);
+    if (error) { toast.error('Error submitting leave: ' + error.message); return; }
+
+    toast.success('Leave request submitted successfully!');
+    setNewLeave({ type: '', startDate: '', endDate: '', reason: '' });
+    setDialogOpen(false);
+    await Promise.all([fetchLeaveRequests(employeeDbId), fetchLeaveBalance(employeeDbId)]);
+  };
+
+  // ─── Helpers ─────────────────────────────────────────────────────────────────
+  const getAttendanceStatusColor = (status: string) => {
+    switch (status) {
       case 'Present': return 'bg-green-100 text-green-800';
       case 'Late': return 'bg-yellow-100 text-yellow-800';
       case 'Absent': return 'bg-red-100 text-red-800';
       case 'Leave': return 'bg-blue-100 text-blue-800';
       default: return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  const getLeaveStatusColor = (status: string) => {
+    switch (status) {
+      case 'Approved': return 'bg-green-100 text-green-800';
+      case 'Rejected': return 'bg-red-100 text-red-800';
+      case 'Pending': return 'bg-yellow-100 text-yellow-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const computedDays = () => {
+    if (!newLeave.startDate || !newLeave.endDate) return 0;
+    const diff = new Date(newLeave.endDate).getTime() - new Date(newLeave.startDate).getTime();
+    return diff >= 0 ? Math.ceil(diff / (1000 * 60 * 60 * 24)) + 1 : 0;
   };
 
   return (
@@ -110,12 +264,13 @@ export function EmployeeSelfService() {
       <Tabs defaultValue="personal" className="space-y-6">
         <TabsList>
           <TabsTrigger value="personal">Personal Info</TabsTrigger>
-          <TabsTrigger value="leave">Leave Balance</TabsTrigger>
+          <TabsTrigger value="my-leave">My Leave</TabsTrigger>
           <TabsTrigger value="payslips">Payslips</TabsTrigger>
           <TabsTrigger value="attendance">Attendance</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
         </TabsList>
 
+        {/* ── Personal Info ─────────────────────────────────────────────────── */}
         <TabsContent value="personal">
           <Card>
             <CardHeader>
@@ -172,76 +327,169 @@ export function EmployeeSelfService() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="leave">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Annual Leave</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-500">Total</span>
-                    <span className="font-medium">{leaveBalance.annual.total} days</span>
+        {/* ── My Leave ──────────────────────────────────────────────────────── */}
+        <TabsContent value="my-leave">
+          <div className="space-y-6">
+            {/* Balance cards + Apply button */}
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-800">Leave Overview</h2>
+              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button id="apply-leave-btn">
+                    <PlusCircle className="w-4 h-4 mr-2" />
+                    Apply for Leave
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Apply for Leave</DialogTitle>
+                    <DialogDescription>Submit a new leave request. It will be reviewed by your manager.</DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 mt-2">
+                    <div>
+                      <Label htmlFor="leave-type">Leave Type <span className="text-red-500">*</span></Label>
+                      <Select value={newLeave.type} onValueChange={(val) => setNewLeave({ ...newLeave, type: val })}>
+                        <SelectTrigger id="leave-type" className="mt-1">
+                          <SelectValue placeholder="Select leave type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Annual Leave">Annual Leave</SelectItem>
+                          <SelectItem value="Sick Leave">Sick Leave</SelectItem>
+                          <SelectItem value="Emergency Leave">Emergency Leave</SelectItem>
+                          <SelectItem value="Maternity Leave">Maternity Leave</SelectItem>
+                          <SelectItem value="Paternity Leave">Paternity Leave</SelectItem>
+                          <SelectItem value="Study Leave">Study Leave</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="start-date">Start Date <span className="text-red-500">*</span></Label>
+                        <Input
+                          id="start-date"
+                          type="date"
+                          className="mt-1"
+                          value={newLeave.startDate}
+                          onChange={(e) => setNewLeave({ ...newLeave, startDate: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="end-date">End Date <span className="text-red-500">*</span></Label>
+                        <Input
+                          id="end-date"
+                          type="date"
+                          className="mt-1"
+                          value={newLeave.endDate}
+                          onChange={(e) => setNewLeave({ ...newLeave, endDate: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    {computedDays() > 0 && (
+                      <p className="text-sm text-blue-600 font-medium">
+                        Duration: {computedDays()} day{computedDays() !== 1 ? 's' : ''}
+                      </p>
+                    )}
+                    <div>
+                      <Label htmlFor="reason">Reason</Label>
+                      <Textarea
+                        id="reason"
+                        className="mt-1"
+                        value={newLeave.reason}
+                        onChange={(e) => setNewLeave({ ...newLeave, reason: e.target.value })}
+                        placeholder="Briefly explain the reason for your leave..."
+                        rows={3}
+                      />
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-500">Used</span>
-                    <span className="font-medium">{leaveBalance.annual.used} days</span>
-                  </div>
-                  <div className="flex justify-between border-t pt-3">
-                    <span className="font-medium">Remaining</span>
-                    <span className="text-2xl font-bold text-blue-600">{leaveBalance.annual.remaining}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                  <Button
+                    id="submit-leave-btn"
+                    onClick={handleSubmitLeave}
+                    className="mt-2 w-full"
+                    disabled={submitting}
+                  >
+                    {submitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Submitting...</> : 'Submit Request'}
+                  </Button>
+                </DialogContent>
+              </Dialog>
+            </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Sick Leave</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-500">Total</span>
-                    <span className="font-medium">{leaveBalance.sick.total} days</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-500">Used</span>
-                    <span className="font-medium">{leaveBalance.sick.used} days</span>
-                  </div>
-                  <div className="flex justify-between border-t pt-3">
-                    <span className="font-medium">Remaining</span>
-                    <span className="text-2xl font-bold text-green-600">{leaveBalance.sick.remaining}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            {/* Leave balance summary */}
+            {leaveLoading ? (
+              <div className="flex items-center justify-center h-24">
+                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[
+                  { label: 'Annual Leave', balance: leaveBalance.annual, color: 'blue' },
+                  { label: 'Sick Leave', balance: leaveBalance.sick, color: 'green' },
+                  { label: 'Emergency Leave', balance: leaveBalance.emergency, color: 'orange' },
+                ].map(({ label, balance, color }) => (
+                  <Card key={label}>
+                    <CardContent className="p-5">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="font-semibold text-gray-700">{label}</span>
+                        <span className={`text-2xl font-bold text-${color}-600`}>{balance.remaining}</span>
+                      </div>
+                      <div className="w-full bg-gray-100 rounded-full h-2 mb-3">
+                        <div
+                          className={`bg-${color}-500 h-2 rounded-full transition-all`}
+                          style={{ width: `${Math.min((balance.used / balance.total) * 100, 100)}%` }}
+                        />
+                      </div>
+                      <div className="flex justify-between text-xs text-gray-500">
+                        <span>{balance.used} used</span>
+                        <span>{balance.remaining} of {balance.total} remaining</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
 
+            {/* Leave history */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Emergency Leave</CardTitle>
+                <CardTitle>My Leave Requests</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-500">Total</span>
-                    <span className="font-medium">{leaveBalance.emergency.total} days</span>
+                {leaveLoading ? (
+                  <div className="flex items-center justify-center h-24">
+                    <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-500">Used</span>
-                    <span className="font-medium">{leaveBalance.emergency.used} days</span>
+                ) : leaveRequests.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-gray-400 gap-3">
+                    <AlertCircle className="w-10 h-10" />
+                    <p className="text-sm">No leave requests yet. Click <strong>Apply for Leave</strong> to get started.</p>
                   </div>
-                  <div className="flex justify-between border-t pt-3">
-                    <span className="font-medium">Remaining</span>
-                    <span className="text-2xl font-bold text-orange-600">{leaveBalance.emergency.remaining}</span>
+                ) : (
+                  <div className="space-y-3">
+                    {leaveRequests.map((req) => (
+                      <div key={req.id} className="flex items-start justify-between border rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-gray-800">{req.type}</span>
+                            <Badge className={getLeaveStatusColor(req.status)}>{req.status}</Badge>
+                          </div>
+                          <p className="text-sm text-gray-500">
+                            {req.start_date} → {req.end_date}
+                            <span className="ml-2 font-medium text-gray-700">({req.days} day{req.days !== 1 ? 's' : ''})</span>
+                          </p>
+                          {req.reason && (
+                            <p className="text-sm text-gray-500 italic">"{req.reason}"</p>
+                          )}
+                        </div>
+                        <Calendar className="w-5 h-5 text-gray-300 mt-1 flex-shrink-0" />
+                      </div>
+                    ))}
                   </div>
-                </div>
+                )}
               </CardContent>
             </Card>
           </div>
         </TabsContent>
 
+        {/* ── Payslips ──────────────────────────────────────────────────────── */}
         <TabsContent value="payslips">
           <Card>
             <CardHeader>
@@ -279,6 +527,7 @@ export function EmployeeSelfService() {
           </Card>
         </TabsContent>
 
+        {/* ── Attendance ────────────────────────────────────────────────────── */}
         <TabsContent value="attendance">
           <Card>
             <CardHeader>
@@ -298,10 +547,8 @@ export function EmployeeSelfService() {
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <p className="font-medium">{record.hours > 0 ? `${record.hours} hrs` : '-'}</p>
-                      </div>
-                      <Badge className={getStatusColor(record.status)}>
+                      <p className="font-medium">{record.hours > 0 ? `${record.hours} hrs` : '-'}</p>
+                      <Badge className={getAttendanceStatusColor(record.status)}>
                         {record.status}
                       </Badge>
                     </div>
@@ -312,6 +559,7 @@ export function EmployeeSelfService() {
           </Card>
         </TabsContent>
 
+        {/* ── Documents ─────────────────────────────────────────────────────── */}
         <TabsContent value="documents">
           <Card>
             <CardHeader>
