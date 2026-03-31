@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router';
+import { NavLink, useNavigate } from 'react-router';
 import { 
   LayoutDashboard, 
   Users, 
@@ -10,9 +10,11 @@ import {
   GraduationCap, 
   FileText,
   UserCircle,
+  LogOut,
   X
 } from 'lucide-react';
 import { Button } from './ui/button';
+import { supabase } from '../../lib/supabase';
 
 interface SidebarProps {
   user: any;
@@ -21,8 +23,16 @@ interface SidebarProps {
 }
 
 export function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
+  const navigate = useNavigate();
   const isHRorAdmin = user?.role === 'HR' || user?.role === 'Admin';
   const isManager = user?.role === 'Manager';
+  const attendanceLabel = isHRorAdmin || isManager ? 'Attendance Review' : 'My Attendance';
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    localStorage.removeItem('hrms_user');
+    navigate('/login');
+  };
 
   const menuItems = [
     { to: '/', icon: LayoutDashboard, label: 'Dashboard', show: true },
@@ -30,7 +40,7 @@ export function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
     { to: '/employees', icon: Users, label: 'Employees', show: isHRorAdmin },
     { to: '/recruitment', icon: UserPlus, label: 'Recruitment', show: isHRorAdmin },
     { to: '/leave', icon: Calendar, label: 'Leave Management', show: isHRorAdmin || isManager },
-    { to: '/attendance', icon: Clock, label: 'Attendance', show: isHRorAdmin || isManager },
+    { to: '/attendance', icon: Clock, label: attendanceLabel, show: true },
     { to: '/payroll', icon: DollarSign, label: 'Payroll', show: isHRorAdmin },
     { to: '/performance', icon: TrendingUp, label: 'Performance', show: isHRorAdmin || isManager },
     { to: '/training', icon: GraduationCap, label: 'Training', show: isHRorAdmin },
@@ -80,7 +90,15 @@ export function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
         </ul>
       </nav>
 
-      <div className="p-4 border-t border-gray-200">
+      <div className="p-4 border-t border-gray-200 space-y-4">
+        <Button 
+          onClick={handleLogout}
+          variant="outline"
+          className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+        >
+          <LogOut className="w-4 h-4 mr-2" />
+          Logout
+        </Button>
         <div className="text-xs text-gray-500">
           <p>Version 1.0.0</p>
           <p className="mt-1">© 2026 e-HRMS</p>

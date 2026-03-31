@@ -13,6 +13,13 @@ export function Login() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const demoUserFallbacks: Record<string, { role: string; name: string; department: string }> = {
+    'admin@hrms.com': { role: 'Admin', name: 'Demo Admin', department: 'Administration' },
+    'hr@hrms.com': { role: 'HR', name: 'Demo HR Manager', department: 'HR' },
+    'manager@hrms.com': { role: 'Manager', name: 'Demo Manager', department: 'Operations' },
+    'employee@hrms.com': { role: 'Employee', name: 'Demo Employee', department: 'IT' },
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -27,6 +34,8 @@ export function Login() {
 
       if (data.user) {
         const normalizedEmail = (data.user.email || email).toLowerCase();
+        const fallbackUser = demoUserFallbacks[normalizedEmail];
+
         const { data: profileData } = await supabase
           .from('profiles')
           .select('role')
@@ -42,9 +51,9 @@ export function Login() {
         localStorage.setItem('hrms_user', JSON.stringify({
           email: normalizedEmail,
           id: data.user.id,
-          role: profileData?.role || 'Employee',
-          name: employeeData?.name || normalizedEmail,
-          department: employeeData?.department || 'General',
+          role: profileData?.role || fallbackUser?.role || 'Employee',
+          name: employeeData?.name || fallbackUser?.name || normalizedEmail,
+          department: employeeData?.department || fallbackUser?.department || 'General',
         }));
         toast.success('Login successful!');
         navigate('/');

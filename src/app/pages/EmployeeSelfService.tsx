@@ -40,6 +40,7 @@ export function EmployeeSelfService() {
     }
   };
   const user = getStoredUser();
+  const canManageLeave = ['HR', 'Admin', 'Manager'].includes(user?.role);
 
   const profileData = {
     employeeId: 'EMP001',
@@ -96,24 +97,20 @@ export function EmployeeSelfService() {
   const loadLeaveData = async () => {
     setLeaveLoading(true);
     try {
-      // Try to find the employee by the logged-in user's email
-      const emailToQuery = user.email || profileData.email;
+      const emailToQuery = String(user.email || profileData.email || '').toLowerCase();
       const { data: emp } = await supabase
         .from('employees')
         .select('id')
         .eq('email', emailToQuery)
-        .single();
+        .maybeSingle();
 
-      // Fallback: use the first employee if no match
-      const { data: empFallback } = !emp
-        ? await supabase.from('employees').select('id').limit(1).single()
-        : { data: null };
-
-      const resolvedId = emp?.id || empFallback?.id || null;
+      const resolvedId = emp?.id || null;
       setEmployeeDbId(resolvedId);
 
       if (resolvedId) {
         await Promise.all([fetchLeaveRequests(resolvedId), fetchLeaveBalance(resolvedId)]);
+      } else {
+        setLeaveRequests([]);
       }
     } catch (err) {
       console.error('Error loading leave data', err);
@@ -164,6 +161,10 @@ export function EmployeeSelfService() {
   };
 
   const handleSubmitLeave = async () => {
+    if (canManageLeave) {
+      toast.info('Approver accounts should review leave from the Leave Management screen.');
+      return;
+    }
     if (!newLeave.type || !newLeave.startDate || !newLeave.endDate) {
       toast.error('Please fill in all required fields');
       return;
@@ -354,86 +355,92 @@ export function EmployeeSelfService() {
         <TabsContent value="my-leave">
           <div className="space-y-6">
             {/* Balance cards + Apply button */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
               <h2 className="text-xl font-semibold text-gray-800">Leave Overview</h2>
-              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button id="apply-leave-btn">
-                    <PlusCircle className="w-4 h-4 mr-2" />
-                    Apply for Leave
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Apply for Leave</DialogTitle>
-                    <DialogDescription>Submit a new leave request. It will be reviewed by your manager.</DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4 mt-2">
-                    <div>
-                      <Label htmlFor="leave-type">Leave Type <span className="text-red-500">*</span></Label>
-                      <Select value={newLeave.type} onValueChange={(val) => setNewLeave({ ...newLeave, type: val })}>
-                        <SelectTrigger id="leave-type" className="mt-1">
-                          <SelectValue placeholder="Select leave type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Annual Leave">Annual Leave</SelectItem>
-                          <SelectItem value="Sick Leave">Sick Leave</SelectItem>
-                          <SelectItem value="Emergency Leave">Emergency Leave</SelectItem>
-                          <SelectItem value="Maternity Leave">Maternity Leave</SelectItem>
-                          <SelectItem value="Paternity Leave">Paternity Leave</SelectItem>
-                          <SelectItem value="Study Leave">Study Leave</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
+              {canManageLeave ? (
+                <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">
+                  Managers approve requests in Leave Management
+                </Badge>
+              ) : (
+                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button id="apply-leave-btn">
+                      <PlusCircle className="w-4 h-4 mr-2" />
+                      Apply for Leave
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Apply for Leave</DialogTitle>
+                      <DialogDescription>Submit a new leave request. It will be reviewed by your manager.</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 mt-2">
                       <div>
-                        <Label htmlFor="start-date">Start Date <span className="text-red-500">*</span></Label>
-                        <Input
-                          id="start-date"
-                          type="date"
+                        <Label htmlFor="leave-type">Leave Type <span className="text-red-500">*</span></Label>
+                        <Select value={newLeave.type} onValueChange={(val) => setNewLeave({ ...newLeave, type: val })}>
+                          <SelectTrigger id="leave-type" className="mt-1">
+                            <SelectValue placeholder="Select leave type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Annual Leave">Annual Leave</SelectItem>
+                            <SelectItem value="Sick Leave">Sick Leave</SelectItem>
+                            <SelectItem value="Emergency Leave">Emergency Leave</SelectItem>
+                            <SelectItem value="Maternity Leave">Maternity Leave</SelectItem>
+                            <SelectItem value="Paternity Leave">Paternity Leave</SelectItem>
+                            <SelectItem value="Study Leave">Study Leave</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="start-date">Start Date <span className="text-red-500">*</span></Label>
+                          <Input
+                            id="start-date"
+                            type="date"
+                            className="mt-1"
+                            value={newLeave.startDate}
+                            onChange={(e) => setNewLeave({ ...newLeave, startDate: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="end-date">End Date <span className="text-red-500">*</span></Label>
+                          <Input
+                            id="end-date"
+                            type="date"
+                            className="mt-1"
+                            value={newLeave.endDate}
+                            onChange={(e) => setNewLeave({ ...newLeave, endDate: e.target.value })}
+                          />
+                        </div>
+                      </div>
+                      {computedDays() > 0 && (
+                        <p className="text-sm text-blue-600 font-medium">
+                          Duration: {computedDays()} day{computedDays() !== 1 ? 's' : ''}
+                        </p>
+                      )}
+                      <div>
+                        <Label htmlFor="reason">Reason</Label>
+                        <Textarea
+                          id="reason"
                           className="mt-1"
-                          value={newLeave.startDate}
-                          onChange={(e) => setNewLeave({ ...newLeave, startDate: e.target.value })}
+                          value={newLeave.reason}
+                          onChange={(e) => setNewLeave({ ...newLeave, reason: e.target.value })}
+                          placeholder="Briefly explain the reason for your leave..."
+                          rows={3}
                         />
                       </div>
-                      <div>
-                        <Label htmlFor="end-date">End Date <span className="text-red-500">*</span></Label>
-                        <Input
-                          id="end-date"
-                          type="date"
-                          className="mt-1"
-                          value={newLeave.endDate}
-                          onChange={(e) => setNewLeave({ ...newLeave, endDate: e.target.value })}
-                        />
-                      </div>
                     </div>
-                    {computedDays() > 0 && (
-                      <p className="text-sm text-blue-600 font-medium">
-                        Duration: {computedDays()} day{computedDays() !== 1 ? 's' : ''}
-                      </p>
-                    )}
-                    <div>
-                      <Label htmlFor="reason">Reason</Label>
-                      <Textarea
-                        id="reason"
-                        className="mt-1"
-                        value={newLeave.reason}
-                        onChange={(e) => setNewLeave({ ...newLeave, reason: e.target.value })}
-                        placeholder="Briefly explain the reason for your leave..."
-                        rows={3}
-                      />
-                    </div>
-                  </div>
-                  <Button
-                    id="submit-leave-btn"
-                    onClick={handleSubmitLeave}
-                    className="mt-2 w-full"
-                    disabled={submitting}
-                  >
-                    {submitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Submitting...</> : 'Submit Request'}
-                  </Button>
-                </DialogContent>
-              </Dialog>
+                    <Button
+                      id="submit-leave-btn"
+                      onClick={handleSubmitLeave}
+                      className="mt-2 w-full"
+                      disabled={submitting}
+                    >
+                      {submitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Submitting...</> : 'Submit Request'}
+                    </Button>
+                  </DialogContent>
+                </Dialog>
+              )}
             </div>
 
             {/* Leave balance summary */}
@@ -486,7 +493,11 @@ export function EmployeeSelfService() {
                 ) : leaveRequests.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 text-gray-400 gap-3">
                     <AlertCircle className="w-10 h-10" />
-                    <p className="text-sm">No leave requests yet. Click <strong>Apply for Leave</strong> to get started.</p>
+                    <p className="text-sm">
+                      {canManageLeave
+                        ? 'No personal leave requests are linked to this account.'
+                        : <>No leave requests yet. Click <strong>Apply for Leave</strong> to get started.</>}
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-3">

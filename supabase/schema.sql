@@ -156,3 +156,167 @@ EXCEPTION WHEN OTHERS THEN NULL; END $$;
 DO $$ BEGIN
     CREATE POLICY "Allow all access to training_certificates" ON public.training_certificates FOR ALL USING (true);
 EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
+-- Attendance verification upgrades
+ALTER TABLE public.attendance
+    ADD COLUMN IF NOT EXISTS verification_status TEXT DEFAULT 'Pending',
+    ADD COLUMN IF NOT EXISTS within_geofence BOOLEAN DEFAULT FALSE,
+    ADD COLUMN IF NOT EXISTS latitude DOUBLE PRECISION,
+    ADD COLUMN IF NOT EXISTS longitude DOUBLE PRECISION,
+    ADD COLUMN IF NOT EXISTS ip_address TEXT,
+    ADD COLUMN IF NOT EXISTS device_info TEXT,
+    ADD COLUMN IF NOT EXISTS correction_reason TEXT,
+    ADD COLUMN IF NOT EXISTS manual_correction_requested BOOLEAN DEFAULT FALSE,
+    ADD COLUMN IF NOT EXISTS approved_by TEXT,
+    ADD COLUMN IF NOT EXISTS approved_at TIMESTAMP WITH TIME ZONE,
+    ADD COLUMN IF NOT EXISTS surge_sync_status TEXT DEFAULT 'Not Synced',
+    ADD COLUMN IF NOT EXISTS surge_last_synced_at TIMESTAMP WITH TIME ZONE,
+    ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT now();
+
+CREATE INDEX IF NOT EXISTS idx_attendance_employee_date ON public.attendance (employee_id, date DESC);
+
+CREATE OR REPLACE FUNCTION public.clock_in_attendance(
+    p_employee_id UUID,
+    p_latitude DOUBLE PRECISION DEFAULT NULL,
+    p_longitude DOUBLE PRECISION DEFAULT NULL,
+    p_location_label TEXT DEFAULT NULL,
+    p_ip_address TEXT DEFAULT NULL,
+    p_device_info TEXT DEFAULT NULL,
+    p_within_geofence BOOLEAN DEFAULT FALSE
+)
+RETURNS SETOF public.attendance
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_record public.attendance;
+    v_now TIMESTAMP WITH TIME ZONE := now();
+    v_status TEXT := CASE
+        WHEN COALESCE(p_within_geofence, FALSE) = FALSE THEN 'Needs Review'
+        WHEN EXTRACT(HOUR FROM (v_now AT TIME ZONE 'Africa/Blantyre')) >= 9 THEN 'Late'
+        ELSE 'Present'
+    END;
+BEGIN
+    SELECT *
+    INTO v_record
+    FROM public.attendance
+    WHERE employee_id = p_employee_id
+      AND date = CURRENT_DATE
+    ORDER BY clock_in DESC NULLS LAST
+    LIMIT 1;
+
+    IF v_record.id IS NOT NULL THEN
+        RETURN QUERY
+        UPDATE public.attendance
+        SET clock_in = COALESCE(v_record.clock_in, v_now),
+            status = CASE WHEN v_record.status = 'Correction Pending' THEN 'Correction Pending' ELSE v_status END,
+            location = COALESCE(p_location_label, v_record.location),
+            verification_status = CASE WHEN COALESCE(p_within_geofence, FALSE) THEN 'Verified' ELSE 'Needs Review' END,
+            latitude = p_latitude,
+            longitude = p_longitude,
+            ip_address = p_ip_address,
+            device_info = p_device_info,
+            within_geofence = COALESCE(p_within_geofence, FALSE),
+            manual_correction_requested = FALSE,
+            updated_at = v_now
+        WHERE id = v_record.id
+        RETURNING *;
+    ELSE
+        RETURN QUERY
+        INSERT INTO public.attendance (
+            employee_id,
+            date,
+            clock_in,
+            status,
+            location,
+            verification_status,
+            latitude,
+            longitude,
+            ip_address,
+            device_info,
+            within_geofence,
+            updated_at
+        )
+        VALUES (
+            p_employee_id,
+            CURRENT_DATE,
+            v_now,
+            v_status,
+            COALESCE(p_location_label, 'Verification pending'),
+            CASE WHEN COALESCE(p_within_geofence, FALSE) THEN 'Verified' ELSE 'Needs Review' END,
+            p_latitude,
+            p_longitude,
+            p_ip_address,
+            p_device_info,
+            COALESCE(p_within_geofence, FALSE),
+            v_now
+        )
+        RETURNING *;
+    END IF;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.clock_out_attendance(
+    p_attendance_id UUID,
+    p_latitude DOUBLE PRECISION DEFAULT NULL,
+    p_longitude DOUBLE PRECISION DEFAULT NULL,
+    p_location_label TEXT DEFAULT NULL,
+    p_ip_address TEXT DEFAULT NULL,
+    p_device_info TEXT DEFAULT NULL,
+    p_within_geofence BOOLEAN DEFAULT FALSE
+)
+RETURNS SETOF public.attendance
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_now TIMESTAMP WITH TIME ZONE := now();
+BEGIN
+    RETURN QUERY
+    UPDATE public.attendance
+    SET clock_out = v_now,
+        location = COALESCE(p_location_label, location),
+        verification_status = CASE WHEN COALESCE(p_within_geofence, FALSE) THEN COALESCE(verification_status, 'Verified') ELSE 'Needs Review' END,
+        latitude = COALESCE(p_latitude, latitude),
+        longitude = COALESCE(p_longitude, longitude),
+        ip_address = COALESCE(p_ip_address, ip_address),
+        device_info = COALESCE(p_device_info, device_info),
+        within_geofence = COALESCE(p_within_geofence, within_geofence),
+        status = CASE
+            WHEN status = 'Correction Pending' THEN status
+            WHEN COALESCE(p_within_geofence, FALSE) = FALSE THEN 'Needs Review'
+            ELSE status
+        END,
+        updated_at = v_now
+    WHERE id = p_attendance_id
+    RETURNING *;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.approve_attendance_exception(
+    p_attendance_id UUID,
+    p_approved_by TEXT,
+    p_approved_status TEXT DEFAULT 'Present'
+)
+RETURNS SETOF public.attendance
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_now TIMESTAMP WITH TIME ZONE := now();
+BEGIN
+    RETURN QUERY
+    UPDATE public.attendance
+    SET status = p_approved_status,
+        verification_status = CASE WHEN p_approved_status = 'Rejected' THEN 'Rejected' ELSE 'Approved' END,
+        manual_correction_requested = FALSE,
+        approved_by = p_approved_by,
+        approved_at = v_now,
+        updated_at = v_now
+    WHERE id = p_attendance_id
+    RETURNING *;
+END;
+$$;

@@ -26,6 +26,7 @@ interface LeaveRequest {
 export function LeaveManagement() {
   const user = JSON.parse(localStorage.getItem('hrms_user') || '{}');
   const canApprove = user?.role === 'HR' || user?.role === 'Admin' || user?.role === 'Manager';
+  const userEmail = String(user?.email || '').toLowerCase();
 
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,19 +55,24 @@ export function LeaveManagement() {
     try {
       setLoading(true);
 
-      // Get first employee as current user
-      const { data: emp } = await supabase
-        .from('employees')
-        .select('id')
-        .limit(1)
-        .single();
+      let resolvedEmployeeId: string | null = null;
 
-      if (emp) {
-        setCurrentEmployeeId(emp.id);
-        await fetchLeaveBalance(emp.id);
+      if (userEmail) {
+        const { data: emp } = await supabase
+          .from('employees')
+          .select('id')
+          .eq('email', userEmail)
+          .maybeSingle();
+
+        resolvedEmployeeId = emp?.id || null;
+        setCurrentEmployeeId(resolvedEmployeeId);
       }
 
-      await fetchLeaveRequests();
+      if (!canApprove && resolvedEmployeeId) {
+        await fetchLeaveBalance(resolvedEmployeeId);
+      }
+
+      await fetchLeaveRequests(resolvedEmployeeId);
     } catch (error) {
       console.error('Error initializing leave management', error);
     } finally {
@@ -74,11 +80,21 @@ export function LeaveManagement() {
     }
   };
 
-  const fetchLeaveRequests = async () => {
-    const { data, error } = await supabase
+  const fetchLeaveRequests = async (employeeId?: string | null) => {
+    let query = supabase
       .from('leave_requests')
       .select('*')
-      .order('id', { ascending: false });
+      .order('start_date', { ascending: false });
+
+    if (!canApprove) {
+      if (!employeeId) {
+        setLeaveRequests([]);
+        return;
+      }
+      query = query.eq('employee_id', employeeId);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       toast.error('Error fetching leave requests');
@@ -154,7 +170,7 @@ export function LeaveManagement() {
       return;
     }
     toast.success('Leave request approved');
-    await fetchLeaveRequests();
+    await fetchLeaveRequests(currentEmployeeId);
     if (currentEmployeeId) await fetchLeaveBalance(currentEmployeeId);
   };
 
@@ -169,7 +185,7 @@ export function LeaveManagement() {
       return;
     }
     toast.success('Leave request rejected');
-    await fetchLeaveRequests();
+    await fetchLeaveRequests(currentEmployeeId);
   };
 
   const handleSubmitLeave = async () => {
@@ -201,7 +217,7 @@ export function LeaveManagement() {
     toast.success('Leave request submitted');
     setNewLeave({ type: '', startDate: '', endDate: '', reason: '' });
     setDialogOpen(false);
-    await fetchLeaveRequests();
+    await fetchLeaveRequests(currentEmployeeId);
   };
 
   const getStatusColor = (status: string) => {
@@ -228,13 +244,14 @@ export function LeaveManagement() {
           <h1 className="text-3xl font-bold text-gray-900">Leave Management</h1>
           <p className="text-gray-500 mt-1">Track and manage employee leave requests</p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Calendar className="w-4 h-4 mr-2" />
-              Apply for Leave
-            </Button>
-          </DialogTrigger>
+        {!canApprove && (
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Calendar className="w-4 h-4 mr-2" />
+                Apply for Leave
+              </Button>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Apply for Leave</DialogTitle>
@@ -287,40 +304,42 @@ export function LeaveManagement() {
             <Button onClick={handleSubmitLeave} className="mt-4">Submit Request</Button>
           </DialogContent>
         </Dialog>
+        )}
       </div>
 
-      {/* Leave Balance */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold">Annual Leave</h3>
-              <Calendar className="w-5 h-5 text-blue-600" />
-            </div>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Total</span>
-                <span className="font-medium">{leaveBalance.annual.total} days</span>
+      {/* Leave Balance - Only for Employees */}
+      {!canApprove && (
+        <>
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold">Annual Leave</h3>
+                <Calendar className="w-5 h-5 text-blue-600" />
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Used</span>
-                <span className="font-medium">{leaveBalance.annual.used} days</span>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Total</span>
+                  <span className="font-medium">{leaveBalance.annual.total} days</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Used</span>
+                  <span className="font-medium">{leaveBalance.annual.used} days</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Remaining</span>
+                  <span className="font-bold text-blue-600">{leaveBalance.annual.remaining} days</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2 mt-4">
+                  <div
+                    className="bg-blue-600 h-2 rounded-full"
+                    style={{ width: `${(leaveBalance.annual.used / leaveBalance.annual.total) * 100}%` }}
+                  />
+                </div>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Remaining</span>
-                <span className="font-bold text-blue-600">{leaveBalance.annual.remaining} days</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2 mt-4">
-                <div
-                  className="bg-blue-600 h-2 rounded-full"
-                  style={{ width: `${(leaveBalance.annual.used / leaveBalance.annual.total) * 100}%` }}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
+          <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold">Sick Leave</h3>
@@ -377,12 +396,13 @@ export function LeaveManagement() {
             </div>
           </CardContent>
         </Card>
-      </div>
+        </>
+      )}
 
       {/* Leave Requests */}
       <Card>
         <CardHeader>
-          <CardTitle>Leave Requests</CardTitle>
+          <CardTitle>{canApprove ? 'Team Leave Requests' : 'My Leave Requests'}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
