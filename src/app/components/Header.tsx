@@ -52,14 +52,14 @@ export function Header({ user, setUser, toggleSidebar }: HeaderProps) {
           {/* Notifications */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="relative">
+              <Button variant="ghost" size="icon" className="relative" aria-label="Open notifications" type="button">
                 <Bell className="w-5 h-5" />
                 <Badge className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center p-0 bg-red-500">
                   3
                 </Badge>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80">
+            <DropdownMenuContent align="end" sideOffset={8} className="w-80 bg-white border border-gray-200 shadow-lg">
               <DropdownMenuLabel>Notifications</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <div className="max-h-96 overflow-y-auto">
@@ -88,13 +88,22 @@ export function Header({ user, setUser, toggleSidebar }: HeaderProps) {
           {/* User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                className="flex items-center gap-2 px-2"
+                aria-label="Open account menu"
+                type="button"
+              >
                 <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-medium">
                   {user?.name?.charAt(0) || 'U'}
                 </div>
+                <div className="hidden md:flex flex-col items-start leading-tight">
+                  <span className="text-sm font-medium text-gray-700">{user?.name || 'User'}</span>
+                  <span className="text-xs text-gray-500">{user?.role || 'Account'}</span>
+                </div>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" sideOffset={8} className="w-56 bg-white border border-gray-200 shadow-lg">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => navigate('/self-service')}>
