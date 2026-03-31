@@ -206,6 +206,19 @@ export function EmployeeSelfService() {
     }
   };
 
+  const getLeaveUsageColorClasses = (color: string) => {
+    switch (color) {
+      case 'blue':
+        return { text: 'text-blue-600', bg: 'bg-blue-500' };
+      case 'green':
+        return { text: 'text-green-600', bg: 'bg-green-500' };
+      case 'orange':
+        return { text: 'text-orange-600', bg: 'bg-orange-500' };
+      default:
+        return { text: 'text-gray-600', bg: 'bg-gray-500' };
+    }
+  };
+
   const computedDays = () => {
     if (!newLeave.startDate || !newLeave.endDate) return 0;
     const diff = new Date(newLeave.endDate).getTime() - new Date(newLeave.startDate).getTime();
@@ -424,26 +437,29 @@ export function EmployeeSelfService() {
                   { label: 'Annual Leave', balance: leaveBalance.annual, color: 'blue' },
                   { label: 'Sick Leave', balance: leaveBalance.sick, color: 'green' },
                   { label: 'Emergency Leave', balance: leaveBalance.emergency, color: 'orange' },
-                ].map(({ label, balance, color }) => (
-                  <Card key={label}>
-                    <CardContent className="p-5">
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="font-semibold text-gray-700">{label}</span>
-                        <span className={`text-2xl font-bold text-${color}-600`}>{balance.remaining}</span>
-                      </div>
-                      <div className="w-full bg-gray-100 rounded-full h-2 mb-3">
-                        <div
-                          className={`bg-${color}-500 h-2 rounded-full transition-all`}
-                          style={{ width: `${Math.min((balance.used / balance.total) * 100, 100)}%` }}
-                        />
-                      </div>
-                      <div className="flex justify-between text-xs text-gray-500">
-                        <span>{balance.used} used</span>
-                        <span>{balance.remaining} of {balance.total} remaining</span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                ].map(({ label, balance, color }) => {
+                  const { text, bg } = getLeaveUsageColorClasses(color);
+                  return (
+                    <Card key={label}>
+                      <CardContent className="p-5">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="font-semibold text-gray-700">{label}</span>
+                          <span className={`text-2xl font-bold ${text}`}>{balance.remaining}</span>
+                        </div>
+                        <div className="w-full bg-gray-100 rounded-full h-2 mb-3">
+                          <div
+                            className={`${bg} h-2 rounded-full transition-all`}
+                            style={{ width: `${Math.min((balance.used / balance.total) * 100, 100)}%` }}
+                          />
+                        </div>
+                        <div className="flex justify-between text-xs text-gray-500">
+                          <span>{balance.used} used</span>
+                          <span>{balance.remaining} of {balance.total} remaining</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             )}
 
