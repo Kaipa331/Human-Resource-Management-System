@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -10,6 +11,7 @@ import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { toast } from 'sonner';
+import { Switch } from '../components/ui/switch';
 import { supabase } from '../../lib/supabase';
 
 interface LeaveRequest {
@@ -41,6 +43,67 @@ export function EmployeeSelfService() {
   };
   const user = getStoredUser();
   const canManageLeave = ['HR', 'Admin', 'Manager'].includes(user?.role);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const allowedTabs = ['personal', 'my-leave', 'payslips', 'attendance', 'documents', 'settings'];
+  const currentTabParam = searchParams.get('tab') || 'personal';
+  const [activeTab, setActiveTab] = useState(
+    allowedTabs.includes(currentTabParam) ? currentTabParam : 'personal'
+  );
+  const [notificationSettings, setNotificationSettings] = useState(() => {
+    const defaultSettings = {
+      emailAlerts: true,
+      leaveUpdates: true,
+      weeklySummary: false,
+    };
+
+    if (!user?.email) {
+      return defaultSettings;
+    }
+
+    const savedSettings = localStorage.getItem(`hrms_notifications_${user.email}`);
+    if (!savedSettings) {
+      return defaultSettings;
+    }
+
+    try {
+      return { ...defaultSettings, ...JSON.parse(savedSettings) };
+    } catch (error) {
+      console.error('Invalid notification settings JSON in localStorage', error);
+      return defaultSettings;
+    }
+  });
+
+  useEffect(() => {
+    const tab = searchParams.get('tab') || 'personal';
+    if (allowedTabs.includes(tab) && tab !== activeTab) {
+      setActiveTab(tab);
+    }
+  }, [searchParams, activeTab]);
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    const nextParams = new URLSearchParams(searchParams);
+
+    if (value === 'personal') {
+      nextParams.delete('tab');
+    } else {
+      nextParams.set('tab', value);
+    }
+
+    setSearchParams(nextParams);
+  };
+
+  const updateNotificationSetting = (
+    key: 'emailAlerts' | 'leaveUpdates' | 'weeklySummary',
+    checked: boolean,
+  ) => {
+    const nextSettings = { ...notificationSettings, [key]: checked };
+    setNotificationSettings(nextSettings);
+
+    if (user?.email) {
+      localStorage.setItem(`hrms_notifications_${user.email}`, JSON.stringify(nextSettings));
+    }
+  };
 
   const profileData = {
     employeeId: 'EMP001',
@@ -257,9 +320,9 @@ export function EmployeeSelfService() {
                   <p className="text-gray-500">{profileData.position}</p>
                   <Badge className="mt-2">{profileData.employeeId}</Badge>
                 </div>
-                <Button variant="outline">
+                <Button variant="outline" onClick={() => handleTabChange('settings')}>
                   <Edit className="w-4 h-4 mr-2" />
-                  Edit Profile
+                  Open Settings
                 </Button>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
@@ -285,13 +348,14 @@ export function EmployeeSelfService() {
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="personal" className="space-y-6">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
         <TabsList>
           <TabsTrigger value="personal">Personal Info</TabsTrigger>
           <TabsTrigger value="my-leave">My Leave</TabsTrigger>
           <TabsTrigger value="payslips">Payslips</TabsTrigger>
           <TabsTrigger value="attendance">Attendance</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
+          <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
         {/* ── Personal Info ─────────────────────────────────────────────────── */}
@@ -632,6 +696,72 @@ export function EmployeeSelfService() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* ── Settings ──────────────────────────────────────────────────────── */}
+        <TabsContent value="settings">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Notification Preferences</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="font-medium text-gray-800">Email alerts</p>
+                    <p className="text-sm text-gray-500">Receive sign-in, leave, and payslip updates by email.</p>
+                  </div>
+                  <Switch
+                    checked={notificationSettings.emailAlerts}
+                    onCheckedChange={(checked) => updateNotificationSetting('emailAlerts', checked)}
+                  />
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="font-medium text-gray-800">Leave status updates</p>
+                    <p className="text-sm text-gray-500">Get notified when HR approves or rejects a leave request.</p>
+                  </div>
+                  <Switch
+                    checked={notificationSettings.leaveUpdates}
+                    onCheckedChange={(checked) => updateNotificationSetting('leaveUpdates', checked)}
+                  />
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="font-medium text-gray-800">Weekly summary</p>
+                    <p className="text-sm text-gray-500">Receive a summary of attendance, documents, and leave balance.</p>
+                  </div>
+                  <Switch
+                    checked={notificationSettings.weeklySummary}
+                    onCheckedChange={(checked) => updateNotificationSetting('weeklySummary', checked)}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Account Shortcuts</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Button variant="outline" className="w-full justify-start" onClick={() => handleTabChange('personal')}>
+                  <Edit className="w-4 h-4 mr-2" />
+                  Review personal details
+                </Button>
+                <Button variant="outline" className="w-full justify-start" onClick={() => handleTabChange('attendance')}>
+                  <Clock className="w-4 h-4 mr-2" />
+                  Open attendance history
+                </Button>
+                <Button variant="outline" className="w-full justify-start" onClick={() => handleTabChange('documents')}>
+                  <FileText className="w-4 h-4 mr-2" />
+                  Manage documents
+                </Button>
+                <p className="text-sm text-gray-500 pt-2">
+                  Your notification settings are saved locally for this account so the header actions now open a working settings view.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

@@ -20,6 +20,27 @@ interface HeaderProps {
 
 export function Header({ user, setUser, toggleSidebar }: HeaderProps) {
   const navigate = useNavigate();
+  const isEmployee = user?.role === 'Employee';
+
+  const notifications = isEmployee
+    ? [
+        { title: 'Leave balance updated', description: 'Your annual leave balance is ready to review.' },
+        { title: 'Attendance reminder', description: 'Remember to complete today’s check-in before the end of day.' },
+        { title: 'Profile update', description: 'Review your personal details from the settings tab.' },
+      ]
+    : [
+        { title: 'Leave Request Pending', description: 'Precious Kaipa requested annual leave.' },
+        { title: 'Payroll Processed', description: 'March 2026 payroll completed successfully.' },
+        { title: 'Performance Review Due', description: '5 reviews are still pending completion.' },
+      ];
+
+  const openSettings = () => {
+    navigate('/self-service?tab=settings');
+  };
+
+  const openProfile = () => {
+    navigate('/self-service?tab=personal');
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -32,10 +53,10 @@ export function Header({ user, setUser, toggleSidebar }: HeaderProps) {
     <header className="bg-white border-b border-gray-200 px-4 md:px-6 py-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="lg:hidden" 
+          <Button
+            variant="ghost"
+            size="icon"
+            className="lg:hidden"
             onClick={toggleSidebar}
           >
             <Menu className="w-6 h-6" />
@@ -49,13 +70,12 @@ export function Header({ user, setUser, toggleSidebar }: HeaderProps) {
         </div>
 
         <div className="flex items-center gap-4">
-          {/* Notifications */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="relative" aria-label="Open notifications" type="button">
                 <Bell className="w-5 h-5" />
                 <Badge className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center p-0 bg-red-500">
-                  3
+                  {notifications.length}
                 </Badge>
               </Button>
             </DropdownMenuTrigger>
@@ -63,29 +83,23 @@ export function Header({ user, setUser, toggleSidebar }: HeaderProps) {
               <DropdownMenuLabel>Notifications</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <div className="max-h-96 overflow-y-auto">
-                <DropdownMenuItem>
-                  <div className="flex flex-col gap-1">
-                    <p className="font-medium text-sm">Leave Request Pending</p>
-                    <p className="text-xs text-gray-500">Precious Kaipa requested annual leave</p>
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <div className="flex flex-col gap-1">
-                    <p className="font-medium text-sm">Payroll Processed</p>
-                    <p className="text-xs text-gray-500">March 2026 payroll completed</p>
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <div className="flex flex-col gap-1">
-                    <p className="font-medium text-sm">Performance Review Due</p>
-                    <p className="text-xs text-gray-500">5 reviews pending completion</p>
-                  </div>
-                </DropdownMenuItem>
+                {notifications.map((notification) => (
+                  <DropdownMenuItem key={notification.title} className="items-start">
+                    <div className="flex flex-col gap-1">
+                      <p className="font-medium text-sm">{notification.title}</p>
+                      <p className="text-xs text-gray-500">{notification.description}</p>
+                    </div>
+                  </DropdownMenuItem>
+                ))}
               </div>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={openSettings}>
+                <Settings className="w-4 h-4 mr-2" />
+                Notification settings
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -106,11 +120,11 @@ export function Header({ user, setUser, toggleSidebar }: HeaderProps) {
             <DropdownMenuContent align="end" sideOffset={8} className="w-56 bg-white border border-gray-200 shadow-lg">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate('/self-service')}>
+              <DropdownMenuItem onClick={openProfile}>
                 <User className="w-4 h-4 mr-2" />
                 Profile
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={openSettings}>
                 <Settings className="w-4 h-4 mr-2" />
                 Settings
               </DropdownMenuItem>
