@@ -26,11 +26,25 @@ export function Login() {
       if (error) throw error;
 
       if (data.user) {
-        // We can still store some basic info in local storage if needed by the app
+        const normalizedEmail = (data.user.email || email).toLowerCase();
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('email', normalizedEmail)
+          .maybeSingle();
+
+        const { data: employeeData } = await supabase
+          .from('employees')
+          .select('name, department')
+          .eq('email', normalizedEmail)
+          .maybeSingle();
+
         localStorage.setItem('hrms_user', JSON.stringify({
-          email: data.user.email,
+          email: normalizedEmail,
           id: data.user.id,
-          role: 'Admin', // In a real app, this would come from a profiles table
+          role: profileData?.role || 'Employee',
+          name: employeeData?.name || normalizedEmail,
+          department: employeeData?.department || 'General',
         }));
         toast.success('Login successful!');
         navigate('/');

@@ -1,100 +1,280 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { DollarSign, Download, FileText, TrendingUp, Users, Calendar } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { toast } from 'sonner';
+import { supabase } from '../../lib/supabase';
+
+type PayrollCycle = {
+  id: string;
+  period: string;
+  startDate: string;
+  endDate: string;
+  totalEmployees: number;
+  grossTotal: string;
+  netTotal: string;
+  status: string;
+  payDate: string;
+};
+
+type PayrollSummary = {
+  totalGross: string;
+  totalNet: string;
+  totalTax: string;
+  totalDeductions: string;
+  employees: number;
+};
+
+type EmployeePayrollRow = {
+  employeeId: string;
+  name: string;
+  department: string;
+  basicSalary: number;
+  allowances: number;
+  gross: number;
+  deductions: number;
+  net: number;
+  taxDeducted: number;
+  payeeTax: string;
+};
+
+const INITIAL_PAYROLL_CYCLES: PayrollCycle[] = [
+  {
+    id: 'PAY001',
+    period: 'March 2026',
+    startDate: '2026-03-01',
+    endDate: '2026-03-31',
+    totalEmployees: 247,
+    grossTotal: 'MWK 210,450,000',
+    netTotal: 'MWK 168,360,000',
+    status: 'In Progress',
+    payDate: '2026-03-31'
+  },
+  {
+    id: 'PAY002',
+    period: 'February 2026',
+    startDate: '2026-02-01',
+    endDate: '2026-02-28',
+    totalEmployees: 245,
+    grossTotal: 'MWK 208,800,000',
+    netTotal: 'MWK 167,040,000',
+    status: 'Completed',
+    payDate: '2026-02-28'
+  },
+  {
+    id: 'PAY003',
+    period: 'January 2026',
+    startDate: '2026-01-01',
+    endDate: '2026-01-31',
+    totalEmployees: 242,
+    grossTotal: 'MWK 206,400,000',
+    netTotal: 'MWK 165,120,000',
+    status: 'Completed',
+    payDate: '2026-01-31'
+  },
+];
+
+const INITIAL_PAYROLL_SUMMARY: PayrollSummary = {
+  totalGross: 'MWK 210,450,000',
+  totalNet: 'MWK 168,360,000',
+  totalTax: 'MWK 31,567,500',
+  totalDeductions: 'MWK 42,090,000',
+  employees: 247
+};
 
 export function Payroll() {
-  const [payrollCycles, setPayrollCycles] = useState([
-    {
-      id: 'PAY001',
-      period: 'March 2026',
-      startDate: '2026-03-01',
-      endDate: '2026-03-31',
-      totalEmployees: 247,
-      grossTotal: 'MWK 210,450,000',
-      netTotal: 'MWK 168,360,000',
-      status: 'In Progress',
-      payDate: '2026-03-31'
-    },
-    {
-      id: 'PAY002',
-      period: 'February 2026',
-      startDate: '2026-02-01',
-      endDate: '2026-02-28',
-      totalEmployees: 245,
-      grossTotal: 'MWK 208,800,000',
-      netTotal: 'MWK 167,040,000',
-      status: 'Completed',
-      payDate: '2026-02-28'
-    },
-    {
-      id: 'PAY003',
-      period: 'January 2026',
-      startDate: '2026-01-01',
-      endDate: '2026-01-31',
-      totalEmployees: 242,
-      grossTotal: 'MWK 206,400,000',
-      netTotal: 'MWK 165,120,000',
-      status: 'Completed',
-      payDate: '2026-01-31'
-    },
-  ]);
+  const [payrollCycles, setPayrollCycles] = useState<PayrollCycle[]>(INITIAL_PAYROLL_CYCLES);
+  const [employeePayroll, setEmployeePayroll] = useState<EmployeePayrollRow[]>([]);
+  const [selectedPeriod, setSelectedPeriod] = useState('March 2026');
+  const [statutory, setStatutory] = useState({
+    totalPaye: 0,
+    employeeContrib: 0,
+    employerContrib: 0,
+    employees: 0,
+  });
 
-  const employeePayroll = [
-    {
-      employeeId: 'EMP001',
-      name: 'Precious Kaipa',
-      department: 'IT',
-      basicSalary: 850000,
-      allowances: 150000,
-      gross: 1000000,
-      deductions: 200000,
-      net: 800000,
-      taxDeducted: 150000,
-      payeeTax: 'PAYE 30%'
-    },
-    {
-      employeeId: 'EMP002',
-      name: 'Sarah Williams',
-      department: 'HR',
-      basicSalary: 1200000,
-      allowances: 200000,
-      gross: 1400000,
-      deductions: 280000,
-      net: 1120000,
-      taxDeducted: 210000,
-      payeeTax: 'PAYE 30%'
-    },
-    {
-      employeeId: 'EMP003',
-      name: 'Michael Brown',
-      department: 'Sales',
-      basicSalary: 750000,
-      allowances: 100000,
-      gross: 850000,
-      deductions: 170000,
-      net: 680000,
-      taxDeducted: 127500,
-      payeeTax: 'PAYE 30%'
-    },
-  ];
+  const [payrollSummary, setPayrollSummary] = useState<PayrollSummary>(INITIAL_PAYROLL_SUMMARY);
+  const [loading, setLoading] = useState(false);
 
-  const payrollSummary = {
-    totalGross: 'MWK 210,450,000',
-    totalNet: 'MWK 168,360,000',
-    totalTax: 'MWK 31,567,500',
-    totalDeductions: 'MWK 42,090,000',
-    employees: 247
-  };
+  useEffect(() => {
+    const loadPayrollFromBackend = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('payroll')
+          .select('period, basics, bonuses, deductions, net_pay, employee_id, status');
 
-  const handleProcessPayroll = (id: string) => {
-    setPayrollCycles(payrollCycles.map(cycle => 
-      cycle.id === id ? { ...cycle, status: 'Completed' } : cycle
-    ));
-    toast.success('Payroll processed successfully');
+        if (error || !data || data.length === 0) {
+          return;
+        }
+
+        const byPeriod = new Map<string, {
+          gross: number;
+          net: number;
+          deductions: number;
+          employees: Set<string>;
+          status: string;
+        }>();
+
+        for (const row of data as any[]) {
+          const period = row.period as string;
+          if (!period) continue;
+          const basics = Number(row.basics ?? 0);
+          const bonuses = Number(row.bonuses ?? 0);
+          const net = Number(row.net_pay ?? 0);
+          const deductions = Number(row.deductions ?? 0);
+          const employeeId = String(row.employee_id ?? '');
+          const status = String(row.status ?? 'Completed');
+
+          if (!byPeriod.has(period)) {
+            byPeriod.set(period, {
+              gross: 0,
+              net: 0,
+              deductions: 0,
+              employees: new Set<string>(),
+              status,
+            });
+          }
+
+          const agg = byPeriod.get(period)!;
+          agg.gross += basics + bonuses;
+          agg.net += net;
+          agg.deductions += deductions;
+          if (employeeId) agg.employees.add(employeeId);
+          // If any row is not completed, mark the cycle as in progress
+          if (status !== 'Completed') {
+            agg.status = 'In Progress';
+          }
+        }
+
+        const formattedCycles: PayrollCycle[] = [];
+        let totalGross = 0;
+        let totalNet = 0;
+        let totalDeductions = 0;
+        let totalEmployees = 0;
+
+        for (const [period, agg] of byPeriod.entries()) {
+          totalGross += agg.gross;
+          totalNet += agg.net;
+          totalDeductions += agg.deductions;
+          totalEmployees += agg.employees.size;
+
+          formattedCycles.push({
+            id: period,
+            period,
+            startDate: '',
+            endDate: '',
+            totalEmployees: agg.employees.size,
+            grossTotal: `MWK ${agg.gross.toLocaleString()}`,
+            netTotal: `MWK ${agg.net.toLocaleString()}`,
+            status: agg.status,
+            payDate: '',
+          });
+        }
+
+        if (formattedCycles.length > 0) {
+          formattedCycles.sort((a, b) => b.period.localeCompare(a.period));
+          setPayrollCycles(formattedCycles);
+          setSelectedPeriod(formattedCycles[0].period);
+          setPayrollSummary({
+            totalGross: `MWK ${totalGross.toLocaleString()}`,
+            totalNet: `MWK ${totalNet.toLocaleString()}`,
+            totalTax: `MWK ${totalDeductions.toLocaleString()}`,
+            totalDeductions: `MWK ${totalDeductions.toLocaleString()}`,
+            employees: totalEmployees,
+          });
+        }
+      } catch (err) {
+        console.error('Error loading payroll data', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPayrollFromBackend();
+  }, []);
+
+  useEffect(() => {
+    const loadEmployeePayroll = async () => {
+      if (!selectedPeriod) return;
+      try {
+        const { data, error } = await supabase
+          .from('payroll')
+          .select(`
+            employee_id,
+            basics,
+            bonuses,
+            deductions,
+            net_pay,
+            period,
+            employees:employee_id (
+              employee_id,
+              name,
+              department
+            )
+          `)
+          .eq('period', selectedPeriod);
+
+        if (error || !data) return;
+
+        const rows: EmployeePayrollRow[] = (data as any[]).map((row) => {
+          const basic = Number(row.basics ?? 0);
+          const allowances = Number(row.bonuses ?? 0);
+          const deductions = Number(row.deductions ?? 0);
+          const net = Number(row.net_pay ?? 0);
+          const gross = basic + allowances;
+          const taxDeducted = Math.max(deductions * 0.75, 0);
+
+          const employee = row.employees || {};
+          return {
+            employeeId: employee.employee_id || String(row.employee_id ?? ''),
+            name: employee.name || 'Unknown',
+            department: employee.department || 'N/A',
+            basicSalary: basic,
+            allowances,
+            gross,
+            deductions,
+            net,
+            taxDeducted,
+            payeeTax: 'PAYE 30%',
+          };
+        });
+
+        setEmployeePayroll(rows);
+
+        const totalPaye = rows.reduce((sum, r) => sum + r.taxDeducted, 0);
+        const employeeContrib = rows.reduce((sum, r) => sum + r.gross * 0.05, 0);
+        setStatutory({
+          totalPaye,
+          employeeContrib,
+          employerContrib: employeeContrib,
+          employees: rows.length,
+        });
+      } catch (err) {
+        console.error('Error loading employee payroll details', err);
+      }
+    };
+
+    loadEmployeePayroll();
+  }, [selectedPeriod]);
+
+  const handleProcessPayroll = async (period: string) => {
+    try {
+      const { error } = await supabase
+        .from('payroll')
+        .update({ status: 'Completed' })
+        .eq('period', period);
+
+      if (error) throw error;
+      setPayrollCycles(payrollCycles.map(cycle =>
+        cycle.period === period ? { ...cycle, status: 'Completed' } : cycle
+      ));
+      toast.success('Payroll processed successfully');
+    } catch (error: any) {
+      toast.error('Failed to process payroll: ' + error.message);
+    }
   };
 
   const handleDownloadPayslip = (employeeName: string) => {
@@ -217,7 +397,7 @@ export function Payroll() {
                     <div className="flex gap-2 mt-4">
                       {cycle.status === 'In Progress' ? (
                         <>
-                          <Button onClick={() => handleProcessPayroll(cycle.id)}>
+                          <Button onClick={() => handleProcessPayroll(cycle.period)}>
                             Process Payroll
                           </Button>
                           <Button variant="outline">
@@ -246,10 +426,24 @@ export function Payroll() {
         <TabsContent value="employees">
           <Card>
             <CardHeader>
-              <CardTitle>Employee Payroll Details - March 2026</CardTitle>
+              <div className="flex items-center justify-between gap-3">
+                <CardTitle>Employee Payroll Details - {selectedPeriod}</CardTitle>
+                <select
+                  className="border rounded-md px-3 py-1.5 text-sm"
+                  value={selectedPeriod}
+                  onChange={(e) => setSelectedPeriod(e.target.value)}
+                >
+                  {payrollCycles.map((cycle) => (
+                    <option key={cycle.id} value={cycle.period}>{cycle.period}</option>
+                  ))}
+                </select>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
+                {employeePayroll.length === 0 && (
+                  <p className="text-gray-500 text-sm">No payroll rows found for this period.</p>
+                )}
                 {employeePayroll.map((emp) => (
                   <div key={emp.employeeId} className="border rounded-lg p-6">
                     <div className="flex items-start justify-between mb-4">
@@ -303,7 +497,7 @@ export function Payroll() {
         <TabsContent value="statutory">
           <Card>
             <CardHeader>
-              <CardTitle>Statutory Deductions - March 2026</CardTitle>
+              <CardTitle>Statutory Deductions - {selectedPeriod}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
@@ -312,11 +506,11 @@ export function Payroll() {
                   <div className="grid grid-cols-3 gap-4">
                     <div>
                       <p className="text-sm text-gray-500">Total PAYE Collected</p>
-                      <p className="text-2xl font-bold">MWK 31,567,500</p>
+                      <p className="text-2xl font-bold">{formatCurrency(statutory.totalPaye)}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Employees Subject to PAYE</p>
-                      <p className="text-2xl font-bold">247</p>
+                      <p className="text-2xl font-bold">{statutory.employees}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Status</p>
@@ -334,15 +528,15 @@ export function Payroll() {
                   <div className="grid grid-cols-3 gap-4">
                     <div>
                       <p className="text-sm text-gray-500">Employee Contributions</p>
-                      <p className="text-2xl font-bold">MWK 5,261,250</p>
+                      <p className="text-2xl font-bold">{formatCurrency(statutory.employeeContrib)}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Employer Contributions</p>
-                      <p className="text-2xl font-bold">MWK 5,261,250</p>
+                      <p className="text-2xl font-bold">{formatCurrency(statutory.employerContrib)}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Total</p>
-                      <p className="text-2xl font-bold">MWK 10,522,500</p>
+                      <p className="text-2xl font-bold">{formatCurrency(statutory.employeeContrib + statutory.employerContrib)}</p>
                     </div>
                   </div>
                   <Button className="mt-4">

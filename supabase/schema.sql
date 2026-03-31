@@ -23,6 +23,23 @@ DO $$ BEGIN
     CREATE POLICY "Allow all access to employees" ON public.employees FOR ALL USING (true);
 EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
+-- Profiles / Role Mapping Table
+CREATE TABLE IF NOT EXISTS public.profiles (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    email TEXT UNIQUE NOT NULL,
+    role TEXT NOT NULL DEFAULT 'Employee', -- Admin, HR, Manager, Employee
+    employee_id UUID REFERENCES public.employees(id) ON DELETE SET NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+DO $$ BEGIN
+    ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
+DO $$ BEGIN
+    CREATE POLICY "Allow all access to profiles" ON public.profiles FOR ALL USING (true);
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
 -- Attendance Table
 CREATE TABLE IF NOT EXISTS public.attendance (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -79,4 +96,63 @@ EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 DO $$ BEGIN
     CREATE POLICY "Allow all access to payroll" ON public.payroll FOR ALL USING (true);
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
+-- Training Courses Table
+CREATE TABLE IF NOT EXISTS public.training_courses (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    title TEXT NOT NULL,
+    category TEXT NOT NULL,
+    duration_hours INTEGER DEFAULT 0,
+    provider TEXT,
+    status TEXT DEFAULT 'Active',
+    rating NUMERIC DEFAULT 0,
+    start_date DATE,
+    end_date DATE
+);
+
+DO $$ BEGIN
+    ALTER TABLE public.training_courses ENABLE ROW LEVEL SECURITY;
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
+DO $$ BEGIN
+    CREATE POLICY "Allow all access to training_courses" ON public.training_courses FOR ALL USING (true);
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
+-- Training Enrollments Table
+CREATE TABLE IF NOT EXISTS public.training_enrollments (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    course_id UUID REFERENCES public.training_courses(id) ON DELETE CASCADE,
+    employee_id UUID REFERENCES public.employees(id) ON DELETE CASCADE,
+    status TEXT DEFAULT 'In Progress',
+    progress NUMERIC DEFAULT 0,
+    due_date DATE,
+    completed_modules INTEGER DEFAULT 0,
+    total_modules INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    UNIQUE (course_id, employee_id)
+);
+
+DO $$ BEGIN
+    ALTER TABLE public.training_enrollments ENABLE ROW LEVEL SECURITY;
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
+DO $$ BEGIN
+    CREATE POLICY "Allow all access to training_enrollments" ON public.training_enrollments FOR ALL USING (true);
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
+-- Training Certificates Table
+CREATE TABLE IF NOT EXISTS public.training_certificates (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    course_id UUID REFERENCES public.training_courses(id) ON DELETE CASCADE,
+    employee_id UUID REFERENCES public.employees(id) ON DELETE CASCADE,
+    issued_on DATE DEFAULT CURRENT_DATE
+);
+
+DO $$ BEGIN
+    ALTER TABLE public.training_certificates ENABLE ROW LEVEL SECURITY;
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
+DO $$ BEGIN
+    CREATE POLICY "Allow all access to training_certificates" ON public.training_certificates FOR ALL USING (true);
 EXCEPTION WHEN OTHERS THEN NULL; END $$;

@@ -15,7 +15,13 @@ export function RootLayout() {
     if (!storedUser && location.pathname !== '/login') {
       navigate('/login');
     } else if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (error) {
+        console.error('Invalid stored user JSON. Clearing session.', error);
+        localStorage.removeItem('hrms_user');
+        navigate('/login');
+      }
     }
   }, [navigate, location]);
 

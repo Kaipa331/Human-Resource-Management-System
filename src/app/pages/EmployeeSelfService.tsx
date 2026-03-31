@@ -29,7 +29,17 @@ interface LeaveBalance {
 }
 
 export function EmployeeSelfService() {
-  const user = JSON.parse(localStorage.getItem('hrms_user') || '{}');
+  const getStoredUser = () => {
+    const raw = localStorage.getItem('hrms_user');
+    if (!raw) return {};
+    try {
+      return JSON.parse(raw);
+    } catch (error) {
+      console.error('Invalid hrms_user JSON in localStorage', error);
+      return {};
+    }
+  };
+  const user = getStoredUser();
 
   const profileData = {
     employeeId: 'EMP001',

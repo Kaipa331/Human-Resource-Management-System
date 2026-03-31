@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
 import { Badge } from './ui/badge';
+import { supabase } from '../../lib/supabase';
 
 interface HeaderProps {
   user: any;
@@ -20,7 +21,8 @@ interface HeaderProps {
 export function Header({ user, setUser, toggleSidebar }: HeaderProps) {
   const navigate = useNavigate();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     localStorage.removeItem('hrms_user');
     setUser(null);
     navigate('/login');

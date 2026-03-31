@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -6,9 +6,41 @@ import { Progress } from '../components/ui/progress';
 import { GraduationCap, BookOpen, Award, Clock, Plus } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { toast } from 'sonner';
+import { supabase } from '../../lib/supabase';
+
+type Course = {
+  id: string;
+  title: string;
+  category: string;
+  duration: string;
+  provider: string;
+  enrolledEmployees: number;
+  completedEmployees: number;
+  status: string;
+  startDate: string;
+  endDate: string;
+};
+
+type MyTraining = {
+  id: string;
+  title: string;
+  category: string;
+  progress: number;
+  status: string;
+  dueDate: string;
+  completedModules: number;
+  totalModules: number;
+};
+
+type Certificate = {
+  id: string;
+  title: string;
+  issuedOn: string;
+  colorClass: string;
+};
 
 export function Training() {
-  const [courses, setCourses] = useState([
+  const [courses, setCourses] = useState<Course[]>([
     {
       id: 'TRN001',
       title: 'Advanced Excel for HR Professionals',
@@ -47,7 +79,7 @@ export function Training() {
     },
   ]);
 
-  const [myTrainings, setMyTrainings] = useState([
+  const [myTrainings, setMyTrainings] = useState<MyTraining[]>([
     {
       id: 'MY001',
       title: 'React & TypeScript Fundamentals',
@@ -80,16 +112,193 @@ export function Training() {
     },
   ]);
 
-  const trainingStats = {
+  const [trainingStats, setTrainingStats] = useState({
     totalCourses: 28,
     activeCourses: 18,
     totalEnrollments: 542,
     completionRate: 76,
     averageRating: 4.3
-  };
+  });
+  const [certificates, setCertificates] = useState<Certificate[]>([]);
+  const [currentEmployeeDbId, setCurrentEmployeeDbId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem('hrms_user') || '{}');
+
+    const loadTrainingData = async () => {
+      try {
+        const { data: emp } = await supabase
+          .from('employees')
+          .select('id')
+          .eq('email', user.email || '')
+          .single();
+
+        const employeeId = emp?.id || null;
+        setCurrentEmployeeDbId(employeeId);
+
+        const { data: courseRows } = await supabase
+          .from('training_courses')
+          .select('*')
+          .order('start_date', { ascending: false });
+
+        if (courseRows && courseRows.length > 0) {
+          const { data: enrollmentRows } = await supabase
+            .from('training_enrollments')
+            .select('course_id, status');
+
+          const enrollCountByCourse = new Map<string, { enrolled: number; completed: number }>();
+          (enrollmentRows || []).forEach((en: any) => {
+            if (!enrollCountByCourse.has(en.course_id)) {
+              enrollCountByCourse.set(en.course_id, { enrolled: 0, completed: 0 });
+            }
+            const stats = enrollCountByCourse.get(en.course_id)!;
+            stats.enrolled += 1;
+            if (String(en.status || '').toLowerCase() === 'completed') stats.completed += 1;
+          });
+
+          setCourses(courseRows.map((c: any) => {
+            const stats = enrollCountByCourse.get(c.id) || { enrolled: 0, completed: 0 };
+            return {
+              id: c.id,
+              title: c.title,
+              category: c.category,
+              duration: `${c.duration_hours ?? 0} hours`,
+              provider: c.provider || 'N/A',
+              enrolledEmployees: stats.enrolled,
+              completedEmployees: stats.completed,
+              status: c.status || 'Active',
+              startDate: c.start_date || '',
+              endDate: c.end_date || '',
+            };
+          }));
+
+          const totalCourses = courseRows.length;
+          const activeCourses = courseRows.filter((c: any) => String(c.status || '').toLowerCase() === 'active').length;
+          const totalEnrollments = (enrollmentRows || []).length;
+          const totalCompleted = (enrollmentRows || []).filter((e: any) => String(e.status || '').toLowerCase() === 'completed').length;
+          const completionRate = totalEnrollments ? Math.round((totalCompleted / totalEnrollments) * 100) : 0;
+          const avgRating = Number((courseRows.reduce((sum: number, c: any) => sum + Number(c.rating ?? 0), 0) / totalCourses).toFixed(1)) || 0;
+
+          setTrainingStats({
+            totalCourses,
+            activeCourses,
+            totalEnrollments,
+            completionRate,
+            averageRating: avgRating,
+          });
+        }
+
+        if (employeeId) {
+          const { data: myRows } = await supabase
+            .from('training_enrollments')
+            .select(`
+              id,
+              progress,
+              status,
+              due_date,
+              completed_modules,
+              total_modules,
+              training_courses:course_id (
+                title,
+                category
+              )
+            `)
+            .eq('employee_id', employeeId);
+
+          if (myRows && myRows.length > 0) {
+            setMyTrainings(myRows.map((r: any) => ({
+              id: r.id,
+              title: r.training_courses?.title || 'Untitled Course',
+              category: r.training_courses?.category || 'General',
+              progress: Number(r.progress ?? 0),
+              status: r.status || 'In Progress',
+              dueDate: r.due_date || '',
+              completedModules: Number(r.completed_modules ?? 0),
+              totalModules: Number(r.total_modules ?? 0),
+            })));
+          }
+
+          const { data: certRows } = await supabase
+            .from('training_certificates')
+            .select(`
+              id,
+              issued_on,
+              training_courses:course_id (
+                title
+              )
+            `)
+            .eq('employee_id', employeeId)
+            .order('issued_on', { ascending: false });
+
+          if (certRows && certRows.length > 0) {
+            setCertificates(certRows.map((c: any, index: number) => ({
+              id: c.id,
+              title: c.training_courses?.title || 'Certificate',
+              issuedOn: c.issued_on || '',
+              colorClass: ['blue', 'green', 'purple'][index % 3],
+            })));
+          }
+        }
+      } catch (err) {
+        console.error('Error loading training data', err);
+      }
+    };
+
+    loadTrainingData();
+  }, []);
 
   const handleEnrollCourse = (courseId: string) => {
-    toast.success('Successfully enrolled in course');
+    if (!currentEmployeeDbId) {
+      toast.error('Employee profile not found. Please check your user email.');
+      return;
+    }
+
+    const enroll = async () => {
+      const { data: existing } = await supabase
+        .from('training_enrollments')
+        .select('id')
+        .eq('course_id', courseId)
+        .eq('employee_id', currentEmployeeDbId)
+        .maybeSingle();
+
+      if (existing?.id) {
+        toast.info('You are already enrolled in this course');
+        return;
+      }
+
+      const { error } = await supabase
+        .from('training_enrollments')
+        .insert([{
+          course_id: courseId,
+          employee_id: currentEmployeeDbId,
+          status: 'In Progress',
+          progress: 0,
+          completed_modules: 0,
+          total_modules: 10,
+        }]);
+
+      if (error) {
+        toast.error('Enrollment failed: ' + error.message);
+        return;
+      }
+
+      toast.success('Successfully enrolled in course');
+    };
+
+    enroll();
+  };
+
+  const getCertificateColorClasses = (colorClass: string) => {
+    switch (colorClass) {
+      case 'blue':
+        return { bg: 'bg-blue-50', text: 'text-blue-600' };
+      case 'green':
+        return { bg: 'bg-green-50', text: 'text-green-600' };
+      case 'purple':
+        return { bg: 'bg-purple-50', text: 'text-purple-600' };
+      default:
+        return { bg: 'bg-gray-50', text: 'text-gray-600' };
+    }
   };
 
   return (
@@ -318,53 +527,26 @@ export function Training() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="border rounded-lg p-6">
-                  <div className="flex items-start gap-4">
-                    <div className="p-3 bg-blue-50 rounded-lg">
-                      <Award className="w-8 h-8 text-blue-600" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold">Data Protection & Privacy (Malawi DPA)</h3>
-                      <p className="text-sm text-gray-500 mt-1">Issued on February 28, 2026</p>
-                      <div className="flex gap-2 mt-4">
-                        <Button size="sm" variant="outline">Download Certificate</Button>
-                        <Button size="sm" variant="outline">Share</Button>
+                {certificates.length === 0 && (
+                  <p className="text-sm text-gray-500">No certificates available yet.</p>
+                )}
+                {certificates.map((cert) => (
+                  <div key={cert.id} className="border rounded-lg p-6">
+                    <div className="flex items-start gap-4">
+                      <div className={`p-3 ${getCertificateColorClasses(cert.colorClass).bg} rounded-lg`}>
+                        <Award className={`w-8 h-8 ${getCertificateColorClasses(cert.colorClass).text}`} />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold">{cert.title}</h3>
+                        <p className="text-sm text-gray-500 mt-1">Issued on {cert.issuedOn}</p>
+                        <div className="flex gap-2 mt-4">
+                          <Button size="sm" variant="outline">Download Certificate</Button>
+                          <Button size="sm" variant="outline">Share</Button>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-
-                <div className="border rounded-lg p-6">
-                  <div className="flex items-start gap-4">
-                    <div className="p-3 bg-green-50 rounded-lg">
-                      <Award className="w-8 h-8 text-green-600" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold">Workplace Safety & Compliance</h3>
-                      <p className="text-sm text-gray-500 mt-1">Issued on January 20, 2026</p>
-                      <div className="flex gap-2 mt-4">
-                        <Button size="sm" variant="outline">Download Certificate</Button>
-                        <Button size="sm" variant="outline">Share</Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border rounded-lg p-6">
-                  <div className="flex items-start gap-4">
-                    <div className="p-3 bg-purple-50 rounded-lg">
-                      <Award className="w-8 h-8 text-purple-600" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold">Basic First Aid Training</h3>
-                      <p className="text-sm text-gray-500 mt-1">Issued on December 15, 2025</p>
-                      <div className="flex gap-2 mt-4">
-                        <Button size="sm" variant="outline">Download Certificate</Button>
-                        <Button size="sm" variant="outline">Share</Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                ))}
               </div>
             </CardContent>
           </Card>
