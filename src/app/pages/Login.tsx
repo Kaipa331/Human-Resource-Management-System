@@ -5,7 +5,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { toast } from 'sonner';
-import { supabase } from '../../lib/supabase';
+import { isSupabaseConfigured, supabase } from '../../lib/supabase';
 
 export function Login() {
   const navigate = useNavigate();
@@ -20,46 +20,84 @@ export function Login() {
     'employee@hrms.com': { role: 'Employee', name: 'Demo Employee', department: 'IT' },
   };
 
+  const persistUserSession = async (normalizedEmail: string, userId?: string) => {
+    const fallbackUser = demoUserFallbacks[normalizedEmail];
+
+    const [profileResult, employeeResult] = await Promise.allSettled([
+      supabase
+        .from('profiles')
+        .select('role')
+        .eq('email', normalizedEmail)
+        .maybeSingle(),
+      supabase
+        .from('employees')
+        .select('name, department')
+        .eq('email', normalizedEmail)
+        .maybeSingle(),
+    ]);
+
+    const profileData = profileResult.status === 'fulfilled' ? profileResult.value.data : null;
+    const employeeData = employeeResult.status === 'fulfilled' ? employeeResult.value.data : null;
+
+    localStorage.setItem('hrms_user', JSON.stringify({
+      email: normalizedEmail,
+      id: userId || normalizedEmail,
+      role: profileData?.role || fallbackUser?.role || 'Employee',
+      name: employeeData?.name || fallbackUser?.name || normalizedEmail,
+      department: employeeData?.department || fallbackUser?.department || 'General',
+    }));
+  };
+
+  const tryDemoFallbackLogin = async (normalizedEmail: string) => {
+    const fallbackUser = demoUserFallbacks[normalizedEmail];
+    const isDemoPassword = password === 'admin123';
+
+    if (!fallbackUser || !isDemoPassword) {
+      return false;
+    }
+
+    await persistUserSession(normalizedEmail);
+    toast.success('Signed in with demo mode!');
+    navigate('/');
+    return true;
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
+    const normalizedEmail = email.trim().toLowerCase();
+
     try {
+      if (!isSupabaseConfigured && await tryDemoFallbackLogin(normalizedEmail)) {
+        return;
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: normalizedEmail,
         password,
       });
 
       if (error) throw error;
 
       if (data.user) {
-        const normalizedEmail = (data.user.email || email).toLowerCase();
-        const fallbackUser = demoUserFallbacks[normalizedEmail];
-
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('email', normalizedEmail)
-          .maybeSingle();
-
-        const { data: employeeData } = await supabase
-          .from('employees')
-          .select('name, department')
-          .eq('email', normalizedEmail)
-          .maybeSingle();
-
-        localStorage.setItem('hrms_user', JSON.stringify({
-          email: normalizedEmail,
-          id: data.user.id,
-          role: profileData?.role || fallbackUser?.role || 'Employee',
-          name: employeeData?.name || fallbackUser?.name || normalizedEmail,
-          department: employeeData?.department || fallbackUser?.department || 'General',
-        }));
+        await persistUserSession(normalizedEmail, data.user.id);
         toast.success('Login successful!');
         navigate('/');
       }
     } catch (error: any) {
-      toast.error(error.message || 'Invalid credentials');
+      if (await tryDemoFallbackLogin(normalizedEmail)) {
+        return;
+      }
+
+      const errorMessage = String(error?.message || '');
+      const isNetworkFailure = /failed to fetch|networkerror|load failed/i.test(errorMessage);
+
+      toast.error(
+        isNetworkFailure
+          ? 'Unable to reach Supabase from this Vercel deployment. Demo accounts still work with password admin123.'
+          : errorMessage || 'Invalid credentials'
+      );
     } finally {
       setLoading(false);
     }

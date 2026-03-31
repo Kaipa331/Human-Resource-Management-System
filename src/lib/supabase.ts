@@ -1,13 +1,17 @@
 import { createClient } from '@supabase/supabase-js'
+import { projectId, publicAnonKey } from '../../utils/supabase/info'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+const envSupabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim()
+const envSupabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim()
 
-// Provide defaults to avoid fatal initialization error if env vars are missing on Netlify
-const isConfigured = Boolean(supabaseUrl && supabaseAnonKey)
+export const supabaseUrl = envSupabaseUrl || (projectId ? `https://${projectId}.supabase.co` : '')
+export const supabaseAnonKey = envSupabaseAnonKey || publicAnonKey || ''
+export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey)
 
-if (!isConfigured) {
-  console.warn('Supabase environment variables are missing. Please configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your deployment environment.')
+if (!isSupabaseConfigured) {
+  console.warn(
+    'Supabase configuration is missing. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Vercel for production deployments.'
+  )
 }
 
 export const supabase = createClient(

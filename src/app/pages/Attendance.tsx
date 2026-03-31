@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import { toast } from 'sonner';
-import { supabase } from '../../lib/supabase';
+import { supabase, supabaseUrl } from '../../lib/supabase';
 
 const OFFICE_GEOFENCE = {
   label: 'Lilongwe Office',
@@ -159,7 +159,7 @@ const collectVerificationDetails = async (): Promise<VerificationDetails> => {
 };
 
 const syncAttendanceToSurge = async (payload: Record<string, unknown>) => {
-  const functionBaseUrl = import.meta.env.VITE_SUPABASE_URL?.replace('.supabase.co', '.functions.supabase.co');
+  const functionBaseUrl = supabaseUrl?.replace('.supabase.co', '.functions.supabase.co');
   if (!functionBaseUrl) return;
 
   try {
