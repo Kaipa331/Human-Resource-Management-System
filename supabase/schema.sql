@@ -320,3 +320,91 @@ BEGIN
     RETURNING *;
 END;
 $$;
+
+-- Job Postings Table
+CREATE TABLE IF NOT EXISTS public.job_postings (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    title TEXT NOT NULL,
+    department TEXT NOT NULL,
+    location TEXT NOT NULL,
+    type TEXT NOT NULL,
+    description TEXT,
+    applicants INTEGER DEFAULT 0,
+    status TEXT DEFAULT 'Open',
+    posted_date DATE DEFAULT CURRENT_DATE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+DO $$ BEGIN
+    ALTER TABLE public.job_postings ENABLE ROW LEVEL SECURITY;
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
+DO $$ BEGIN
+    CREATE POLICY "Allow all access to job_postings" ON public.job_postings FOR ALL USING (true);
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
+-- Job Applicants Table
+CREATE TABLE IF NOT EXISTS public.job_applicants (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    job_id UUID REFERENCES public.job_postings(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    phone TEXT,
+    position TEXT NOT NULL,
+    experience TEXT,
+    status TEXT DEFAULT 'New',
+    applied_date DATE DEFAULT CURRENT_DATE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+DO $$ BEGIN
+    ALTER TABLE public.job_applicants ENABLE ROW LEVEL SECURITY;
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
+DO $$ BEGIN
+    CREATE POLICY "Allow all access to job_applicants" ON public.job_applicants FOR ALL USING (true);
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
+-- Performance Reviews Table
+CREATE TABLE IF NOT EXISTS public.performance_reviews (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    employee_id UUID REFERENCES public.employees(id) ON DELETE CASCADE,
+    period TEXT NOT NULL,
+    reviewer TEXT NOT NULL,
+    status TEXT DEFAULT 'Pending',
+    overall_rating NUMERIC,
+    goals INTEGER DEFAULT 0,
+    achieved_goals INTEGER DEFAULT 0,
+    completed_date DATE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+DO $$ BEGIN
+    ALTER TABLE public.performance_reviews ENABLE ROW LEVEL SECURITY;
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
+DO $$ BEGIN
+    CREATE POLICY "Allow all access to performance_reviews" ON public.performance_reviews FOR ALL USING (true);
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
+-- Performance Goals Table
+CREATE TABLE IF NOT EXISTS public.performance_goals (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    employee_id UUID REFERENCES public.employees(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    description TEXT,
+    category TEXT,
+    progress INTEGER DEFAULT 0,
+    status TEXT DEFAULT 'Not Started',
+    start_date DATE DEFAULT CURRENT_DATE,
+    due_date DATE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+DO $$ BEGIN
+    ALTER TABLE public.performance_goals ENABLE ROW LEVEL SECURITY;
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
+DO $$ BEGIN
+    CREATE POLICY "Allow all access to performance_goals" ON public.performance_goals FOR ALL USING (true);
+EXCEPTION WHEN OTHERS THEN NULL; END $$;

@@ -225,7 +225,7 @@ export function Reports() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Headcount Trend (6 Months)</CardTitle>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => handleDownloadReport('Headcount Trend Export')}>
               <Download className="w-4 h-4 mr-2" />
               Export
             </Button>
@@ -253,7 +253,7 @@ export function Reports() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Turnover Rate by Department</CardTitle>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={() => handleDownloadReport('Turnover Rate Export')}>
                 <Download className="w-4 h-4 mr-2" />
                 Export
               </Button>
@@ -278,7 +278,7 @@ export function Reports() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Leave Distribution (Current Year)</CardTitle>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={() => handleDownloadReport('Leave Distribution Export')}>
                 <Download className="w-4 h-4 mr-2" />
                 Export
               </Button>
@@ -313,7 +313,7 @@ export function Reports() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Payroll Trend (MWK)</CardTitle>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => handleDownloadReport('Payroll Trend Export')}>
               <Download className="w-4 h-4 mr-2" />
               Export
             </Button>
@@ -348,7 +348,7 @@ export function Reports() {
                 <h4 className="font-medium">PAYE Tax Report - March 2026</h4>
                 <p className="text-sm text-gray-500">Malawi Revenue Authority (MRA) submission</p>
               </div>
-              <Button size="sm" variant="outline">
+              <Button size="sm" variant="outline" onClick={() => handleDownloadReport('PAYE Tax Report')}>
                 <Download className="w-4 h-4 mr-2" />
                 Download
               </Button>
@@ -358,7 +358,7 @@ export function Reports() {
                 <h4 className="font-medium">Pension Contributions Report - March 2026</h4>
                 <p className="text-sm text-gray-500">Employee and employer contributions summary</p>
               </div>
-              <Button size="sm" variant="outline">
+              <Button size="sm" variant="outline" onClick={() => handleDownloadReport('Pension Contributions Report')}>
                 <Download className="w-4 h-4 mr-2" />
                 Download
               </Button>
@@ -368,7 +368,7 @@ export function Reports() {
                 <h4 className="font-medium">Employment Act Compliance Report</h4>
                 <p className="text-sm text-gray-500">Leave balances, working hours, and overtime</p>
               </div>
-              <Button size="sm" variant="outline">
+              <Button size="sm" variant="outline" onClick={() => handleDownloadReport('Employment Act Compliance Report')}>
                 <Download className="w-4 h-4 mr-2" />
                 Download
               </Button>

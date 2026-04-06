@@ -44,6 +44,20 @@ export function Employees() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+  
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [viewingEmployee, setViewingEmployee] = useState<Employee | null>(null);
+
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    department: '',
+    position: '',
+    salary: '',
+    joinDate: '',
+  });
 
   useEffect(() => {
     fetchEmployees();
@@ -66,72 +80,125 @@ export function Employees() {
     }
   };
 
-  const [newEmployee, setNewEmployee] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    department: '',
-    position: '',
-    salary: '',
-    joinDate: '',
-  });
-
   const filteredEmployees = employees.filter(emp =>
-    emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    emp.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    emp.employee_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    emp.department.toLowerCase().includes(searchTerm.toLowerCase())
+    (emp.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (emp.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (emp.employee_id || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (emp.department || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleAddEmployee = async () => {
-    if (!newEmployee.name || !newEmployee.email || !newEmployee.department) {
-      toast.error('Please fill in all required fields');
+  const openAddDialog = () => {
+    setEditingEmployee(null);
+    setFormData({ name: '', email: '', phone: '', department: '', position: '', salary: '', joinDate: '' });
+    setIsDialogOpen(true);
+  };
+
+  const openEditDialog = (emp: Employee) => {
+    setEditingEmployee(emp);
+    setFormData({
+      name: emp.name || '',
+      email: emp.email || '',
+      phone: emp.phone || '',
+      department: emp.department || '',
+      position: emp.position || '',
+      salary: emp.salary ? String(emp.salary) : '',
+      joinDate: emp.join_date || '',
+    });
+    setIsDialogOpen(true);
+  };
+
+  const openViewDialog = (emp: Employee) => {
+    setViewingEmployee(emp);
+    setIsViewDialogOpen(true);
+  };
+
+  const handleSubmit = async () => {
+    if (!formData.name || !formData.email || !formData.department) {
+      toast.error('Please fill in required fields (Name, Email, Dept)');
       return;
     }
 
     try {
-      const empId = `EMP${String(employees.length + 1).padStart(3, '0')}`;
-      const { error } = await supabase
-        .from('employees')
-        .insert([{
-          name: newEmployee.name,
-          email: newEmployee.email,
-          phone: newEmployee.phone,
-          department: newEmployee.department,
-          position: newEmployee.position,
-          join_date: newEmployee.joinDate || new Date().toISOString().split('T')[0],
-          employee_id: empId,
-          status: 'Active',
-          salary: typeof newEmployee.salary === 'string' ? parseFloat(newEmployee.salary.replace(/[^\d.]/g, '')) : newEmployee.salary
-        }]);
+      const parsedSalary = typeof formData.salary === 'string' ? parseFloat(formData.salary.replace(/[^\d.]/g, '')) || 0 : formData.salary;
+      const joinStr = formData.joinDate || new Date().toISOString().split('T')[0];
 
-      if (error) throw error;
+      if (editingEmployee) {
+        const { error } = await supabase
+          .from('employees')
+          .update({
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone,
+            department: formData.department,
+            position: formData.position,
+            join_date: joinStr,
+            salary: parsedSalary
+          })
+          .eq('id', editingEmployee.id);
+        if (error) throw error;
+        toast.success('Employee updated successfully');
+      } else {
+        const empId = `EMP${String(employees.length + 1).padStart(3, '0')}`;
+        const { error } = await supabase
+          .from('employees')
+          .insert([{
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone,
+            department: formData.department,
+            position: formData.position,
+            join_date: joinStr,
+            employee_id: empId,
+            status: 'Active',
+            salary: parsedSalary
+          }]);
+        if (error) throw error;
+        toast.success('Employee added successfully');
+      }
 
-      toast.success('Employee added successfully');
       setIsDialogOpen(false);
-      setNewEmployee({ name: '', email: '', phone: '', department: '', position: '', salary: '', joinDate: '' });
       fetchEmployees();
     } catch (error: any) {
-      toast.error('Error adding employee: ' + error.message);
+      toast.error(`Error ${editingEmployee ? 'updating' : 'adding'} employee: ` + error.message);
     }
   };
 
   const handleDeleteEmployee = async (id: string) => {
     if (!confirm('Are you sure you want to delete this employee?')) return;
-    
     try {
-      const { error } = await supabase
-        .from('employees')
-        .delete()
-        .eq('id', id);
-
+      const { error } = await supabase.from('employees').delete().eq('id', id);
       if (error) throw error;
-      
       toast.success('Employee removed');
       fetchEmployees();
     } catch (error: any) {
       toast.error('Error deleting employee: ' + error.message);
     }
+  };
+
+  const handleExport = () => {
+    if (employees.length === 0) {
+      toast.error('No data to export');
+      return;
+    }
+    const headers = ['Employee ID', 'Name', 'Email', 'Department', 'Position', 'Status'];
+    const rows = filteredEmployees.map(emp => [
+      emp.employee_id,
+      emp.name,
+      emp.email,
+      emp.department,
+      emp.position,
+      emp.status
+    ]);
+    const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", "employees_export.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('Export downloaded');
   };
 
   return (
@@ -142,49 +209,32 @@ export function Employees() {
           <p className="text-gray-500 mt-1">Manage employee records and information</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Employee
-            </Button>
-          </DialogTrigger>
+          <Button onClick={openAddDialog}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Employee
+          </Button>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Add New Employee</DialogTitle>
-              <DialogDescription>Enter employee details to add them to the system</DialogDescription>
+              <DialogTitle>{editingEmployee ? 'Edit Employee' : 'Add New Employee'}</DialogTitle>
+              <DialogDescription>{editingEmployee ? 'Update employee details' : 'Enter employee details to add them to the system'}</DialogDescription>
             </DialogHeader>
             <div className="grid grid-cols-2 gap-4 mt-4">
               <div>
                 <Label>Full Name *</Label>
-                <Input
-                  value={newEmployee.name}
-                  onChange={(e) => setNewEmployee({ ...newEmployee, name: e.target.value })}
-                  placeholder="Precious Kaipa"
-                />
+                <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Precious Kaipa" />
               </div>
               <div>
                 <Label>Email *</Label>
-                <Input
-                  type="email"
-                  value={newEmployee.email}
-                  onChange={(e) => setNewEmployee({ ...newEmployee, email: e.target.value })}
-                  placeholder="john@company.com"
-                />
+                <Input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="john@company.com" disabled={!!editingEmployee} />
               </div>
               <div>
                 <Label>Phone</Label>
-                <Input
-                  value={newEmployee.phone}
-                  onChange={(e) => setNewEmployee({ ...newEmployee, phone: e.target.value })}
-                  placeholder="+265 991 234 567"
-                />
+                <Input value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="+265 991 234 567" />
               </div>
               <div>
                 <Label>Department *</Label>
-                <Select value={newEmployee.department} onValueChange={(val) => setNewEmployee({ ...newEmployee, department: val })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select department" />
-                  </SelectTrigger>
+                <Select value={formData.department} onValueChange={(val) => setFormData({ ...formData, department: val })}>
+                  <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="IT">IT</SelectItem>
                     <SelectItem value="HR">HR</SelectItem>
@@ -197,34 +247,72 @@ export function Employees() {
               </div>
               <div>
                 <Label>Position</Label>
-                <Input
-                  value={newEmployee.position}
-                  onChange={(e) => setNewEmployee({ ...newEmployee, position: e.target.value })}
-                  placeholder="Software Engineer"
-                />
+                <Input value={formData.position} onChange={(e) => setFormData({ ...formData, position: e.target.value })} placeholder="Software Engineer" />
               </div>
               <div>
                 <Label>Salary</Label>
-                <Input
-                  value={newEmployee.salary}
-                  onChange={(e) => setNewEmployee({ ...newEmployee, salary: e.target.value })}
-                  placeholder="MWK 850,000"
-                />
+                <Input value={formData.salary} onChange={(e) => setFormData({ ...formData, salary: e.target.value })} placeholder="MWK 850,000" />
               </div>
               <div className="col-span-2">
                 <Label>Join Date</Label>
-                <Input
-                  type="date"
-                  value={newEmployee.joinDate}
-                  onChange={(e) => setNewEmployee({ ...newEmployee, joinDate: e.target.value })}
-                />
+                <Input type="date" value={formData.joinDate} onChange={(e) => setFormData({ ...formData, joinDate: e.target.value })} />
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-4">
-              <DialogClose asChild>
-                <Button variant="outline">Cancel</Button>
-              </DialogClose>
-              <Button onClick={handleAddEmployee}>Add Employee</Button>
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+              <Button onClick={handleSubmit}>{editingEmployee ? 'Update Employee' : 'Add Employee'}</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* View Details Dialog */}
+        <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Employee Details</DialogTitle>
+              <DialogDescription>Full profile information</DialogDescription>
+            </DialogHeader>
+            {viewingEmployee && (
+              <div className="space-y-4 mt-4">
+                <div className="flex justify-between items-center bg-gray-50 p-4 rounded-lg">
+                  <div>
+                    <h3 className="text-lg font-bold">{viewingEmployee.name}</h3>
+                    <p className="text-sm text-gray-500">{viewingEmployee.employee_id}</p>
+                  </div>
+                  <Badge variant={viewingEmployee.status === 'Active' ? 'default' : 'secondary'}>
+                    {viewingEmployee.status}
+                  </Badge>
+                </div>
+                <div className="grid grid-cols-2 gap-y-4 text-sm mt-4">
+                  <div>
+                    <p className="text-gray-500">Email Address</p>
+                    <p className="font-medium">{viewingEmployee.email}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Phone</p>
+                    <p className="font-medium">{viewingEmployee.phone || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Department</p>
+                    <p className="font-medium">{viewingEmployee.department}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Position</p>
+                    <p className="font-medium">{viewingEmployee.position}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Join Date</p>
+                    <p className="font-medium">{viewingEmployee.join_date}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Salary</p>
+                    <p className="font-medium">MWK {Number(viewingEmployee.salary || 0).toLocaleString()}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+            <div className="flex justify-end gap-2 mt-4">
+              <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>Close</Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -237,14 +325,9 @@ export function Employees() {
             <div className="flex gap-2">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input
-                  placeholder="Search employees..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9 w-64"
-                />
+                <Input placeholder="Search employees..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-9 w-64" />
               </div>
-              <Button variant="outline">
+              <Button variant="outline" onClick={handleExport}>
                 <Download className="w-4 h-4 mr-2" />
                 Export
               </Button>
@@ -253,9 +336,7 @@ export function Employees() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            </div>
+            <div className="flex items-center justify-center py-8"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
@@ -284,24 +365,17 @@ export function Employees() {
                       <TableCell className="hidden lg:table-cell">{employee.position}</TableCell>
                       <TableCell className="hidden sm:table-cell text-sm">{employee.phone}</TableCell>
                       <TableCell>
-                        <Badge variant={employee.status === 'Active' ? 'default' : 'secondary'} className="text-[10px] md:text-xs">
-                          {employee.status}
-                        </Badge>
+                        <Badge variant={employee.status === 'Active' ? 'default' : 'secondary'} className="text-[10px] md:text-xs">{employee.status}</Badge>
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1 md:gap-2">
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openViewDialog(employee)}>
                             <Eye className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditDialog(employee)}>
                             <Edit className="w-4 h-4" />
                           </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => handleDeleteEmployee(employee.id)}
-                          >
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDeleteEmployee(employee.id)}>
                             <Trash2 className="w-4 h-4 text-red-500" />
                           </Button>
                         </div>

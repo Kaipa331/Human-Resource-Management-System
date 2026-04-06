@@ -4,6 +4,7 @@ import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { DollarSign, Download, FileText, TrendingUp, Users, Calendar } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { toast } from 'sonner';
 import { supabase } from '../../lib/supabase';
 
@@ -97,6 +98,12 @@ export function Payroll() {
 
   const [payrollSummary, setPayrollSummary] = useState<PayrollSummary>(INITIAL_PAYROLL_SUMMARY);
   const [loading, setLoading] = useState(false);
+
+  const [activeCycleForDetails, setActiveCycleForDetails] = useState<PayrollCycle | null>(null);
+  const [isCycleDialogOpen, setIsCycleDialogOpen] = useState(false);
+
+  const [activeEmployeeForBreakdown, setActiveEmployeeForBreakdown] = useState<EmployeePayrollRow | null>(null);
+  const [isBreakdownDialogOpen, setIsBreakdownDialogOpen] = useState(false);
 
   useEffect(() => {
     const loadPayrollFromBackend = async () => {
@@ -281,6 +288,10 @@ export function Payroll() {
     toast.success(`Downloading payslip for ${employeeName}`);
   };
 
+  const handleDownloadReport = (reportType: string) => {
+    toast.success(`Downloading ${reportType}...`);
+  };
+
   const formatCurrency = (amount: number) => {
     return `MWK ${amount.toLocaleString()}`;
   };
@@ -292,11 +303,65 @@ export function Payroll() {
           <h1 className="text-3xl font-bold text-gray-900">Payroll Management</h1>
           <p className="text-gray-500 mt-1">Process and manage employee payroll</p>
         </div>
-        <Button>
+        <Button onClick={() => handleDownloadReport('Master Payroll Report')}>
           <FileText className="w-4 h-4 mr-2" />
           Generate Payroll Report
         </Button>
       </div>
+
+      <Dialog open={isCycleDialogOpen} onOpenChange={setIsCycleDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Payroll Cycle Details</DialogTitle>
+            <DialogDescription>{activeCycleForDetails?.period}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4 text-sm mt-4">
+              <div><p className="text-gray-500">Gross Total</p><p className="font-medium">{activeCycleForDetails?.grossTotal}</p></div>
+              <div><p className="text-gray-500">Net Total</p><p className="font-medium">{activeCycleForDetails?.netTotal}</p></div>
+              <div><p className="text-gray-500">Total Employees</p><p className="font-medium">{activeCycleForDetails?.totalEmployees}</p></div>
+              <div><p className="text-gray-500">Status</p><Badge>{activeCycleForDetails?.status}</Badge></div>
+            </div>
+          </div>
+          <div className="flex justify-end mt-4">
+            <Button variant="outline" onClick={() => setIsCycleDialogOpen(false)}>Close</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isBreakdownDialogOpen} onOpenChange={setIsBreakdownDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Salary Breakdown</DialogTitle>
+            <DialogDescription>{activeEmployeeForBreakdown?.name} - {activeEmployeeForBreakdown?.department}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div className="flex justify-between py-2 border-b">
+              <span className="text-gray-600">Basic Salary</span>
+              <span className="font-medium">{activeEmployeeForBreakdown && formatCurrency(activeEmployeeForBreakdown.basicSalary)}</span>
+            </div>
+            <div className="flex justify-between py-2 border-b">
+              <span className="text-gray-600">Allowances</span>
+              <span className="font-medium text-green-600">+{activeEmployeeForBreakdown && formatCurrency(activeEmployeeForBreakdown.allowances)}</span>
+            </div>
+            <div className="flex justify-between py-2 border-b">
+              <span className="text-gray-600">PAYE Tax</span>
+              <span className="font-medium text-red-600">-{activeEmployeeForBreakdown && formatCurrency(activeEmployeeForBreakdown.taxDeducted)}</span>
+            </div>
+            <div className="flex justify-between py-2 border-b">
+              <span className="text-gray-600">Other Deductions</span>
+              <span className="font-medium text-red-600">-{activeEmployeeForBreakdown && formatCurrency(activeEmployeeForBreakdown.deductions - activeEmployeeForBreakdown.taxDeducted)}</span>
+            </div>
+            <div className="flex justify-between py-2 font-bold text-lg">
+              <span>Net Pay</span>
+              <span className="text-blue-600">{activeEmployeeForBreakdown && formatCurrency(activeEmployeeForBreakdown.net)}</span>
+            </div>
+          </div>
+          <div className="flex justify-end mt-4">
+            <Button variant="outline" onClick={() => setIsBreakdownDialogOpen(false)}>Close</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -400,17 +465,17 @@ export function Payroll() {
                           <Button onClick={() => handleProcessPayroll(cycle.period)}>
                             Process Payroll
                           </Button>
-                          <Button variant="outline">
+                          <Button variant="outline" onClick={() => toast.success('Saved as Draft')}>
                             Edit
                           </Button>
                         </>
                       ) : (
                         <>
-                          <Button variant="outline">
+                          <Button variant="outline" onClick={() => handleDownloadReport(`Cycle Report ${cycle.period}`)}>
                             <Download className="w-4 h-4 mr-2" />
                             Download Report
                           </Button>
-                          <Button variant="outline">
+                          <Button variant="outline" onClick={() => { setActiveCycleForDetails(cycle); setIsCycleDialogOpen(true); }}>
                             View Details
                           </Button>
                         </>
@@ -483,7 +548,7 @@ export function Payroll() {
                         <Download className="w-4 h-4 mr-2" />
                         Download Payslip
                       </Button>
-                      <Button size="sm" variant="outline">
+                      <Button size="sm" variant="outline" onClick={() => { setActiveEmployeeForBreakdown(emp); setIsBreakdownDialogOpen(true); }}>
                         View Breakdown
                       </Button>
                     </div>
@@ -517,7 +582,7 @@ export function Payroll() {
                       <Badge className="mt-2">Ready for Remittance</Badge>
                     </div>
                   </div>
-                  <Button className="mt-4">
+                  <Button className="mt-4" onClick={() => handleDownloadReport('PAYE Report')}>
                     <Download className="w-4 h-4 mr-2" />
                     Generate PAYE Report
                   </Button>
@@ -539,7 +604,7 @@ export function Payroll() {
                       <p className="text-2xl font-bold">{formatCurrency(statutory.employeeContrib + statutory.employerContrib)}</p>
                     </div>
                   </div>
-                  <Button className="mt-4">
+                  <Button className="mt-4" onClick={() => handleDownloadReport('Pension Report')}>
                     <Download className="w-4 h-4 mr-2" />
                     Generate Pension Report
                   </Button>

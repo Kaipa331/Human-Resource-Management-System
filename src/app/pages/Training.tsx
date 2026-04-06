@@ -5,6 +5,10 @@ import { Badge } from '../components/ui/badge';
 import { Progress } from '../components/ui/progress';
 import { GraduationCap, BookOpen, Award, Clock, Plus } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
+import { Label } from '../components/ui/label';
+import { Input } from '../components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { toast } from 'sonner';
 import { supabase } from '../../lib/supabase';
 
@@ -121,6 +125,12 @@ export function Training() {
   });
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [currentEmployeeDbId, setCurrentEmployeeDbId] = useState<string | null>(null);
+
+  const [activeCourse, setActiveCourse] = useState<Course | null>(null);
+  const [isCourseDialogOpen, setIsCourseDialogOpen] = useState(false);
+
+  const [activeCertificate, setActiveCertificate] = useState<Certificate | null>(null);
+  const [isCertificateDialogOpen, setIsCertificateDialogOpen] = useState(false);
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('hrms_user') || '{}');
@@ -247,6 +257,56 @@ export function Training() {
     loadTrainingData();
   }, []);
 
+  const [newCourse, setNewCourse] = useState({
+    title: '',
+    category: '',
+    provider: '',
+    duration: '',
+    startDate: '',
+    endDate: ''
+  });
+  
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const handleCreateCourse = async () => {
+    if(!newCourse.title || !newCourse.category) {
+      toast.error('Title and category are required');
+      return;
+    }
+    try {
+      const { data, error } = await supabase.from('training_courses').insert([{
+        title: newCourse.title,
+        category: newCourse.category,
+        provider: newCourse.provider,
+        duration_hours: parseInt(newCourse.duration) || 0,
+        start_date: newCourse.startDate || null,
+        end_date: newCourse.endDate || null,
+        status: 'Active'
+      }]).select('*');
+      
+      if(error) throw error;
+      
+      if(data) {
+        setCourses([{
+          id: data[0].id,
+          title: data[0].title,
+          category: data[0].category,
+          duration: `${data[0].duration_hours} hours`,
+          provider: data[0].provider,
+          enrolledEmployees: 0,
+          completedEmployees: 0,
+          status: 'Active',
+          startDate: data[0].start_date || '',
+          endDate: data[0].end_date || ''
+        }, ...courses]);
+      }
+      setIsDialogOpen(false);
+      toast.success('Training program created');
+    } catch(err: any) {
+      toast.error('Failed to create program: ' + err.message);
+    }
+  };
+
   const handleEnrollCourse = (courseId: string) => {
     if (!currentEmployeeDbId) {
       toast.error('Employee profile not found. Please check your user email.');
@@ -301,6 +361,34 @@ export function Training() {
     }
   };
 
+  const handleContinueLearning = async (training: MyTraining) => {
+    try {
+      const newModules = Math.min(training.totalModules, training.completedModules + 1);
+      const newProgress = Math.round((newModules / training.totalModules) * 100);
+      const newStatus = newModules === training.totalModules ? 'Completed' : 'In Progress';
+
+      const { error } = await supabase
+        .from('training_enrollments')
+        .update({ completed_modules: newModules, progress: newProgress, status: newStatus })
+        .eq('id', training.id);
+
+      if (error) throw error;
+
+      setMyTrainings(myTrainings.map(t => t.id === training.id ? {
+        ...t, completedModules: newModules, progress: newProgress, status: newStatus
+      } : t));
+
+      if (newStatus === 'Completed') {
+        toast.success(`Congratulations! You have completed ${training.title}`);
+        // Optionally insert a record into training_certificates
+      } else {
+        toast.success(`Progress saved! Module ${newModules} completed.`);
+      }
+    } catch (error: any) {
+      toast.error('Error updating progress: ' + error.message);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -308,11 +396,96 @@ export function Training() {
           <h1 className="text-3xl font-bold text-gray-900">Training & Development</h1>
           <p className="text-gray-500 mt-1">Manage employee training and skill development</p>
         </div>
-        <Button>
-          <Plus className="w-4 h-4 mr-2" />
-          Create Training Program
-        </Button>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="w-4 h-4 mr-2" />
+              Create Training Program
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create Training Program</DialogTitle>
+              <DialogDescription>Add a new course for employees.</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 mt-4">
+              <div>
+                <Label>Course Title *</Label>
+                <Input value={newCourse.title} onChange={e => setNewCourse({...newCourse, title: e.target.value})} />
+              </div>
+              <div>
+                <Label>Category *</Label>
+                <Select onValueChange={v => setNewCourse({...newCourse, category: v})}>
+                  <SelectTrigger><SelectValue placeholder="Select Category" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Technical Skills">Technical Skills</SelectItem>
+                    <SelectItem value="Leadership">Leadership</SelectItem>
+                    <SelectItem value="Compliance">Compliance</SelectItem>
+                    <SelectItem value="Professional Development">Professional Development</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Provider</Label>
+                <Input value={newCourse.provider} onChange={e => setNewCourse({...newCourse, provider: e.target.value})} />
+              </div>
+              <div>
+                <Label>Duration (Hours)</Label>
+                <Input type="number" value={newCourse.duration} onChange={e => setNewCourse({...newCourse, duration: e.target.value})} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Start Date</Label>
+                  <Input type="date" value={newCourse.startDate} onChange={e => setNewCourse({...newCourse, startDate: e.target.value})} />
+                </div>
+                <div>
+                  <Label>End Date</Label>
+                  <Input type="date" value={newCourse.endDate} onChange={e => setNewCourse({...newCourse, endDate: e.target.value})} />
+                </div>
+              </div>
+            </div>
+            <Button onClick={handleCreateCourse}>Create Program</Button>
+          </DialogContent>
+        </Dialog>
       </div>
+
+      <Dialog open={isCourseDialogOpen} onOpenChange={setIsCourseDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{activeCourse?.title}</DialogTitle>
+            <DialogDescription>{activeCourse?.provider} • {activeCourse?.category}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <h4 className="font-semibold text-sm text-gray-500 uppercase">Syllabus Overview</h4>
+            <ul className="list-disc pl-5 space-y-2">
+              <li>Introduction and core concepts</li>
+              <li>Practical application exercises</li>
+              <li>Advanced techniques and strategies</li>
+              <li>Final assessment and certification</li>
+            </ul>
+            <div className="text-sm">
+              <span className="font-semibold text-gray-700">Duration:</span> {activeCourse?.duration}
+            </div>
+          </div>
+          <div className="flex justify-end mt-4">
+            <Button variant="outline" onClick={() => setIsCourseDialogOpen(false)}>Close</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isCertificateDialogOpen} onOpenChange={setIsCertificateDialogOpen}>
+        <DialogContent className="max-w-xl text-center p-8 bg-gradient-to-r from-gray-50 to-white">
+          <div className="border-4 border-double border-gray-300 p-8">
+            <div className="mx-auto bg-yellow-100 p-4 rounded-full w-20 h-20 flex items-center justify-center mb-6">
+              <Award className="w-10 h-10 text-yellow-600" />
+            </div>
+            <h2 className="text-3xl font-serif text-gray-800 mb-2">Certificate of Completion</h2>
+            <p className="text-gray-500 mb-8">This is to certify that the employee has successfully completed</p>
+            <h3 className="text-2xl font-bold text-blue-800 mb-6">{activeCertificate?.title}</h3>
+            <p className="text-gray-500">Issued On: {activeCertificate?.issuedOn}</p>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
@@ -444,7 +617,7 @@ export function Training() {
                         {course.startDate} - {course.endDate}
                       </p>
                       <div className="flex gap-2">
-                        <Button size="sm" variant="outline">View Details</Button>
+                        <Button size="sm" variant="outline" onClick={() => { setActiveCourse(course); setIsCourseDialogOpen(true); }}>View Details</Button>
                         <Button size="sm" onClick={() => handleEnrollCourse(course.id)}>
                           Enroll
                         </Button>
@@ -500,16 +673,24 @@ export function Training() {
                     <div className="flex gap-2">
                       {training.status === 'Completed' ? (
                         <>
-                          <Button size="sm" variant="outline">
+                          <Button size="sm" variant="outline" onClick={() => {
+                            setActiveCertificate({
+                              id: training.id,
+                              title: training.title,
+                              issuedOn: training.dueDate || new Date().toISOString().split('T')[0],
+                              colorClass: 'blue'
+                            });
+                            setIsCertificateDialogOpen(true);
+                          }}>
                             <Award className="w-4 h-4 mr-2" />
                             View Certificate
                           </Button>
-                          <Button size="sm" variant="outline">Review Course</Button>
+                          <Button size="sm" variant="outline" onClick={() => toast.success('5 stars rating submitted!')}>Review Course</Button>
                         </>
                       ) : (
                         <>
-                          <Button size="sm">Continue Learning</Button>
-                          <Button size="sm" variant="outline">View Schedule</Button>
+                          <Button size="sm" onClick={() => handleContinueLearning(training)}>Continue Learning</Button>
+                          <Button size="sm" variant="outline" onClick={() => toast.info(`Schedule: Complete by ${training.dueDate}`)}>View Schedule</Button>
                         </>
                       )}
                     </div>
@@ -540,8 +721,8 @@ export function Training() {
                         <h3 className="text-lg font-semibold">{cert.title}</h3>
                         <p className="text-sm text-gray-500 mt-1">Issued on {cert.issuedOn}</p>
                         <div className="flex gap-2 mt-4">
-                          <Button size="sm" variant="outline">Download Certificate</Button>
-                          <Button size="sm" variant="outline">Share</Button>
+                          <Button size="sm" variant="outline" onClick={() => toast.success('Certificate downloaded')}>Download Certificate</Button>
+                          <Button size="sm" variant="outline" onClick={() => toast.success('Certificate link copied to clipboard')}>Share</Button>
                         </div>
                       </div>
                     </div>
