@@ -357,7 +357,7 @@ export function Training() {
       case 'purple':
         return { bg: 'bg-purple-50', text: 'text-purple-600' };
       default:
-        return { bg: 'bg-gray-50', text: 'text-gray-600' };
+        return { bg: 'bg-gray-50 dark:bg-slate-900', text: 'text-gray-600 dark:text-gray-300' };
     }
   };
 
@@ -393,8 +393,8 @@ export function Training() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Training & Development</h1>
-          <p className="text-gray-500 mt-1">Manage employee training and skill development</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Training & Development</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Manage employee training and skill development</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
@@ -456,7 +456,7 @@ export function Training() {
             <DialogDescription>{activeCourse?.provider} • {activeCourse?.category}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <h4 className="font-semibold text-sm text-gray-500 uppercase">Syllabus Overview</h4>
+            <h4 className="font-semibold text-sm text-gray-500 dark:text-gray-400 uppercase">Syllabus Overview</h4>
             <ul className="list-disc pl-5 space-y-2">
               <li>Introduction and core concepts</li>
               <li>Practical application exercises</li>
@@ -493,7 +493,7 @@ export function Training() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Total Courses</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Total Courses</p>
                 <h3 className="text-2xl font-bold mt-1">{trainingStats.totalCourses}</h3>
               </div>
               <BookOpen className="w-8 h-8 text-blue-600" />
@@ -505,7 +505,7 @@ export function Training() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Active Courses</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Active Courses</p>
                 <h3 className="text-2xl font-bold mt-1">{trainingStats.activeCourses}</h3>
               </div>
               <GraduationCap className="w-8 h-8 text-green-600" />
@@ -517,7 +517,7 @@ export function Training() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Enrollments</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Enrollments</p>
                 <h3 className="text-2xl font-bold mt-1">{trainingStats.totalEnrollments}</h3>
               </div>
               <Award className="w-8 h-8 text-purple-600" />
@@ -529,7 +529,7 @@ export function Training() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Completion Rate</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Completion Rate</p>
                 <h3 className="text-2xl font-bold mt-1">{trainingStats.completionRate}%</h3>
               </div>
               <Clock className="w-8 h-8 text-orange-600" />
@@ -541,7 +541,7 @@ export function Training() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Avg Rating</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Avg Rating</p>
                 <h3 className="text-2xl font-bold mt-1">{trainingStats.averageRating}</h3>
               </div>
               <Award className="w-8 h-8 text-yellow-500" />
@@ -572,7 +572,7 @@ export function Training() {
                           <GraduationCap className="w-6 h-6 text-blue-600" />
                           <div>
                             <h3 className="text-lg font-semibold">{course.title}</h3>
-                            <p className="text-sm text-gray-500">{course.provider}</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">{course.provider}</p>
                           </div>
                         </div>
                       </div>
@@ -603,7 +603,7 @@ export function Training() {
                     <div className="mb-4">
                       <div className="flex justify-between text-sm mb-2">
                         <span className="font-medium">Completion Progress</span>
-                        <span className="text-gray-600">
+                        <span className="text-gray-600 dark:text-gray-300">
                           {course.completedEmployees} / {course.enrolledEmployees}
                         </span>
                       </div>
@@ -642,7 +642,7 @@ export function Training() {
                     <div className="flex items-start justify-between mb-4">
                       <div>
                         <h3 className="text-lg font-semibold">{training.title}</h3>
-                        <p className="text-sm text-gray-500">{training.category}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">{training.category}</p>
                       </div>
                       <Badge variant={training.status === 'Completed' ? 'default' : 'secondary'}>
                         {training.status}
@@ -709,7 +709,7 @@ export function Training() {
             <CardContent>
               <div className="space-y-4">
                 {certificates.length === 0 && (
-                  <p className="text-sm text-gray-500">No certificates available yet.</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">No certificates available yet.</p>
                 )}
                 {certificates.map((cert) => (
                   <div key={cert.id} className="border rounded-lg p-6">
@@ -719,7 +719,7 @@ export function Training() {
                       </div>
                       <div className="flex-1">
                         <h3 className="text-lg font-semibold">{cert.title}</h3>
-                        <p className="text-sm text-gray-500 mt-1">Issued on {cert.issuedOn}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Issued on {cert.issuedOn}</p>
                         <div className="flex gap-2 mt-4">
                           <Button size="sm" variant="outline" onClick={() => toast.success('Certificate downloaded')}>Download Certificate</Button>
                           <Button size="sm" variant="outline" onClick={() => toast.success('Certificate link copied to clipboard')}>Share</Button>

@@ -172,6 +172,16 @@ export function Dashboard() {
     { title: 'Days Present', value: String(daysPresentThisMonth), helper: 'This month', icon: Clock3, color: 'text-green-600', bg: 'bg-green-50' },
   ];
 
+  const heroTitle = isEmployee
+    ? `Welcome back, ${user?.name || 'Team Member'}`
+    : 'Accelerate your HR operations';
+  const heroSubtitle = isEmployee
+    ? 'Manage your attendance, leave requests, and employee details in one beautiful workspace.'
+    : 'A modern HR dashboard built for employee lifecycle, payroll, attendance, and performance.';
+  const heroDescription = isEmployee
+    ? 'Quickly check your leave, attendance, and personal updates. Everything you need is a click away.'
+    : 'Stay on top of employee activity, approvals, and insights with a clean, powerful interface.';
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -183,10 +193,43 @@ export function Dashboard() {
   if (isEmployee) {
     return (
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">My Dashboard</h1>
-          <p className="text-sm text-gray-500 mt-1">Track your leave, attendance, and personal updates.</p>
-        </div>
+        <section className="relative overflow-hidden rounded-[2rem] bg-gradient-to-r from-slate-950 via-blue-900 to-cyan-600 p-8 shadow-2xl text-white">
+          <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_top_right,_rgba(255,255,255,0.35),_transparent_35%)]" />
+          <div className="relative grid gap-8 lg:grid-cols-[1.6fr_0.9fr] items-center">
+            <div>
+              <p className="text-sm uppercase tracking-[0.25em] text-cyan-200/90">Human Resource Management</p>
+              <h1 className="mt-4 text-4xl md:text-5xl font-semibold tracking-tight">{heroTitle}</h1>
+              <p className="mt-4 max-w-2xl text-sm md:text-base text-cyan-100/90">{heroSubtitle}</p>
+              <p className="mt-4 max-w-2xl text-sm text-cyan-100/80">{heroDescription}</p>
+
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <Button variant="secondary" className="min-w-[10rem]" onClick={() => navigate('/self-service')}>
+                  Open my portal
+                </Button>
+                <Button variant="outline" className="min-w-[10rem] text-white border-white/30 hover:border-white" onClick={() => navigate('/attendance')}>
+                  View attendance
+                </Button>
+              </div>
+            </div>
+
+            <div className="rounded-[1.5rem] border border-white/10 bg-white/10 p-6 backdrop-blur-xl shadow-lg">
+              <div className="mb-5">
+                <p className="text-sm uppercase tracking-[0.2em] text-cyan-100/70">Today’s snapshot</p>
+                <h2 className="mt-3 text-2xl font-semibold dark:text-white">Fast access to what matters</h2>
+              </div>
+              <div className="space-y-4">
+                <div className="rounded-3xl bg-slate-950/80 p-4">
+                  <p className="text-sm text-cyan-200">Pending leave</p>
+                  <p className="mt-2 text-3xl font-semibold">{pendingLeaves}</p>
+                </div>
+                <div className="rounded-3xl bg-slate-950/80 p-4">
+                  <p className="text-sm text-cyan-200">Days present this month</p>
+                  <p className="mt-2 text-3xl font-semibold">{daysPresentThisMonth}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
           {employeeStats.map((stat) => (
@@ -194,9 +237,9 @@ export function Dashboard() {
               <CardContent className="p-6">
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-sm text-gray-500">{stat.title}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{stat.title}</p>
                     <h3 className="text-2xl font-bold mt-2 break-words">{stat.value}</h3>
-                    <p className="text-xs text-gray-500 mt-2">{stat.helper}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">{stat.helper}</p>
                   </div>
                   <div className={`p-3 rounded-lg ${stat.bg}`}>
                     <stat.icon className={`w-6 h-6 ${stat.color}`} />
@@ -226,8 +269,8 @@ export function Dashboard() {
                 <FileText className="w-4 h-4 mr-2" />
                 Open my documents
               </Button>
-              <p className="text-sm text-gray-500 pt-2">
-                You currently have <span className="font-semibold text-gray-800">{approvedPersonalLeaves}</span> approved leave request{approvedPersonalLeaves === 1 ? '' : 's'} on record.
+              <p className="text-sm text-gray-500 dark:text-gray-400 pt-2">
+                You currently have <span className="font-semibold text-gray-800 dark:text-gray-200">{approvedPersonalLeaves}</span> approved leave request{approvedPersonalLeaves === 1 ? '' : 's'} on record.
               </p>
             </CardContent>
           </Card>
@@ -241,19 +284,19 @@ export function Dashboard() {
               <div className="space-y-4">
                 {recentLeaves.length > 0 ? recentLeaves.map((lv, index) => (
                   <div key={index} className="flex items-start gap-4">
-                    <div className="p-2 bg-gray-100 rounded-lg">
-                      <Calendar className="w-4 h-4 text-gray-600" />
+                    <div className="p-2 bg-gray-100 dark:bg-slate-900 rounded-lg">
+                      <Calendar className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                     </div>
                     <div className="flex-1">
                       <p className="font-medium text-sm">{lv.type}</p>
-                      <p className="text-sm text-gray-500">{lv.start_date}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{lv.start_date}</p>
                     </div>
                     <Badge variant={lv.status === 'Approved' ? 'default' : lv.status === 'Rejected' ? 'destructive' : 'secondary'}>
                       {lv.status}
                     </Badge>
                   </div>
                 )) : (
-                  <p className="text-gray-400 text-sm text-center py-4">No leave updates yet.</p>
+                  <p className="text-gray-400 dark:text-gray-500 text-sm text-center py-4">No leave updates yet.</p>
                 )}
               </div>
             </CardContent>
@@ -265,18 +308,13 @@ export function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-sm text-gray-500 mt-1">Overview of your HR operations</p>
-      </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat) => (
           <Card key={stat.title}>
             <CardContent className="p-6">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">{stat.title}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{stat.title}</p>
                   <h3 className="text-3xl font-bold mt-2">{stat.value}</h3>
                   {stat.change && (
                     <Badge variant="secondary" className="mt-2">
@@ -367,7 +405,7 @@ export function Dashboard() {
                 </div>
                 <div className="flex-1">
                   <p className="font-medium text-sm">{emp.name}</p>
-                  <p className="text-sm text-gray-500">{emp.department}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{emp.department}</p>
                 </div>
                 <span className="text-xs text-gray-400">{emp.join_date}</span>
               </div>

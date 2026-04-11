@@ -2,3 +2,61 @@
 @source '../**/*.{js,ts,jsx,tsx}';
 
 @import 'tw-animate-css';
+
+@theme {
+  --color-surface: #0b1120;
+  --color-surface-container-low: #111b2e;
+  --color-surface-container-high: #1f2a48;
+  --color-secondary-container: #1e293b;
+  --color-on-tertiary-fixed-variant: #94a3b8;
+  --color-tertiary-fixed-dim: #67758b;
+  --color-surface-container-lowest: #0f172a;
+  --color-on-error-container: #fee2e2;
+  --color-surface-container-highest: #172138;
+  --color-on-tertiary-fixed: #cbd5e1;
+  --color-on-secondary-fixed: #cbd5e1;
+  --color-on-primary: #ffffff;
+  --color-on-surface-variant: #94a3b8;
+  --color-surface-variant: #1f2937;
+  --color-on-secondary: #e2e8f0;
+  --color-primary-fixed: #1d4ed8;
+  --color-on-secondary-fixed-variant: #94a3b8;
+  --color-inverse-primary: #d4dbff;
+  --color-inverse-on-surface: #0f172a;
+  --color-on-primary-container: #dbeafe;
+  --color-on-error: #ffffff;
+  --color-on-tertiary-container: #e2e8f0;
+  --color-on-primary-fixed-variant: #c7d2fe;
+  --color-on-tertiary: #ffffff;
+  --color-on-secondary-container: #94a3b8;
+  --color-surface-container: #111827;
+  --color-inverse-surface: #e2e8f0;
+  --color-secondary: #94a3b8;
+  --color-surface-dim: #131f37;
+  --color-error: #f87272;
+  --color-surface-bright: #0f172a;
+  --color-tertiary: #cbd5e1;
+  --color-error-container: #7f1d1d;
+  --color-tertiary-container: #334155;
+  --color-primary-fixed-dim: #567dea;
+  --color-primary-container: #1d4ed8;
+  --color-outline: #475569;
+  --color-background: #050a16;
+  --color-tertiary-fixed: #1e293b;
+  --color-on-surface: #e2e8f0;
+  --color-primary: #7ca7ff;
+  --color-outline-variant: #475569;
+  --color-secondary-fixed: #29354d;
+  --color-secondary-fixed-dim: #394860;
+  --color-on-primary-fixed: #c7d2fe;
+  --color-surface-tint: #4f6fee;
+  --color-on-background: #e2e8f0;
+
+  --radius: 0.25rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+
+  --font-family-headline: 'Manrope', sans-serif;
+  --font-family-body: 'Inter', sans-serif;
+  --font-family-label: 'Inter', sans-serif;
+}

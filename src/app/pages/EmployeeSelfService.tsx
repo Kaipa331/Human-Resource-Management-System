@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
-import { Mail, Phone, Building, Calendar, Download, Edit, Clock, FileText, PlusCircle, Loader2, AlertCircle } from 'lucide-react';
+import { Mail, Phone, Building, Calendar, Download, Edit, Clock, FileText, PlusCircle, Loader2, AlertCircle, BookOpen, Award, GraduationCap, Target } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { Label } from '../components/ui/label';
@@ -12,6 +12,7 @@ import { Textarea } from '../components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { toast } from 'sonner';
 import { Switch } from '../components/ui/switch';
+import { Progress } from '../components/ui/progress';
 import { supabase } from '../../lib/supabase';
 
 interface LeaveRequest {
@@ -30,6 +31,17 @@ interface LeaveBalance {
   emergency: { total: number; used: number; remaining: number };
 }
 
+interface MyTraining {
+  id: string;
+  title: string;
+  category: string;
+  progress: number;
+  status: string;
+  dueDate: string;
+  completedModules: number;
+  totalModules: number;
+}
+
 export function EmployeeSelfService() {
   const getStoredUser = () => {
     const raw = localStorage.getItem('hrms_user');
@@ -44,7 +56,7 @@ export function EmployeeSelfService() {
   const user = getStoredUser();
   const canManageLeave = ['HR', 'Admin', 'Manager'].includes(user?.role);
   const [searchParams, setSearchParams] = useSearchParams();
-  const allowedTabs = ['personal', 'my-leave', 'payslips', 'attendance', 'documents', 'settings'];
+  const allowedTabs = ['personal', 'my-leave', 'my-training', 'payslips', 'attendance', 'documents', 'settings'];
   const currentTabParam = searchParams.get('tab') || 'personal';
   const [activeTab, setActiveTab] = useState(
     allowedTabs.includes(currentTabParam) ? currentTabParam : 'personal'
@@ -72,6 +84,10 @@ export function EmployeeSelfService() {
       return defaultSettings;
     }
   });
+
+  // ─── Training State ─────────────────────────────────────────────────────────
+  const [myTrainings, setMyTrainings] = useState<MyTraining[]>([]);
+  const [trainingLoading, setTrainingLoading] = useState(false);
 
   useEffect(() => {
     const tab = searchParams.get('tab') || 'personal';
@@ -105,18 +121,68 @@ export function EmployeeSelfService() {
     }
   };
 
-  const profileData = {
-    employeeId: 'EMP001',
-    name: user.name || 'Precious Kaipa',
-    email: user.email || 'precious.kaipa@company.com',
-    phone: '+265 991 234 567',
-    department: user.department || 'IT',
-    position: 'Software Engineer',
-    joinDate: '2024-01-15',
-    reportingTo: 'Sarah Williams (HR Manager)',
-    location: 'Lilongwe Office',
-    address: '123 City Center, Area 47, Lilongwe',
-    emergencyContact: 'Precious Kaipa - +265 991 987 654',
+  interface EmployeeProfileData {
+    employeeId?: string;
+    name?: string;
+    email?: string;
+    phone?: string;
+    department?: string;
+    position?: string;
+    joinDate?: string;
+    reportingTo?: string;
+    location?: string;
+    address?: string;
+    emergencyContact?: string;
+  }
+
+  const [profileData, setProfileData] = useState<EmployeeProfileData>({
+    employeeId: undefined,
+    name: user.name || '',
+    email: user.email || '',
+    phone: '',
+    department: user.department || '',
+    position: '',
+    joinDate: '',
+    reportingTo: '',
+    location: '',
+    address: '',
+    emergencyContact: '',
+  });
+
+  const loadProfileData = async () => {
+    try {
+      const emailToQuery = String(user.email || '').toLowerCase();
+      if (!emailToQuery) return;
+
+      const { data: employee, error } = await supabase
+        .from('employees')
+        .select('employee_id, name, email, phone, department, position, join_date')
+        .eq('email', emailToQuery)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Could not load employee profile data', error);
+        return;
+      }
+
+      if (employee) {
+        setProfileData({
+          employeeId: employee.employee_id || undefined,
+          name: employee.name || user.name || '',
+          email: employee.email || user.email || '',
+          phone: employee.phone || '',
+          department: employee.department || user.department || '',
+          position: employee.position || '',
+          joinDate: employee.join_date ? new Date(employee.join_date).toISOString().split('T')[0] : '',
+          reportingTo: '',
+          location: '',
+          address: '',
+          emergencyContact: '',
+        });
+      }
+    } catch (err) {
+      console.error('Error loading employee profile data', err);
+    }
   };
 
   const recentPayslips = [
@@ -154,7 +220,9 @@ export function EmployeeSelfService() {
   const [newLeave, setNewLeave] = useState({ type: '', startDate: '', endDate: '', reason: '' });
 
   useEffect(() => {
+    loadProfileData();
     loadLeaveData();
+    loadTrainingData();
   }, []);
 
   const loadLeaveData = async () => {
@@ -223,6 +291,86 @@ export function EmployeeSelfService() {
     });
   };
 
+  const loadTrainingData = async () => {
+    setTrainingLoading(true);
+    try {
+      const emailToQuery = String(user.email || profileData.email || '').toLowerCase();
+      const { data: emp } = await supabase
+        .from('employees')
+        .select('id')
+        .eq('email', emailToQuery)
+        .maybeSingle();
+
+      if (!emp?.id) {
+        setMyTrainings([]);
+        return;
+      }
+
+      const { data: enrollments } = await supabase
+        .from('training_enrollments')
+        .select(`
+          id,
+          progress,
+          status,
+          due_date,
+          completed_modules,
+          total_modules,
+          training_courses:course_id (
+            title,
+            category
+          )
+        `)
+        .eq('employee_id', emp.id);
+
+      if (enrollments && enrollments.length > 0) {
+        setMyTrainings(enrollments.map((r: any) => ({
+          id: r.id,
+          title: r.training_courses?.title || 'Untitled Course',
+          category: r.training_courses?.category || 'General',
+          progress: Number(r.progress ?? 0),
+          status: r.status || 'In Progress',
+          dueDate: r.due_date || '',
+          completedModules: Number(r.completed_modules ?? 0),
+          totalModules: Number(r.total_modules ?? 0),
+        })));
+      } else {
+        setMyTrainings([]);
+      }
+    } catch (err) {
+      console.error('Error loading training data', err);
+      setMyTrainings([]);
+    } finally {
+      setTrainingLoading(false);
+    }
+  };
+
+  const handleContinueTraining = async (training: MyTraining) => {
+    try {
+      const newModules = Math.min(training.totalModules, training.completedModules + 1);
+      const newProgress = Math.round((newModules / training.totalModules) * 100);
+      const newStatus = newModules === training.totalModules ? 'Completed' : 'In Progress';
+
+      const { error } = await supabase
+        .from('training_enrollments')
+        .update({ completed_modules: newModules, progress: newProgress, status: newStatus })
+        .eq('id', training.id);
+
+      if (error) throw error;
+
+      setMyTrainings(myTrainings.map(t => t.id === training.id ? {
+        ...t, completedModules: newModules, progress: newProgress, status: newStatus
+      } : t));
+
+      if (newStatus === 'Completed') {
+        toast.success(`Congratulations! You have completed ${training.title}`);
+      } else {
+        toast.success(`Progress saved! Module ${newModules} completed.`);
+      }
+    } catch (error: any) {
+      toast.error('Error updating progress: ' + error.message);
+    }
+  };
+
   const handleSubmitLeave = async () => {
     if (canManageLeave) {
       toast.info('Approver accounts should review leave from the Leave Management screen.');
@@ -289,7 +437,7 @@ export function EmployeeSelfService() {
       case 'orange':
         return { text: 'text-orange-600', bg: 'bg-orange-500' };
       default:
-        return { text: 'text-gray-600', bg: 'bg-gray-500' };
+        return { text: 'text-gray-600 dark:text-gray-300', bg: 'bg-gray-500 dark:bg-gray-600' };
     }
   };
 
@@ -302,8 +450,8 @@ export function EmployeeSelfService() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Employee Self-Service Portal</h1>
-        <p className="text-gray-500 mt-1">Manage your personal information and requests</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Employee Self-Service Portal</h1>
+        <p className="text-gray-500 dark:text-gray-400 mt-1">Manage your personal information and requests</p>
       </div>
 
       {/* Profile Summary Card */}
@@ -317,7 +465,7 @@ export function EmployeeSelfService() {
               <div className="flex items-start justify-between">
                 <div>
                   <h2 className="text-2xl font-bold">{profileData.name}</h2>
-                  <p className="text-gray-500">{profileData.position}</p>
+                  <p className="text-gray-500 dark:text-gray-400">{profileData.position}</p>
                   <Badge className="mt-2">{profileData.employeeId}</Badge>
                 </div>
                 <Button variant="outline" onClick={() => handleTabChange('settings')}>
@@ -352,6 +500,7 @@ export function EmployeeSelfService() {
         <TabsList>
           <TabsTrigger value="personal">Personal Info</TabsTrigger>
           <TabsTrigger value="my-leave">My Leave</TabsTrigger>
+          <TabsTrigger value="my-training">My Training</TabsTrigger>
           <TabsTrigger value="payslips">Payslips</TabsTrigger>
           <TabsTrigger value="attendance">Attendance</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
@@ -367,47 +516,47 @@ export function EmployeeSelfService() {
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Full Name</label>
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Full Name</label>
                   <p className="mt-1 text-lg">{profileData.name}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Employee ID</label>
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Employee ID</label>
                   <p className="mt-1 text-lg">{profileData.employeeId}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Email</label>
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Email</label>
                   <p className="mt-1 text-lg">{profileData.email}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Phone</label>
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Phone</label>
                   <p className="mt-1 text-lg">{profileData.phone}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Department</label>
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Department</label>
                   <p className="mt-1 text-lg">{profileData.department}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Position</label>
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Position</label>
                   <p className="mt-1 text-lg">{profileData.position}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Join Date</label>
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Join Date</label>
                   <p className="mt-1 text-lg">{profileData.joinDate}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Reporting To</label>
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Reporting To</label>
                   <p className="mt-1 text-lg">{profileData.reportingTo}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Office Location</label>
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Office Location</label>
                   <p className="mt-1 text-lg">{profileData.location}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Address</label>
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Address</label>
                   <p className="mt-1 text-lg">{profileData.address}</p>
                 </div>
                 <div className="md:col-span-2">
-                  <label className="text-sm font-medium text-gray-500">Emergency Contact</label>
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Emergency Contact</label>
                   <p className="mt-1 text-lg">{profileData.emergencyContact}</p>
                 </div>
               </div>
@@ -533,7 +682,7 @@ export function EmployeeSelfService() {
                             style={{ width: `${Math.min((balance.used / balance.total) * 100, 100)}%` }}
                           />
                         </div>
-                        <div className="flex justify-between text-xs text-gray-500">
+                        <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
                           <span>{balance.used} used</span>
                           <span>{balance.remaining} of {balance.total} remaining</span>
                         </div>
@@ -577,7 +726,7 @@ export function EmployeeSelfService() {
                             <span className="ml-2 font-medium text-gray-700">({req.days} day{req.days !== 1 ? 's' : ''})</span>
                           </p>
                           {req.reason && (
-                            <p className="text-sm text-gray-500 italic">"{req.reason}"</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 italic">"{req.reason}"</p>
                           )}
                         </div>
                         <Calendar className="w-5 h-5 text-gray-300 mt-1 flex-shrink-0" />
@@ -590,7 +739,100 @@ export function EmployeeSelfService() {
           </div>
         </TabsContent>
 
-        {/* ── Payslips ──────────────────────────────────────────────────────── */}
+        {/* ── My Training ───────────────────────────────────────────────────── */}
+        <TabsContent value="my-training">
+          <Card>
+            <CardHeader>
+              <CardTitle>My Training Programs</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {trainingLoading ? (
+                <div className="flex items-center justify-center h-24">
+                  <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                </div>
+              ) : myTrainings.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-gray-400 gap-3">
+                  <BookOpen className="w-10 h-10" />
+                  <p className="text-sm">
+                    No training programs enrolled yet. Visit the <strong>Training & Development</strong> section to enroll in courses.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {myTrainings.map((training) => (
+                    <div key={training.id} className="border rounded-lg p-6 hover:bg-gray-50 transition-colors">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <GraduationCap className="w-5 h-5 text-blue-600" />
+                            <h3 className="text-lg font-semibold">{training.title}</h3>
+                          </div>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">{training.category}</p>
+                        </div>
+                        <Badge variant={
+                          training.status === 'Completed' ? 'default' :
+                          training.status === 'In Progress' ? 'secondary' :
+                          'outline'
+                        }>
+                          {training.status}
+                        </Badge>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium text-gray-700">Progress</span>
+                            <span className="text-sm text-gray-500 dark:text-gray-400">{training.progress}%</span>
+                          </div>
+                          <Progress value={training.progress} className="h-2" />
+                        </div>
+
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          <div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Modules</p>
+                            <p className="text-lg font-semibold">{training.completedModules} / {training.totalModules}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Status</p>
+                            <p className="font-medium">{training.status}</p>
+                          </div>
+                          {training.dueDate && (
+                            <div>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Due Date</p>
+                              <p className="font-medium">{new Date(training.dueDate).toLocaleDateString()}</p>
+                            </div>
+                          )}
+                          <div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Remaining</p>
+                            <p className="font-medium">{training.totalModules - training.completedModules} modules</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {training.status !== 'Completed' && (
+                        <Button 
+                          size="sm" 
+                          className="mt-4 w-full md:w-auto"
+                          onClick={() => handleContinueTraining(training)}
+                        >
+                          <Target className="w-4 h-4 mr-2" />
+                          Continue Learning
+                        </Button>
+                      )}
+
+                      {training.status === 'Completed' && (
+                        <div className="mt-4 flex items-center gap-2 text-green-600">
+                          <Award className="w-5 h-5" />
+                          <span className="font-medium">Completed on {training.dueDate}</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
         <TabsContent value="payslips">
           <Card>
             <CardHeader>
@@ -604,16 +846,16 @@ export function EmployeeSelfService() {
                       <FileText className="w-8 h-8 text-gray-400" />
                       <div>
                         <h4 className="font-medium">{payslip.month}</h4>
-                        <p className="text-sm text-gray-500">Paid on {payslip.date}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Paid on {payslip.date}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-6">
                       <div className="text-right">
-                        <p className="text-sm text-gray-500">Gross</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Gross</p>
                         <p className="font-medium">{payslip.gross}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm text-gray-500">Net</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Net</p>
                         <p className="font-bold text-green-600">{payslip.net}</p>
                       </div>
                       <Button size="sm" variant="outline">
@@ -678,7 +920,7 @@ export function EmployeeSelfService() {
                   <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="flex items-center gap-4">
                       <div className="p-3 bg-gray-100 rounded-lg">
-                        <FileText className="w-6 h-6 text-gray-600" />
+                        <FileText className="w-6 h-6 text-gray-600 dark:text-gray-300" />
                       </div>
                       <div>
                         <h4 className="font-medium">{doc.name}</h4>
@@ -709,7 +951,7 @@ export function EmployeeSelfService() {
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <p className="font-medium text-gray-800">Email alerts</p>
-                    <p className="text-sm text-gray-500">Receive sign-in, leave, and payslip updates by email.</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Receive sign-in, leave, and payslip updates by email.</p>
                   </div>
                   <Switch
                     checked={notificationSettings.emailAlerts}
@@ -719,7 +961,7 @@ export function EmployeeSelfService() {
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <p className="font-medium text-gray-800">Leave status updates</p>
-                    <p className="text-sm text-gray-500">Get notified when HR approves or rejects a leave request.</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Get notified when HR approves or rejects a leave request.</p>
                   </div>
                   <Switch
                     checked={notificationSettings.leaveUpdates}
@@ -729,7 +971,7 @@ export function EmployeeSelfService() {
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <p className="font-medium text-gray-800">Weekly summary</p>
-                    <p className="text-sm text-gray-500">Receive a summary of attendance, documents, and leave balance.</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Receive a summary of attendance, documents, and leave balance.</p>
                   </div>
                   <Switch
                     checked={notificationSettings.weeklySummary}
@@ -748,6 +990,10 @@ export function EmployeeSelfService() {
                   <Edit className="w-4 h-4 mr-2" />
                   Review personal details
                 </Button>
+                <Button variant="outline" className="w-full justify-start" onClick={() => handleTabChange('my-training')}>
+                  <GraduationCap className="w-4 h-4 mr-2" />
+                  View my training programs
+                </Button>
                 <Button variant="outline" className="w-full justify-start" onClick={() => handleTabChange('attendance')}>
                   <Clock className="w-4 h-4 mr-2" />
                   Open attendance history
@@ -756,7 +1002,7 @@ export function EmployeeSelfService() {
                   <FileText className="w-4 h-4 mr-2" />
                   Manage documents
                 </Button>
-                <p className="text-sm text-gray-500 pt-2">
+                <p className="text-sm text-gray-500 dark:text-gray-400 pt-2">
                   Your notification settings are saved locally for this account so the header actions now open a working settings view.
                 </p>
               </CardContent>

@@ -116,8 +116,8 @@ export function Recruitment() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Recruitment & Hiring</h1>
-          <p className="text-gray-500 mt-1">Manage job postings and applicant tracking</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Recruitment & Hiring</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Manage job postings and applicant tracking</p>
         </div>
         <Dialog>
           <DialogTrigger asChild>
@@ -188,7 +188,7 @@ export function Recruitment() {
                 <div className="flex justify-between items-center bg-gray-50 p-4 rounded-lg">
                   <div>
                     <h3 className="text-lg font-bold">{viewingJob.title}</h3>
-                    <p className="text-sm text-gray-500">{viewingJob.department}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{viewingJob.department}</p>
                   </div>
                   <Badge variant={viewingJob.status === 'Open' ? 'default' : 'secondary'}>
                     {viewingJob.status}
@@ -226,10 +226,10 @@ export function Recruitment() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card><CardContent className="p-6"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-500">Open Positions</p><h3 className="text-2xl font-bold mt-1">{jobPostings.filter(j => j.status === 'Open').length}</h3></div><Briefcase className="w-8 h-8 text-blue-600" /></div></CardContent></Card>
-        <Card><CardContent className="p-6"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-500">Total Applicants</p><h3 className="text-2xl font-bold mt-1">{applicants.length}</h3></div><Users className="w-8 h-8 text-green-600" /></div></CardContent></Card>
-        <Card><CardContent className="p-6"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-500">Interviews Scheduled</p><h3 className="text-2xl font-bold mt-1">{applicants.filter(a => a.status === 'Interview Scheduled').length}</h3></div><Calendar className="w-8 h-8 text-orange-600" /></div></CardContent></Card>
-        <Card><CardContent className="p-6"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-500">Hired This Month</p><h3 className="text-2xl font-bold mt-1">0</h3></div><CheckCircle className="w-8 h-8 text-purple-600" /></div></CardContent></Card>
+        <Card><CardContent className="p-6"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-500 dark:text-gray-400">Open Positions</p><h3 className="text-2xl font-bold mt-1">{jobPostings.filter(j => j.status === 'Open').length}</h3></div><Briefcase className="w-8 h-8 text-blue-600" /></div></CardContent></Card>
+        <Card><CardContent className="p-6"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-500 dark:text-gray-400">Total Applicants</p><h3 className="text-2xl font-bold mt-1">{applicants.length}</h3></div><Users className="w-8 h-8 text-green-600" /></div></CardContent></Card>
+        <Card><CardContent className="p-6"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-500 dark:text-gray-400">Interviews Scheduled</p><h3 className="text-2xl font-bold mt-1">{applicants.filter(a => a.status === 'Interview Scheduled').length}</h3></div><Calendar className="w-8 h-8 text-orange-600" /></div></CardContent></Card>
+        <Card><CardContent className="p-6"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-500 dark:text-gray-400">Hired This Month</p><h3 className="text-2xl font-bold mt-1">0</h3></div><CheckCircle className="w-8 h-8 text-purple-600" /></div></CardContent></Card>
       </div>
 
       <Tabs defaultValue="jobs" className="space-y-6">
@@ -243,7 +243,7 @@ export function Recruitment() {
             <CardHeader><CardTitle>Active Job Postings</CardTitle></CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {jobPostings.length === 0 ? <p className="text-gray-500 py-4">No job postings</p> : jobPostings.map((job) => (
+                {jobPostings.length === 0 ? <p className="text-gray-500 dark:text-gray-400 py-4">No job postings</p> : jobPostings.map((job) => (
                   <div key={job.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
@@ -251,7 +251,7 @@ export function Recruitment() {
                           <h3 className="text-lg font-semibold">{job.title}</h3>
                           <Badge variant={job.status === 'Open' ? 'default' : 'secondary'}>{job.status}</Badge>
                         </div>
-                        <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                        <div className="flex items-center gap-4 mt-2 text-sm text-gray-500 dark:text-gray-400">
                           <span>📍 {job.location}</span>
                           <span>🏢 {job.department}</span>
                           <span>⏰ {job.type}</span>
@@ -260,7 +260,7 @@ export function Recruitment() {
                       </div>
                       <div className="text-right">
                         <div className="text-2xl font-bold text-blue-600">{job.applicants || 0}</div>
-                        <div className="text-sm text-gray-500">Applicants</div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">Applicants</div>
                       </div>
                     </div>
                     <div className="flex gap-2 mt-4">
@@ -279,13 +279,13 @@ export function Recruitment() {
             <CardHeader><CardTitle>Applicant Pipeline</CardTitle></CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {applicants.length === 0 ? <p className="text-gray-500 py-4">No applicants</p> : applicants.map((applicant) => (
+                {applicants.length === 0 ? <p className="text-gray-500 dark:text-gray-400 py-4">No applicants</p> : applicants.map((applicant) => (
                   <div key={applicant.id} className="border rounded-lg p-4">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <h3 className="text-lg font-semibold">{applicant.name}</h3>
-                        <p className="text-sm text-gray-500 mt-1">Applied for: {applicant.position || 'Open Role'}</p>
-                        <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Applied for: {applicant.position || 'Open Role'}</p>
+                        <div className="flex items-center gap-4 mt-2 text-sm text-gray-600 dark:text-gray-300">
                           <span>📧 {applicant.email}</span>
                           <span>📞 {applicant.phone}</span>
                           <span>�� {applicant.experience}</span>
@@ -293,7 +293,7 @@ export function Recruitment() {
                       </div>
                       <div className="flex flex-col gap-2 items-end">
                         <Badge>{applicant.status}</Badge>
-                        <span className="text-xs text-gray-500">Applied {applicant.applied_date || new Date().toISOString().split('T')[0]}</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">Applied {applicant.applied_date || new Date().toISOString().split('T')[0]}</span>
                       </div>
                     </div>
                     <div className="flex gap-2 mt-4">

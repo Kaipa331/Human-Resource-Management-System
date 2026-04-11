@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { Download, FileText, TrendingUp, Users, DollarSign, Calendar } from 'lucide-react';
+import { Download, FileText, TrendingUp, Users, DollarSign, Calendar, Upload, FileUp } from 'lucide-react';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { supabase } from '../../lib/supabase';
 import { toast } from 'sonner';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
 
 export function Reports() {
   const [headcountData, setHeadcountData] = useState([
@@ -40,6 +44,9 @@ export function Reports() {
     { month: 'May', gross: 218400000, net: 174720000 },
     { month: 'Jun', gross: 222600000, net: 178080000 },
   ]);
+
+  const [uploadedReports, setUploadedReports] = useState<any[]>([]);
+  const [uploading, setUploading] = useState(false);
 
   const reports = [
     {
@@ -92,8 +99,73 @@ export function Reports() {
     },
   ];
 
-  const handleDownloadReport = (reportTitle: string) => {
-    toast.success(`Generated ${reportTitle}`);
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `reports/${fileName}`;
+
+      // Note: Ensure 'reports' bucket exists in Supabase Storage with public access
+      const { error: uploadError } = await supabase.storage
+        .from('reports')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        if (uploadError.message.includes('bucket')) {
+          toast.error('Reports storage bucket not configured. Please contact administrator.');
+          return;
+        }
+        throw uploadError;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('reports')
+        .getPublicUrl(filePath);
+
+      // Save to a reports table if exists, or just store locally
+      setUploadedReports(prev => [...prev, {
+        name: file.name,
+        url: publicUrl,
+        uploadedAt: new Date().toISOString(),
+        size: file.size
+      }]);
+
+      toast.success('Report uploaded successfully');
+    } catch (error: any) {
+      console.error('Error uploading file:', error);
+      toast.error('Failed to upload report: ' + error.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const loadUploadedReports = async () => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('reports')
+        .list('', {
+          limit: 100,
+          offset: 0,
+          sortBy: { column: 'created_at', order: 'desc' }
+        });
+
+      if (error) throw error;
+
+      const reports = data?.map(file => ({
+        name: file.name,
+        url: supabase.storage.from('reports').getPublicUrl(file.name).data.publicUrl,
+        uploadedAt: file.created_at || new Date().toISOString(),
+        size: file.metadata?.size || 0
+      })) || [];
+
+      setUploadedReports(reports);
+    } catch (error) {
+      console.error('Error loading uploaded reports:', error);
+    }
   };
 
   useEffect(() => {
@@ -187,13 +259,14 @@ export function Reports() {
     };
 
     loadReportsData();
+    loadUploadedReports();
   }, []);
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Reports & Analytics</h1>
-        <p className="text-gray-500 mt-1">Generate comprehensive HR reports and insights</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Reports & Analytics</h1>
+        <p className="text-gray-500 dark:text-gray-400 mt-1">Generate comprehensive HR reports and insights</p>
       </div>
 
       {/* Quick Reports */}
@@ -205,7 +278,7 @@ export function Reports() {
                 <report.icon className={`w-6 h-6 ${report.color}`} />
               </div>
               <h3 className="font-semibold text-lg mb-2">{report.title}</h3>
-              <p className="text-sm text-gray-500 mb-4">{report.description}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{report.description}</p>
               <Button 
                 size="sm" 
                 variant="outline" 
@@ -219,6 +292,67 @@ export function Reports() {
           </Card>
         ))}
       </div>
+
+      {/* Upload Reports */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Upload Custom Reports</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="file-upload">Select a report file to upload</Label>
+              <Input
+                id="file-upload"
+                type="file"
+                accept=".pdf,.doc,.docx,.xls,.xlsx,.csv"
+                onChange={handleFileUpload}
+                disabled={uploading}
+                className="mt-2"
+              />
+            </div>
+            {uploading && (
+              <div className="flex items-center space-x-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
+                <span>Uploading...</span>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Uploaded Reports */}
+      {uploadedReports.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Uploaded Reports</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {uploadedReports.map((report, index) => (
+                <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <FileText className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                    <div>
+                      <h4 className="font-medium">{report.name}</h4>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Uploaded: {new Date(report.uploadedAt).toLocaleDateString()} • 
+                        Size: {(report.size / 1024).toFixed(1)} KB
+                      </p>
+                    </div>
+                  </div>
+                  <Button size="sm" variant="outline" asChild>
+                    <a href={report.url} target="_blank" rel="noopener noreferrer">
+                      <Download className="w-4 h-4 mr-2" />
+                      View
+                    </a>
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Headcount Trend */}
       <Card>
@@ -346,7 +480,7 @@ export function Reports() {
             <div className="flex items-center justify-between p-4 border rounded-lg">
               <div>
                 <h4 className="font-medium">PAYE Tax Report - March 2026</h4>
-                <p className="text-sm text-gray-500">Malawi Revenue Authority (MRA) submission</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Malawi Revenue Authority (MRA) submission</p>
               </div>
               <Button size="sm" variant="outline" onClick={() => handleDownloadReport('PAYE Tax Report')}>
                 <Download className="w-4 h-4 mr-2" />
@@ -356,7 +490,7 @@ export function Reports() {
             <div className="flex items-center justify-between p-4 border rounded-lg">
               <div>
                 <h4 className="font-medium">Pension Contributions Report - March 2026</h4>
-                <p className="text-sm text-gray-500">Employee and employer contributions summary</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Employee and employer contributions summary</p>
               </div>
               <Button size="sm" variant="outline" onClick={() => handleDownloadReport('Pension Contributions Report')}>
                 <Download className="w-4 h-4 mr-2" />
@@ -366,7 +500,7 @@ export function Reports() {
             <div className="flex items-center justify-between p-4 border rounded-lg">
               <div>
                 <h4 className="font-medium">Employment Act Compliance Report</h4>
-                <p className="text-sm text-gray-500">Leave balances, working hours, and overtime</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Leave balances, working hours, and overtime</p>
               </div>
               <Button size="sm" variant="outline" onClick={() => handleDownloadReport('Employment Act Compliance Report')}>
                 <Download className="w-4 h-4 mr-2" />

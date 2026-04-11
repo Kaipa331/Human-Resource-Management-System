@@ -680,8 +680,8 @@ export function Attendance() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Attendance Tracking</h1>
-        <p className="text-gray-500 mt-1">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Attendance Tracking</h1>
+        <p className="text-gray-500 dark:text-gray-400 mt-1">
           {showSelfClock
             ? 'Employees clock themselves in/out while the system verifies location and device details.'
             : 'Review team punches, confirm exceptions and approve manual corrections.'}
@@ -699,7 +699,7 @@ export function Attendance() {
             <p className="font-medium text-gray-900">
               {showSelfClock ? 'Verified self clock-in is enabled' : 'Manager review mode is enabled'}
             </p>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
               {showSelfClock
                 ? 'Each punch is tied to the signed-in employee, checks GPS/IP/device details, and flags anything outside the office geofence for review.'
                 : 'Employees clock themselves in/out. Use the review queue below to approve exceptions and manual attendance corrections.'}
@@ -720,7 +720,7 @@ export function Attendance() {
                 <div className="text-4xl font-bold mb-2">
                   {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                 </div>
-                <div className="text-gray-500">
+                <div className="text-gray-500 dark:text-gray-400">
                   {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                 </div>
               </div>
@@ -756,7 +756,7 @@ export function Attendance() {
                   Clock Out
                 </Button>
               ) : (
-                <div className="text-center text-sm text-gray-500 py-2">
+                <div className="text-center text-sm text-gray-500 dark:text-gray-400 py-2">
                   You've completed your shift for today ✓
                 </div>
               )}
@@ -794,11 +794,11 @@ export function Attendance() {
               </Dialog>
 
               <div className="pt-4 border-t space-y-2">
-                <div className="flex items-start gap-2 text-sm text-gray-600">
+                <div className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300">
                   <MapPin className="w-4 h-4 mt-0.5" />
                   <span>{todayRecord?.location || verificationPreview}</span>
                 </div>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
                   Office geofence: {OFFICE_GEOFENCE.label} within {OFFICE_GEOFENCE.radiusKm} km
                 </p>
               </div>
@@ -811,39 +811,39 @@ export function Attendance() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-                <div className="bg-green-50 rounded-lg p-4">
-                  <p className="text-sm text-gray-600">Present</p>
+                <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
+                  <p className="text-sm text-gray-600 dark:text-gray-300">Present</p>
                   <p className="text-3xl font-bold text-green-600">{monthlyStats.present}</p>
-                  <p className="text-xs text-gray-500">days</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">days</p>
                 </div>
-                <div className="bg-yellow-50 rounded-lg p-4">
-                  <p className="text-sm text-gray-600">Late</p>
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4">
+                  <p className="text-sm text-gray-600 dark:text-gray-300">Late</p>
                   <p className="text-3xl font-bold text-yellow-600">{monthlyStats.late}</p>
-                  <p className="text-xs text-gray-500">days</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">days</p>
                 </div>
-                <div className="bg-red-50 rounded-lg p-4">
-                  <p className="text-sm text-gray-600">Absent</p>
+                <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4">
+                  <p className="text-sm text-gray-600 dark:text-gray-300">Absent</p>
                   <p className="text-3xl font-bold text-red-600">{monthlyStats.absent}</p>
-                  <p className="text-xs text-gray-500">days</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">days</p>
                 </div>
-                <div className="bg-blue-50 rounded-lg p-4">
-                  <p className="text-sm text-gray-600">Leave</p>
+                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+                  <p className="text-sm text-gray-600 dark:text-gray-300">Leave</p>
                   <p className="text-3xl font-bold text-blue-600">{monthlyStats.leave}</p>
-                  <p className="text-xs text-gray-500">days</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">days</p>
                 </div>
-                <div className="bg-purple-50 rounded-lg p-4">
-                  <p className="text-sm text-gray-600">Avg Hours</p>
+                <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4">
+                  <p className="text-sm text-gray-600 dark:text-gray-300">Avg Hours</p>
                   <p className="text-3xl font-bold text-purple-600">{monthlyStats.avgHours}</p>
-                  <p className="text-xs text-gray-500">hours/day</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">hours/day</p>
                 </div>
                 <div className="bg-indigo-50 rounded-lg p-4">
-                  <p className="text-sm text-gray-600">Attendance %</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">Attendance %</p>
                   <p className="text-3xl font-bold text-indigo-600">
                     {monthlyStats.totalDays > 0
                       ? (((monthlyStats.present + monthlyStats.late) / monthlyStats.totalDays) * 100).toFixed(0)
                       : 0}%
                   </p>
-                  <p className="text-xs text-gray-500">rate</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">rate</p>
                 </div>
               </div>
 
@@ -863,25 +863,25 @@ export function Attendance() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-green-50 rounded-lg p-4">
-                <p className="text-sm text-gray-600">Present</p>
+              <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
+                <p className="text-sm text-gray-600 dark:text-gray-300">Present</p>
                 <p className="text-3xl font-bold text-green-600">{teamSummary.present}</p>
-                <p className="text-xs text-gray-500">employees</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">employees</p>
               </div>
-              <div className="bg-yellow-50 rounded-lg p-4">
-                <p className="text-sm text-gray-600">Late</p>
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4">
+                <p className="text-sm text-gray-600 dark:text-gray-300">Late</p>
                 <p className="text-3xl font-bold text-yellow-600">{teamSummary.late}</p>
-                <p className="text-xs text-gray-500">employees</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">employees</p>
               </div>
-              <div className="bg-amber-50 rounded-lg p-4">
-                <p className="text-sm text-gray-600">Needs Review</p>
+              <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-4">
+                <p className="text-sm text-gray-600 dark:text-gray-300">Needs Review</p>
                 <p className="text-3xl font-bold text-amber-600">{teamSummary.review}</p>
-                <p className="text-xs text-gray-500">exceptions</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">exceptions</p>
               </div>
-              <div className="bg-red-50 rounded-lg p-4">
-                <p className="text-sm text-gray-600">Absent</p>
+              <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4">
+                <p className="text-sm text-gray-600 dark:text-gray-300">Absent</p>
                 <p className="text-3xl font-bold text-red-600">{teamSummary.absent}</p>
-                <p className="text-xs text-gray-500">employees</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">employees</p>
               </div>
             </div>
           </CardContent>
@@ -901,11 +901,11 @@ export function Attendance() {
                     <CalendarIcon className="w-5 h-5 text-gray-400" />
                     <div>
                       <p className="font-medium">{record.date}</p>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
                         {formatTime(record.clock_in)} - {formatTime(record.clock_out)}
                       </p>
                       {record.location && (
-                        <p className="text-xs text-gray-500 mt-1">{record.location}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{record.location}</p>
                       )}
                     </div>
                   </div>
@@ -941,9 +941,9 @@ export function Attendance() {
                         <p className="font-semibold">{review.employeeName}</p>
                         <Badge className={getStatusColor(review.status)}>{review.status}</Badge>
                       </div>
-                      <p className="text-sm text-gray-500 mt-1">{review.employeeCode} • {review.date}</p>
-                      <p className="text-sm text-gray-600 mt-2">{review.reason}</p>
-                      <p className="text-xs text-gray-500 mt-1">Clock in: {formatTime(review.clock_in)}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{review.employeeCode} • {review.date}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-300 mt-2">{review.reason}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Clock in: {formatTime(review.clock_in)}</p>
                     </div>
                     <div className="flex gap-2">
                       <Button
@@ -990,13 +990,13 @@ export function Attendance() {
                     </div>
                     <div>
                       <p className="font-medium">{member.name}</p>
-                      <p className="text-sm text-gray-500">{member.employee_id}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{member.employee_id}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="text-right max-w-xs">
                       <p className="text-sm font-medium">{formatTime(member.clock_in)}</p>
-                      <p className="text-xs text-gray-500 truncate">{member.location}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{member.location}</p>
                     </div>
                     <Badge className={getStatusColor(member.status)}>
                       {member.status}

@@ -22,9 +22,10 @@ import {
 } from '../components/ui/dialog';
 import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Search, Plus, Edit, Trash2, Eye, Download, Loader2 } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, Eye, Download, Loader2, Key, CheckCircle, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '../../lib/supabase';
+import { createEmployeeAccountWithCredentials, resetEmployeePassword } from '../../lib/authService';
 
 interface Employee {
   id: string;
@@ -37,6 +38,7 @@ interface Employee {
   status: string;
   join_date: string;
   salary: number | string;
+  role?: string;
 }
 
 export function Employees() {
@@ -49,6 +51,14 @@ export function Employees() {
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [viewingEmployee, setViewingEmployee] = useState<Employee | null>(null);
 
+  // Account creation dialog
+  const [isCredentialsDialogOpen, setIsCredentialsDialogOpen] = useState(false);
+  const [newAccountCredentials, setNewAccountCredentials] = useState<{
+    email: string;
+    tempPassword: string;
+    name: string;
+  } | null>(null);
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -57,6 +67,7 @@ export function Employees() {
     position: '',
     salary: '',
     joinDate: '',
+    role: 'Employee',
   });
 
   useEffect(() => {
@@ -89,11 +100,26 @@ export function Employees() {
 
   const openAddDialog = () => {
     setEditingEmployee(null);
-    setFormData({ name: '', email: '', phone: '', department: '', position: '', salary: '', joinDate: '' });
+    setFormData({ name: '', email: '', phone: '', department: '', position: '', salary: '', joinDate: '', role: 'Employee' });
     setIsDialogOpen(true);
   };
 
-  const openEditDialog = (emp: Employee) => {
+  const openEditDialog = async (emp: Employee) => {
+    let role = 'Employee';
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('employee_id', emp.id)
+        .maybeSingle();
+
+      if (profile?.role) {
+        role = profile.role;
+      }
+    } catch (error) {
+      console.error('Error loading employee role for edit:', error);
+    }
+
     setEditingEmployee(emp);
     setFormData({
       name: emp.name || '',
@@ -103,12 +129,28 @@ export function Employees() {
       position: emp.position || '',
       salary: emp.salary ? String(emp.salary) : '',
       joinDate: emp.join_date || '',
+      role,
     });
     setIsDialogOpen(true);
   };
 
-  const openViewDialog = (emp: Employee) => {
-    setViewingEmployee(emp);
+  const openViewDialog = async (emp: Employee) => {
+    let role = emp.role || 'Employee';
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('employee_id', emp.id)
+        .maybeSingle();
+
+      if (profile?.role) {
+        role = profile.role;
+      }
+    } catch (error) {
+      console.error('Error loading profile role for view dialog:', error);
+    }
+
+    setViewingEmployee({ ...emp, role });
     setIsViewDialogOpen(true);
   };
 
@@ -118,16 +160,19 @@ export function Employees() {
       return;
     }
 
+    const normalizedEmail = formData.email.toLowerCase().trim();
+
     try {
       const parsedSalary = typeof formData.salary === 'string' ? parseFloat(formData.salary.replace(/[^\d.]/g, '')) || 0 : formData.salary;
       const joinStr = formData.joinDate || new Date().toISOString().split('T')[0];
 
       if (editingEmployee) {
+        // Updating existing employee - no new account creation
         const { error } = await supabase
           .from('employees')
           .update({
             name: formData.name,
-            email: formData.email,
+            email: normalizedEmail,
             phone: formData.phone,
             department: formData.department,
             position: formData.position,
@@ -136,14 +181,44 @@ export function Employees() {
           })
           .eq('id', editingEmployee.id);
         if (error) throw error;
+
+        const { error: profileUpdateError } = await supabase
+          .from('profiles')
+          .update({
+            email: normalizedEmail,
+            role: formData.role,
+          })
+          .eq('employee_id', editingEmployee.id);
+
+        if (profileUpdateError) {
+          console.error('Failed to update profile email/role after employee edit:', profileUpdateError);
+        }
+
         toast.success('Employee updated successfully');
       } else {
+        // Adding new employee - create account AND employee record
         const empId = `EMP${String(employees.length + 1).padStart(3, '0')}`;
-        const { error } = await supabase
+        const normalizedEmail = formData.email.toLowerCase().trim();
+        
+        // Step 1: Create Supabase Auth account and profile
+        const accountResult = await createEmployeeAccountWithCredentials(
+          normalizedEmail,
+          formData.name,
+          formData.role || 'Employee'
+        );
+
+        if (!accountResult.success) {
+          // Account creation failed - don't create employee record
+          toast.error(`Failed to create account: ${accountResult.error}`);
+          return;
+        }
+
+        // Step 2: Create employee record in database
+        const { data: insertedEmployee, error: empError } = await supabase
           .from('employees')
           .insert([{
             name: formData.name,
-            email: formData.email,
+            email: normalizedEmail,
             phone: formData.phone,
             department: formData.department,
             position: formData.position,
@@ -151,9 +226,34 @@ export function Employees() {
             employee_id: empId,
             status: 'Active',
             salary: parsedSalary
-          }]);
-        if (error) throw error;
-        toast.success('Employee added successfully');
+          }])
+          .select('id')
+          .single();
+        
+        if (empError || !insertedEmployee?.id) {
+          toast.error('Failed to create employee record: ' + (empError?.message || 'Unknown error'));
+          return;
+        }
+
+        if (accountResult.userId) {
+          const { error: profileUpdateError } = await supabase
+            .from('profiles')
+            .update({ employee_id: insertedEmployee.id })
+            .eq('email', normalizedEmail);
+
+          if (profileUpdateError) {
+            console.error('Failed to attach employee record to profile:', profileUpdateError);
+          }
+        }
+
+        // Show credentials dialog
+        setNewAccountCredentials({
+          email: normalizedEmail,
+          tempPassword: accountResult.tempPassword || '',
+          name: formData.name,
+        });
+        setIsCredentialsDialogOpen(true);
+        toast.success('Employee account created successfully!');
       }
 
       setIsDialogOpen(false);
@@ -172,6 +272,19 @@ export function Employees() {
       fetchEmployees();
     } catch (error: any) {
       toast.error('Error deleting employee: ' + error.message);
+    }
+  };
+
+  const handleResetPassword = async (email: string) => {
+    try {
+      const result = await resetEmployeePassword(email);
+      if (result.success) {
+        toast.success(`Password reset email sent to ${email}`);
+      } else {
+        toast.error(result.error || 'Failed to send password reset email');
+      }
+    } catch (error: any) {
+      toast.error('Error: ' + error.message);
     }
   };
 
@@ -205,8 +318,8 @@ export function Employees() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Employee Management</h1>
-          <p className="text-gray-500 mt-1">Manage employee records and information</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Employee Management</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Manage employee records and information</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <Button onClick={openAddDialog}>
@@ -250,6 +363,18 @@ export function Employees() {
                 <Input value={formData.position} onChange={(e) => setFormData({ ...formData, position: e.target.value })} placeholder="Software Engineer" />
               </div>
               <div>
+                <Label>Role</Label>
+                <Select value={formData.role} onValueChange={(val) => setFormData({ ...formData, role: val })}>
+                  <SelectTrigger><SelectValue placeholder="Select role" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Employee">Employee</SelectItem>
+                    <SelectItem value="HR">HR</SelectItem>
+                    <SelectItem value="Manager">Manager</SelectItem>
+                    <SelectItem value="Admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
                 <Label>Salary</Label>
                 <Input value={formData.salary} onChange={(e) => setFormData({ ...formData, salary: e.target.value })} placeholder="MWK 850,000" />
               </div>
@@ -277,7 +402,7 @@ export function Employees() {
                 <div className="flex justify-between items-center bg-gray-50 p-4 rounded-lg">
                   <div>
                     <h3 className="text-lg font-bold">{viewingEmployee.name}</h3>
-                    <p className="text-sm text-gray-500">{viewingEmployee.employee_id}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{viewingEmployee.employee_id}</p>
                   </div>
                   <Badge variant={viewingEmployee.status === 'Active' ? 'default' : 'secondary'}>
                     {viewingEmployee.status}
@@ -295,6 +420,10 @@ export function Employees() {
                   <div>
                     <p className="text-gray-500">Department</p>
                     <p className="font-medium">{viewingEmployee.department}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Role</p>
+                    <p className="font-medium">{viewingEmployee.role || 'Employee'}</p>
                   </div>
                   <div>
                     <p className="text-gray-500">Position</p>
@@ -358,7 +487,7 @@ export function Employees() {
                       <TableCell>
                         <div>
                           <p className="font-medium text-sm md:text-base">{employee.name}</p>
-                          <p className="text-xs md:text-sm text-gray-500">{employee.email}</p>
+                          <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">{employee.email}</p>
                         </div>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">{employee.department}</TableCell>
@@ -375,6 +504,15 @@ export function Employees() {
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditDialog(employee)}>
                             <Edit className="w-4 h-4" />
                           </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 hover:text-blue-600"
+                            onClick={() => handleResetPassword(employee.email)}
+                            title="Send password reset email"
+                          >
+                            <Key className="w-4 h-4" />
+                          </Button>
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDeleteEmployee(employee.id)}>
                             <Trash2 className="w-4 h-4 text-red-500" />
                           </Button>
@@ -388,6 +526,90 @@ export function Employees() {
           )}
         </CardContent>
       </Card>
+
+      {/* New Account Credentials Dialog */}
+      <Dialog open={isCredentialsDialogOpen} onOpenChange={setIsCredentialsDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle className="w-5 h-5 text-green-600" />
+              Account Created Successfully
+            </DialogTitle>
+            <DialogDescription>
+              Share these credentials with {newAccountCredentials?.name}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {newAccountCredentials && (
+            <div className="space-y-4 mt-4">
+              <div className="bg-blue-50 p-4 rounded-lg space-y-3">
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">Email Address</p>
+                  <div className="flex items-center gap-2">
+                    <code className="text-sm font-mono bg-white px-3 py-2 rounded border flex-1">
+                      {newAccountCredentials.email}
+                    </code>
+                    <Button 
+                      size="sm" 
+                      variant="ghost"
+                      onClick={() => {
+                        navigator.clipboard.writeText(newAccountCredentials.email);
+                        toast.success('Email copied!');
+                      }}
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">Temporary Password</p>
+                  <div className="flex items-center gap-2">
+                    <code className="text-sm font-mono bg-white px-3 py-2 rounded border flex-1 break-all">
+                      {newAccountCredentials.tempPassword}
+                    </code>
+                    <Button 
+                      size="sm" 
+                      variant="ghost"
+                      onClick={() => {
+                        navigator.clipboard.writeText(newAccountCredentials.tempPassword);
+                        toast.success('Password copied!');
+                      }}
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg text-sm text-amber-800">
+                <p className="font-medium mb-1">⚠️ Important:</p>
+                <ul className="list-disc pl-5 space-y-1 text-xs">
+                  <li>Send these credentials to the employee securely (not via email)</li>
+                  <li>Employee must change password on first login</li>
+                  <li>Password expires after first use</li>
+                  <li>Keep this dialog open while you share the details</li>
+                </ul>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-sm text-gray-600 dark:text-gray-300"><strong>Next Steps:</strong></p>
+                <ol className="text-sm space-y-1 list-decimal pl-5">
+                  <li>Share credentials with the employee</li>
+                  <li>Employee logs in at <code className="bg-gray-100 px-2 py-1 rounded text-xs">{window.location.origin}/login</code></li>
+                  <li>Employee creates a new password on first login</li>
+                </ol>
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setIsCredentialsDialogOpen(false)}>
+              Done
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

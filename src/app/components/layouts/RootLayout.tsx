@@ -8,6 +8,31 @@ export function RootLayout() {
   const location = useLocation();
   const [user, setUser] = useState<any>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  // Initialize theme on mount
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('hrms_theme');
+    const prefersDark = savedTheme ? savedTheme === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    setIsDarkMode(prefersDark);
+    if (prefersDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, []);
+
+  // Toggle theme
+  const toggleTheme = () => {
+    const newDarkMode = !isDarkMode;
+    setIsDarkMode(newDarkMode);
+    localStorage.setItem('hrms_theme', newDarkMode ? 'dark' : 'light');
+    if (newDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  };
 
   useEffect(() => {
     // Check if user is logged in
@@ -35,18 +60,18 @@ export function RootLayout() {
       <div className="flex items-center justify-center h-screen bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Verifying authentication...</p>
+          <p className="text-gray-600 dark:text-gray-400">Verifying authentication...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden">
+    <div className="flex h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-hidden">
       {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden"
+          className="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
@@ -57,11 +82,32 @@ export function RootLayout() {
         <Header 
           user={user} 
           setUser={setUser} 
-          toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} 
+          toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+          isDarkMode={isDarkMode}
+          toggleTheme={toggleTheme}
         />
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+        <main className="flex-1 overflow-y-auto p-8 space-y-8 max-w-[1400px] mx-auto w-full">
           <Outlet />
         </main>
+        {/* Mobile Navigation */}
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex justify-around items-center px-4 h-16 z-50">
+          <a className="flex flex-col items-center gap-1 text-slate-400 dark:text-slate-400" href="/app">
+            <span className="material-symbols-outlined">dashboard</span>
+            <span className="text-[10px] font-bold">Home</span>
+          </a>
+          <a className="flex flex-col items-center gap-1 text-slate-400 dark:text-slate-400" href="/app/employees">
+            <span className="material-symbols-outlined">group</span>
+            <span className="text-[10px] font-bold">Team</span>
+          </a>
+          <a className="flex flex-col items-center gap-1 text-blue-700 dark:text-blue-400" href="/app/performance">
+            <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 1"}}>insights</span>
+            <span className="text-[10px] font-bold">Performance</span>
+          </a>
+          <a className="flex flex-col items-center gap-1 text-slate-400 dark:text-slate-400" href="/app/self-service">
+            <span className="material-symbols-outlined">person</span>
+            <span className="text-[10px] font-bold">Profile</span>
+          </a>
+        </nav>
       </div>
     </div>
   );

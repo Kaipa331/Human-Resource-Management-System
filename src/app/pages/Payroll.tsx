@@ -300,8 +300,8 @@ export function Payroll() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Payroll Management</h1>
-          <p className="text-gray-500 mt-1">Process and manage employee payroll</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Payroll Management</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Process and manage employee payroll</p>
         </div>
         <Button onClick={() => handleDownloadReport('Master Payroll Report')}>
           <FileText className="w-4 h-4 mr-2" />
@@ -317,10 +317,10 @@ export function Payroll() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4 text-sm mt-4">
-              <div><p className="text-gray-500">Gross Total</p><p className="font-medium">{activeCycleForDetails?.grossTotal}</p></div>
-              <div><p className="text-gray-500">Net Total</p><p className="font-medium">{activeCycleForDetails?.netTotal}</p></div>
-              <div><p className="text-gray-500">Total Employees</p><p className="font-medium">{activeCycleForDetails?.totalEmployees}</p></div>
-              <div><p className="text-gray-500">Status</p><Badge>{activeCycleForDetails?.status}</Badge></div>
+              <div><p className="text-gray-500 dark:text-gray-400">Gross Total</p><p className="font-medium">{activeCycleForDetails?.grossTotal}</p></div>
+              <div><p className="text-gray-500 dark:text-gray-400">Net Total</p><p className="font-medium">{activeCycleForDetails?.netTotal}</p></div>
+              <div><p className="text-gray-500 dark:text-gray-400">Total Employees</p><p className="font-medium">{activeCycleForDetails?.totalEmployees}</p></div>
+              <div><p className="text-gray-500 dark:text-gray-400">Status</p><Badge>{activeCycleForDetails?.status}</Badge></div>
             </div>
           </div>
           <div className="flex justify-end mt-4">
@@ -337,20 +337,20 @@ export function Payroll() {
           </DialogHeader>
           <div className="space-y-4 mt-4">
             <div className="flex justify-between py-2 border-b">
-              <span className="text-gray-600">Basic Salary</span>
+              <span className="text-gray-600 dark:text-gray-300">Basic Salary</span>
               <span className="font-medium">{activeEmployeeForBreakdown && formatCurrency(activeEmployeeForBreakdown.basicSalary)}</span>
             </div>
             <div className="flex justify-between py-2 border-b">
-              <span className="text-gray-600">Allowances</span>
-              <span className="font-medium text-green-600">+{activeEmployeeForBreakdown && formatCurrency(activeEmployeeForBreakdown.allowances)}</span>
+              <span className="text-gray-600 dark:text-gray-300">Allowances</span>
+              <span className="font-medium text-green-600 dark:text-green-400">+{activeEmployeeForBreakdown && formatCurrency(activeEmployeeForBreakdown.allowances)}</span>
             </div>
             <div className="flex justify-between py-2 border-b">
-              <span className="text-gray-600">PAYE Tax</span>
-              <span className="font-medium text-red-600">-{activeEmployeeForBreakdown && formatCurrency(activeEmployeeForBreakdown.taxDeducted)}</span>
+              <span className="text-gray-600 dark:text-gray-300">PAYE Tax</span>
+              <span className="font-medium text-red-600 dark:text-red-400">-{activeEmployeeForBreakdown && formatCurrency(activeEmployeeForBreakdown.taxDeducted)}</span>
             </div>
             <div className="flex justify-between py-2 border-b">
-              <span className="text-gray-600">Other Deductions</span>
-              <span className="font-medium text-red-600">-{activeEmployeeForBreakdown && formatCurrency(activeEmployeeForBreakdown.deductions - activeEmployeeForBreakdown.taxDeducted)}</span>
+              <span className="text-gray-600 dark:text-gray-300">Other Deductions</span>
+              <span className="font-medium text-red-600 dark:text-red-400">-{activeEmployeeForBreakdown && formatCurrency(activeEmployeeForBreakdown.deductions - activeEmployeeForBreakdown.taxDeducted)}</span>
             </div>
             <div className="flex justify-between py-2 font-bold text-lg">
               <span>Net Pay</span>
@@ -369,7 +369,7 @@ export function Payroll() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Total Gross</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Total Gross</p>
                 <h3 className="text-2xl font-bold mt-1">{payrollSummary.totalGross}</h3>
               </div>
               <DollarSign className="w-8 h-8 text-blue-600" />
@@ -381,7 +381,7 @@ export function Payroll() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Total Net</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Total Net</p>
                 <h3 className="text-2xl font-bold mt-1">{payrollSummary.totalNet}</h3>
               </div>
               <TrendingUp className="w-8 h-8 text-green-600" />
@@ -393,7 +393,7 @@ export function Payroll() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Total Tax (PAYE)</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Total Tax (PAYE)</p>
                 <h3 className="text-2xl font-bold mt-1">{payrollSummary.totalTax}</h3>
               </div>
               <FileText className="w-8 h-8 text-orange-600" />
@@ -405,7 +405,7 @@ export function Payroll() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Employees</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Employees</p>
                 <h3 className="text-2xl font-bold mt-1">{payrollSummary.employees}</h3>
               </div>
               <Users className="w-8 h-8 text-purple-600" />
@@ -441,19 +441,19 @@ export function Payroll() {
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                           <div>
-                            <p className="text-sm text-gray-500">Period</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Period</p>
                             <p className="font-medium">{cycle.startDate} to {cycle.endDate}</p>
                           </div>
                           <div>
-                            <p className="text-sm text-gray-500">Employees</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Employees</p>
                             <p className="font-medium">{cycle.totalEmployees}</p>
                           </div>
                           <div>
-                            <p className="text-sm text-gray-500">Gross Total</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Gross Total</p>
                             <p className="font-medium">{cycle.grossTotal}</p>
                           </div>
                           <div>
-                            <p className="text-sm text-gray-500">Net Total</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Net Total</p>
                             <p className="font-medium text-green-600">{cycle.netTotal}</p>
                           </div>
                         </div>
@@ -507,36 +507,36 @@ export function Payroll() {
             <CardContent>
               <div className="space-y-4">
                 {employeePayroll.length === 0 && (
-                  <p className="text-gray-500 text-sm">No payroll rows found for this period.</p>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">No payroll rows found for this period.</p>
                 )}
                 {employeePayroll.map((emp) => (
                   <div key={emp.employeeId} className="border rounded-lg p-6">
                     <div className="flex items-start justify-between mb-4">
                       <div>
                         <h3 className="text-lg font-semibold">{emp.name}</h3>
-                        <p className="text-sm text-gray-500">{emp.employeeId} • {emp.department}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">{emp.employeeId} • {emp.department}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm text-gray-500">Net Salary</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Net Salary</p>
                         <p className="text-2xl font-bold text-green-600">{formatCurrency(emp.net)}</p>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                       <div className="bg-blue-50 rounded-lg p-3">
-                        <p className="text-xs text-gray-600">Basic Salary</p>
-                        <p className="text-lg font-semibold text-blue-600">{formatCurrency(emp.basicSalary)}</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-300">Basic Salary</p>
+                        <p className="text-lg font-semibold text-blue-600 dark:text-blue-400">{formatCurrency(emp.basicSalary)}</p>
                       </div>
-                      <div className="bg-green-50 rounded-lg p-3">
-                        <p className="text-xs text-gray-600">Allowances</p>
+                      <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3">
+                        <p className="text-xs text-gray-600 dark:text-gray-300">Allowances</p>
                         <p className="text-lg font-semibold text-green-600">{formatCurrency(emp.allowances)}</p>
                       </div>
-                      <div className="bg-orange-50 rounded-lg p-3">
-                        <p className="text-xs text-gray-600">Tax ({emp.payeeTax})</p>
-                        <p className="text-lg font-semibold text-orange-600">{formatCurrency(emp.taxDeducted)}</p>
+                      <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-3">
+                        <p className="text-xs text-gray-600 dark:text-gray-300">Tax ({emp.payeeTax})</p>
+                        <p className="text-lg font-semibold text-orange-600 dark:text-orange-400">{formatCurrency(emp.taxDeducted)}</p>
                       </div>
-                      <div className="bg-red-50 rounded-lg p-3">
-                        <p className="text-xs text-gray-600">Other Deductions</p>
-                        <p className="text-lg font-semibold text-red-600">{formatCurrency(emp.deductions - emp.taxDeducted)}</p>
+                      <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-3">
+                        <p className="text-xs text-gray-600 dark:text-gray-300">Other Deductions</p>
+                        <p className="text-lg font-semibold text-red-600 dark:text-red-400">{formatCurrency(emp.deductions - emp.taxDeducted)}</p>
                       </div>
                     </div>
                     <div className="flex gap-2">
@@ -570,15 +570,15 @@ export function Payroll() {
                   <h3 className="text-lg font-semibold mb-4">PAYE (Pay As You Earn) Tax</h3>
                   <div className="grid grid-cols-3 gap-4">
                     <div>
-                      <p className="text-sm text-gray-500">Total PAYE Collected</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Total PAYE Collected</p>
                       <p className="text-2xl font-bold">{formatCurrency(statutory.totalPaye)}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500">Employees Subject to PAYE</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Employees Subject to PAYE</p>
                       <p className="text-2xl font-bold">{statutory.employees}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500">Status</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Status</p>
                       <Badge className="mt-2">Ready for Remittance</Badge>
                     </div>
                   </div>
@@ -592,15 +592,15 @@ export function Payroll() {
                   <h3 className="text-lg font-semibold mb-4">Pension Contributions</h3>
                   <div className="grid grid-cols-3 gap-4">
                     <div>
-                      <p className="text-sm text-gray-500">Employee Contributions</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Employee Contributions</p>
                       <p className="text-2xl font-bold">{formatCurrency(statutory.employeeContrib)}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500">Employer Contributions</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Employer Contributions</p>
                       <p className="text-2xl font-bold">{formatCurrency(statutory.employerContrib)}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500">Total</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Total</p>
                       <p className="text-2xl font-bold">{formatCurrency(statutory.employeeContrib + statutory.employerContrib)}</p>
                     </div>
                   </div>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -6,23 +6,20 @@ import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { toast } from 'sonner';
 import { isSupabaseConfigured, supabase } from '../../lib/supabase';
+import { resetEmployeePassword } from '../../lib/authService';
 
 export function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const searchParams = new URLSearchParams(window.location.search);
+  const confirmed = searchParams.get('confirmed') === 'true';
+  const passwordReset = searchParams.get('passwordReset') === 'true';
 
-  const demoUserFallbacks: Record<string, { role: string; name: string; department: string }> = {
-    'admin@hrms.com': { role: 'Admin', name: 'Demo Admin', department: 'Administration' },
-    'hr@hrms.com': { role: 'HR', name: 'Demo HR Manager', department: 'HR' },
-    'manager@hrms.com': { role: 'Manager', name: 'Demo Manager', department: 'Operations' },
-    'employee@hrms.com': { role: 'Employee', name: 'Demo Employee', department: 'IT' },
-  };
+  const adminOverrideEmail = 'kaipap332gmail.com';
 
   const persistUserSession = async (normalizedEmail: string, userId?: string) => {
-    const fallbackUser = demoUserFallbacks[normalizedEmail];
-
     const [profileResult, employeeResult] = await Promise.allSettled([
       supabase
         .from('profiles')
@@ -38,29 +35,18 @@ export function Login() {
 
     const profileData = profileResult.status === 'fulfilled' ? profileResult.value.data : null;
     const employeeData = employeeResult.status === 'fulfilled' ? employeeResult.value.data : null;
+    const role = normalizedEmail === adminOverrideEmail ? 'Admin' : (profileData?.role || 'Employee');
 
     localStorage.setItem('hrms_user', JSON.stringify({
       email: normalizedEmail,
       id: userId || normalizedEmail,
-      role: profileData?.role || fallbackUser?.role || 'Employee',
-      name: employeeData?.name || fallbackUser?.name || normalizedEmail,
-      department: employeeData?.department || fallbackUser?.department || 'General',
+      role,
+      name: employeeData?.name || normalizedEmail,
+      department: employeeData?.department || 'General',
     }));
   };
 
-  const tryDemoFallbackLogin = async (normalizedEmail: string) => {
-    const fallbackUser = demoUserFallbacks[normalizedEmail];
-    const isDemoPassword = password === 'admin123';
 
-    if (!fallbackUser || !isDemoPassword) {
-      return false;
-    }
-
-    await persistUserSession(normalizedEmail);
-    toast.success('Signed in with demo mode!');
-    navigate('/');
-    return true;
-  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,10 +55,6 @@ export function Login() {
     const normalizedEmail = email.trim().toLowerCase();
 
     try {
-      if (!isSupabaseConfigured && await tryDemoFallbackLogin(normalizedEmail)) {
-        return;
-      }
-
       const { data, error } = await supabase.auth.signInWithPassword({
         email: normalizedEmail,
         password,
@@ -83,30 +65,46 @@ export function Login() {
       if (data.user) {
         await persistUserSession(normalizedEmail, data.user.id);
         toast.success('Login successful!');
-        navigate('/');
+        navigate('/app');
       }
     } catch (error: any) {
-      if (await tryDemoFallbackLogin(normalizedEmail)) {
-        return;
-      }
-
       const errorMessage = String(error?.message || '');
-      const isNetworkFailure = /failed to fetch|networkerror|load failed/i.test(errorMessage);
-
-      toast.error(
-        isNetworkFailure
-          ? 'Unable to reach Supabase from this Vercel deployment. Demo accounts still work with password admin123.'
-          : errorMessage || 'Invalid credentials'
-      );
+      toast.error(errorMessage || 'Invalid credentials');
     } finally {
       setLoading(false);
     }
   };
 
-  const loginAsDemo = async (userEmail: string) => {
-    setEmail(userEmail);
-    setPassword('admin123'); // Assuming default password for demo
-    toast.info('Please enter the password for the demo account');
+  useEffect(() => {
+    const storedUser = localStorage.getItem('hrms_user');
+    if (storedUser) {
+      navigate('/app');
+    }
+  }, [navigate]);
+
+  const handleForgotPassword = async () => {
+    const normalizedEmail = email.trim().toLowerCase();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!normalizedEmail) {
+      toast.error('Please enter your email address first');
+      return;
+    }
+
+    if (!emailRegex.test(normalizedEmail)) {
+      toast.error('Please enter a valid email address before requesting a password reset.');
+      return;
+    }
+
+    setLoading(true);
+    const result = await resetEmployeePassword(normalizedEmail);
+    setLoading(false);
+    
+    if (result.success) {
+      toast.success('Password reset email sent. Check your inbox for a link to reset your password.');
+    } else {
+      toast.error(result.error || 'Unable to send password reset email. Please try again.');
+    }
   };
 
   return (
@@ -124,13 +122,23 @@ export function Login() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {confirmed && (
+            <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-green-900 mb-4">
+              Your email has been confirmed. Please sign in with the temporary password sent by your administrator, or use the forgot password link to set a new password.
+            </div>
+          )}
+          {passwordReset && (
+            <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-green-900 mb-4">
+              Your password has been reset successfully. You can now sign in with your new password.
+            </div>
+          )}
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="admin@hrms.com"
+                placeholder="your@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -147,52 +155,17 @@ export function Login() {
                 required
               />
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Signing in...' : 'Sign In'}
-            </Button>
-          </form>
-
-          <div className="mt-6">
-            <p className="text-sm text-gray-500 text-center mb-3">Demo Accounts:</p>
-            <div className="space-y-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full justify-start"
-                onClick={() => loginAsDemo('admin@hrms.com')}
-              >
-                <span className="font-medium">Admin</span>
-                <span className="ml-auto text-xs text-gray-500">admin@hrms.com</span>
+            <div className="flex items-center justify-between gap-3">
+              <Button type="submit" className="flex-1" disabled={loading}>
+                {loading ? 'Signing in...' : 'Sign In'}
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full justify-start"
-                onClick={() => loginAsDemo('hr@hrms.com')}
-              >
-                <span className="font-medium">HR Manager</span>
-                <span className="ml-auto text-xs text-gray-500">hr@hrms.com</span>
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full justify-start"
-                onClick={() => loginAsDemo('manager@hrms.com')}
-              >
-                <span className="font-medium">Manager</span>
-                <span className="ml-auto text-xs text-gray-500">manager@hrms.com</span>
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full justify-start"
-                onClick={() => loginAsDemo('employee@hrms.com')}
-              >
-                <span className="font-medium">Employee</span>
-                <span className="ml-auto text-xs text-gray-500">employee@hrms.com</span>
+              <Button type="button" variant="outline" onClick={handleForgotPassword} disabled={loading}>
+                Forgot password?
               </Button>
             </div>
-          </div>
+          </form>
+
+
         </CardContent>
       </Card>
     </div>

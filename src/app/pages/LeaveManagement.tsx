@@ -241,8 +241,8 @@ export function LeaveManagement() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Leave Management</h1>
-          <p className="text-gray-500 mt-1">Track and manage employee leave requests</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Leave Management</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Track and manage employee leave requests</p>
         </div>
         {!canApprove && (
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -318,15 +318,15 @@ export function LeaveManagement() {
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Total</span>
+                  <span className="text-gray-500 dark:text-gray-400">Total</span>
                   <span className="font-medium">{leaveBalance.annual.total} days</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Used</span>
+                  <span className="text-gray-500 dark:text-gray-400">Used</span>
                   <span className="font-medium">{leaveBalance.annual.used} days</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Remaining</span>
+                  <span className="text-gray-500 dark:text-gray-400">Remaining</span>
                   <span className="font-bold text-blue-600">{leaveBalance.annual.remaining} days</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2 mt-4">

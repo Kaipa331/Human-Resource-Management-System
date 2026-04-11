@@ -408,3 +408,60 @@ EXCEPTION WHEN OTHERS THEN NULL; END $$;
 DO $$ BEGIN
     CREATE POLICY "Allow all access to performance_goals" ON public.performance_goals FOR ALL USING (true);
 EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
+-- Departments Table
+CREATE TABLE IF NOT EXISTS public.departments (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    head_of_department TEXT NOT NULL,
+    head_image_url TEXT,
+    employee_count INTEGER DEFAULT 0,
+    budget_utilization INTEGER DEFAULT 0,
+    status TEXT DEFAULT 'STABLE',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+DO $$ BEGIN
+    ALTER TABLE public.departments ENABLE ROW LEVEL SECURITY;
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
+DO $$ BEGIN
+    CREATE POLICY "Allow all access to departments" ON public.departments FOR ALL USING (true);
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
+-- Payroll Cycles Table
+CREATE TABLE IF NOT EXISTS public.payroll_cycles (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    period TEXT NOT NULL UNIQUE,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    status TEXT DEFAULT 'In Progress',
+    total_employees INTEGER DEFAULT 0,
+    total_gross NUMERIC DEFAULT 0,
+    total_net NUMERIC DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+DO $$ BEGIN
+    ALTER TABLE public.payroll_cycles ENABLE ROW LEVEL SECURITY;
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
+DO $$ BEGIN
+    CREATE POLICY "Allow all access to payroll_cycles" ON public.payroll_cycles FOR ALL USING (true);
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
+-- Update Payroll Table to reference cycles
+ALTER TABLE public.payroll
+    ADD COLUMN IF NOT EXISTS cycle_id UUID REFERENCES public.payroll_cycles(id) ON DELETE CASCADE,
+    ADD COLUMN IF NOT EXISTS gross_salary NUMERIC DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS tax_deduction NUMERIC DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT now();
+
+-- Update Training Courses with additional fields
+ALTER TABLE public.training_courses
+    ADD COLUMN IF NOT EXISTS price NUMERIC DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS description TEXT,
+    ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT now();
