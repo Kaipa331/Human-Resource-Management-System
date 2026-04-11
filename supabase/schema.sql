@@ -430,6 +430,28 @@ DO $$ BEGIN
     CREATE POLICY "Allow all access to departments" ON public.departments FOR ALL USING (true);
 EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
+-- Succession Planning Table
+CREATE TABLE IF NOT EXISTS public.succession_plans (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    role TEXT NOT NULL,
+    department TEXT NOT NULL,
+    current_holder TEXT,
+    successor_candidates TEXT[] DEFAULT ARRAY[]::TEXT[],
+    readiness_level TEXT DEFAULT 'Emerging',
+    status TEXT DEFAULT 'Open',
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+DO $$ BEGIN
+    ALTER TABLE public.succession_plans ENABLE ROW LEVEL SECURITY;
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
+DO $$ BEGIN
+    CREATE POLICY "Allow all access to succession_plans" ON public.succession_plans FOR ALL USING (true);
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
 -- Payroll Cycles Table
 CREATE TABLE IF NOT EXISTS public.payroll_cycles (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,

@@ -12,6 +12,7 @@ import { Payroll } from "./pages/Payroll";
 import { Performance } from "./pages/Performance";
 import { Training } from "./pages/Training";
 import { Reports } from "./pages/Reports";
+import { SuccessionPlanning } from "./pages/SuccessionPlanning";
 import { EmployeeSelfService } from "./pages/EmployeeSelfService";
 import { Department } from "./pages/Department";
 import { NotFound } from "./pages/NotFound";
@@ -42,6 +43,7 @@ export const router = createBrowserRouter([
       { path: "payroll", Component: Payroll },
       { path: "performance", Component: Performance },
       { path: "training", Component: Training },
+      { path: "succession", Component: SuccessionPlanning },
       { path: "reports", Component: Reports },
       { path: "self-service", Component: EmployeeSelfService },
       { path: "*", Component: NotFound },

@@ -25,6 +25,7 @@ export function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
     { to: '/app/attendance', iconName: 'fact_check', label: 'Attendance', show: true },
     { to: '/app/payroll', iconName: 'payments', label: 'Payroll', show: isHRorAdmin },
     { to: '/app/performance', iconName: 'insights', label: 'Performance', show: isHRorAdmin || isManager },
+    { to: '/app/succession', iconName: 'workspace_premium', label: 'Succession', show: isHRorAdmin || isManager },
     { to: '/app/training', iconName: 'school', label: 'Training', show: isHRorAdmin },
     { to: '/app/reports', iconName: 'assessment', label: 'Reports', show: isHRorAdmin || isManager },
   ];
