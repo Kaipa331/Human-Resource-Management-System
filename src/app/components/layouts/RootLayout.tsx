@@ -10,23 +10,39 @@ export function RootLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
 
-  // Initialize theme on mount
+  // Initialize theme on mount and when user changes
   useEffect(() => {
-    const savedTheme = localStorage.getItem('hrms_theme');
-    const prefersDark = savedTheme ? savedTheme === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const getUserTheme = () => {
+      const storedUser = localStorage.getItem('hrms_user');
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        const userTheme = localStorage.getItem(`hrms_theme_${user.email}`);
+        return userTheme ? userTheme === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+      }
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    };
+
+    const prefersDark = getUserTheme();
     setIsDarkMode(prefersDark);
     if (prefersDark) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
-  }, []);
+  }, [user]); // Re-run when user changes
 
   // Toggle theme
   const toggleTheme = () => {
     const newDarkMode = !isDarkMode;
     setIsDarkMode(newDarkMode);
-    localStorage.setItem('hrms_theme', newDarkMode ? 'dark' : 'light');
+    
+    // Store theme per user
+    const storedUser = localStorage.getItem('hrms_user');
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      localStorage.setItem(`hrms_theme_${user.email}`, newDarkMode ? 'dark' : 'light');
+    }
+    
     if (newDarkMode) {
       document.documentElement.classList.add('dark');
     } else {

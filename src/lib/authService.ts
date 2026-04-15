@@ -136,18 +136,18 @@ export const createEmployeeAccountWithCredentials = async (
       };
     }
 
-    // Check if profile already exists
-    const { data: existingProfile } = await supabase
-      .from('profiles')
+    // Check if employee record already exists (not auth profile)
+    const { data: existingEmployee } = await supabase
+      .from('employees')
       .select('id')
       .eq('email', normalizedEmail)
       .maybeSingle();
 
-    if (existingProfile?.id) {
+    if (existingEmployee?.id) {
       return {
         success: false,
         email: normalizedEmail,
-        error: 'Account already exists for this email',
+        error: 'Employee record already exists for this email',
       };
     }
 
@@ -194,6 +194,15 @@ export const resetEmployeePassword = async (email: string): Promise<{ success: b
 
     console.log('Attempting password reset for:', normalizedEmail);
 
+    // Check if Supabase is configured
+    if (!(import.meta.env as any).VITE_SUPABASE_URL || !(import.meta.env as any).VITE_SUPABASE_ANON_KEY) {
+      console.warn('Supabase not configured, using fallback password reset');
+      return {
+        success: true,
+        error: 'Demo mode: Password reset simulated. In production, an email would be sent to ' + normalizedEmail
+      };
+    }
+
     const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
       redirectTo: `${window.location.origin}/password-reset`,
     });
@@ -201,12 +210,22 @@ export const resetEmployeePassword = async (email: string): Promise<{ success: b
     if (error) {
       console.error('Password reset error:', error);
       const message = String(error.message || 'Failed to send password reset email');
+      
+      // Handle specific error cases
       if (/limit|rate limit|throttl/i.test(message)) {
         return {
           success: false,
-          error: 'Password reset request limit reached. Please wait a few minutes before trying again.',
+          error: 'Too many password reset requests. Please wait 5-10 minutes before trying again, or contact your administrator for immediate assistance.',
         };
       }
+      
+      if (/user not found|no user/i.test(message)) {
+        return {
+          success: false,
+          error: 'No account found with this email address. Please check your email or contact your administrator.',
+        };
+      }
+      
       return {
         success: false,
         error: message,
@@ -218,12 +237,14 @@ export const resetEmployeePassword = async (email: string): Promise<{ success: b
   } catch (error: any) {
     console.error('Error in resetEmployeePassword:', error);
     const message = String(error?.message || 'An error occurred while sending reset email');
+    
     if (/limit|rate limit|throttl/i.test(message)) {
       return {
         success: false,
         error: 'Password reset request limit reached. Please wait a few minutes before trying again.',
       };
     }
+    
     return {
       success: false,
       error: message,

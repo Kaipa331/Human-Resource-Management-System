@@ -193,44 +193,23 @@ export function Dashboard() {
   if (isEmployee) {
     return (
       <div className="space-y-6">
-        <section className="relative overflow-hidden rounded-[2rem] bg-gradient-to-r from-slate-950 via-blue-900 to-cyan-600 p-8 shadow-2xl text-white">
-          <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_top_right,_rgba(255,255,255,0.35),_transparent_35%)]" />
-          <div className="relative grid gap-8 lg:grid-cols-[1.6fr_0.9fr] items-center">
-            <div>
-              <p className="text-sm uppercase tracking-[0.25em] text-cyan-200/90">Human Resource Management</p>
-              <h1 className="mt-4 text-4xl md:text-5xl font-semibold tracking-tight">{heroTitle}</h1>
-              <p className="mt-4 max-w-2xl text-sm md:text-base text-cyan-100/90">{heroSubtitle}</p>
-              <p className="mt-4 max-w-2xl text-sm text-cyan-100/80">{heroDescription}</p>
-
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Button variant="secondary" className="min-w-[10rem]" onClick={() => navigate('/self-service')}>
-                  Open my portal
-                </Button>
-                <Button variant="outline" className="min-w-[10rem] text-white border-white/30 hover:border-white" onClick={() => navigate('/attendance')}>
-                  View attendance
-                </Button>
-              </div>
-            </div>
-
-            <div className="rounded-[1.5rem] border border-white/10 bg-white/10 p-6 backdrop-blur-xl shadow-lg">
-              <div className="mb-5">
-                <p className="text-sm uppercase tracking-[0.2em] text-cyan-100/70">Today’s snapshot</p>
-                <h2 className="mt-3 text-2xl font-semibold dark:text-white">Fast access to what matters</h2>
-              </div>
-              <div className="space-y-4">
-                <div className="rounded-3xl bg-slate-950/80 p-4">
-                  <p className="text-sm text-cyan-200">Pending leave</p>
-                  <p className="mt-2 text-3xl font-semibold">{pendingLeaves}</p>
-                </div>
-                <div className="rounded-3xl bg-slate-950/80 p-4">
-                  <p className="text-sm text-cyan-200">Days present this month</p>
-                  <p className="mt-2 text-3xl font-semibold">{daysPresentThisMonth}</p>
-                </div>
-              </div>
-            </div>
+        {/* Welcome Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{heroTitle}</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">{heroSubtitle}</p>
           </div>
-        </section>
+          <div className="flex gap-3">
+            <Button onClick={() => navigate('/self-service')}>
+              My Portal
+            </Button>
+            <Button variant="outline" onClick={() => navigate('/attendance')}>
+              Attendance
+            </Button>
+          </div>
+        </div>
 
+        {/* Employee Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
           {employeeStats.map((stat) => (
             <Card key={stat.title}>
@@ -250,40 +229,47 @@ export function Dashboard() {
           ))}
         </div>
 
+        {/* Quick Actions & Recent Activity */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
               <CardTitle>Quick Actions</CardTitle>
-              <CardDescription>Go straight to the tools you use most.</CardDescription>
+              <CardDescription>Manage your employee services</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/self-service?tab=my-leave')}>
                 <Calendar className="w-4 h-4 mr-2" />
-                Request or review leave
+                Request Leave
               </Button>
               <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/attendance')}>
                 <UserCheck className="w-4 h-4 mr-2" />
-                View my attendance
+                View Attendance
+              </Button>
+              <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/self-service?tab=personal')}>
+                <FileText className="w-4 h-4 mr-2" />
+                Update Profile
               </Button>
               <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/self-service?tab=documents')}>
                 <FileText className="w-4 h-4 mr-2" />
-                Open my documents
+                My Documents
               </Button>
-              <p className="text-sm text-gray-500 dark:text-gray-400 pt-2">
-                You currently have <span className="font-semibold text-gray-800 dark:text-gray-200">{approvedPersonalLeaves}</span> approved leave request{approvedPersonalLeaves === 1 ? '' : 's'} on record.
-              </p>
+              <div className="pt-3 border-t">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <span className="font-semibold">{approvedPersonalLeaves}</span> approved leave request{approvedPersonalLeaves === 1 ? '' : 's'}
+                </p>
+              </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>Recent Leave Updates</CardTitle>
-              <CardDescription>Your latest leave activity.</CardDescription>
+              <CardTitle>Recent Activity</CardTitle>
+              <CardDescription>Your latest updates</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {recentLeaves.length > 0 ? recentLeaves.map((lv, index) => (
-                  <div key={index} className="flex items-start gap-4">
+                  <div key={index} className="flex items-start gap-3">
                     <div className="p-2 bg-gray-100 dark:bg-slate-900 rounded-lg">
                       <Calendar className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                     </div>
@@ -296,8 +282,65 @@ export function Dashboard() {
                     </Badge>
                   </div>
                 )) : (
-                  <p className="text-gray-400 dark:text-gray-500 text-sm text-center py-4">No leave updates yet.</p>
+                  <p className="text-gray-400 dark:text-gray-500 text-sm text-center py-4">No recent activity</p>
                 )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Leave Balance</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Pending</span>
+                  <span className="font-medium">{pendingLeaves}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Approved</span>
+                  <span className="font-medium">{approvedPersonalLeaves}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">This Month</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Days Present</span>
+                  <span className="font-medium">{daysPresentThisMonth}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Department</span>
+                  <span className="font-medium">{user?.department || 'General'}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Quick Info</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Role</span>
+                  <span className="font-medium">{user?.role || 'Employee'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Email</span>
+                  <span className="font-medium text-xs truncate">{user?.email}</span>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -359,7 +402,13 @@ export function Dashboard() {
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <p className="text-gray-400 text-center py-12">No employee data yet. Add employees to see the distribution.</p>
+              <div className="text-center py-12">
+                <div className="text-gray-400 mb-4">
+                  <Users className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                  <p className="text-lg font-medium">No departments yet</p>
+                  <p className="text-sm mt-2">Add employees and departments to see distribution</p>
+                </div>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -410,7 +459,11 @@ export function Dashboard() {
                 <span className="text-xs text-gray-400">{emp.join_date}</span>
               </div>
             )) : (
-              <p className="text-gray-400 text-sm text-center py-4">No employees added yet.</p>
+              <div className="text-center py-8">
+                <Users className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                <p className="text-gray-400 font-medium">No employees yet</p>
+                <p className="text-sm text-gray-500 mt-1">Start adding employees to build your team</p>
+              </div>
             )}
           </div>
         </CardContent>

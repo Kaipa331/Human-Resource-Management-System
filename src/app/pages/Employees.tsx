@@ -39,6 +39,22 @@ interface Employee {
   join_date: string;
   salary: number | string;
   role?: string;
+  // 🔹 Identity & Basics
+  date_of_birth: string;
+  gender: string;
+  address: string;
+  // 🔹 Employment Info
+  employment_type: string;
+  manager_supervisor: string;
+  work_location: string;
+  // 🔹 Emergency Info
+  emergency_contact_name: string;
+  emergency_contact_phone: string;
+  emergency_contact_relationship: string;
+  // 🔹 Payroll Basics
+  bank_name: string;
+  bank_account_number: string;
+  tax_id_pin: string;
 }
 
 export function Employees() {
@@ -68,6 +84,43 @@ export function Employees() {
     salary: '',
     joinDate: '',
     role: 'Employee',
+    // 🔹 Identity & Basics
+    dateOfBirth: '',
+    gender: '',
+    address: '',
+    // 🔹 Employment Info
+    employmentType: '',
+    managerSupervisor: '',
+    workLocation: '',
+    // 🔹 Emergency Info
+    emergencyContactName: '',
+    emergencyContactPhone: '',
+    emergencyContactRelationship: '',
+    // 🔹 Payroll Basics
+    bankName: '',
+    bankAccountNumber: '',
+    taxIdPin: '',
+  } as {
+    name: string;
+    email: string;
+    phone: string;
+    department: string;
+    position: string;
+    salary: string;
+    joinDate: string;
+    role: string;
+    dateOfBirth: string;
+    gender: string;
+    address: string;
+    employmentType: string;
+    managerSupervisor: string;
+    workLocation: string;
+    emergencyContactName: string;
+    emergencyContactPhone: string;
+    emergencyContactRelationship: string;
+    bankName: string;
+    bankAccountNumber: string;
+    taxIdPin: string;
   });
 
   useEffect(() => {
@@ -100,7 +153,13 @@ export function Employees() {
 
   const openAddDialog = () => {
     setEditingEmployee(null);
-    setFormData({ name: '', email: '', phone: '', department: '', position: '', salary: '', joinDate: '', role: 'Employee' });
+    setFormData({ 
+      name: '', email: '', phone: '', department: '', position: '', salary: '', joinDate: '', role: 'Employee',
+      dateOfBirth: '', gender: '', address: '',
+      employmentType: '', managerSupervisor: '', workLocation: '',
+      emergencyContactName: '', emergencyContactPhone: '', emergencyContactRelationship: '',
+      bankName: '', bankAccountNumber: '', taxIdPin: ''
+    });
     setIsDialogOpen(true);
   };
 
@@ -127,9 +186,21 @@ export function Employees() {
       phone: emp.phone || '',
       department: emp.department || '',
       position: emp.position || '',
-      salary: emp.salary ? String(emp.salary) : '',
+      salary: String(emp.salary || ''),
       joinDate: emp.join_date || '',
-      role,
+      role: role,
+      dateOfBirth: emp.date_of_birth || '',
+      gender: emp.gender || '',
+      address: emp.address || '',
+      employmentType: emp.employment_type || '',
+      managerSupervisor: emp.manager_supervisor || '',
+      workLocation: emp.work_location || '',
+      emergencyContactName: emp.emergency_contact_name || '',
+      emergencyContactPhone: emp.emergency_contact_phone || '',
+      emergencyContactRelationship: emp.emergency_contact_relationship || '',
+      bankName: emp.bank_name || '',
+      bankAccountNumber: emp.bank_account_number || '',
+      taxIdPin: emp.tax_id_pin || '',
     });
     setIsDialogOpen(true);
   };
@@ -176,8 +247,24 @@ export function Employees() {
             phone: formData.phone,
             department: formData.department,
             position: formData.position,
+            salary: parsedSalary,
             join_date: joinStr,
-            salary: parsedSalary
+            // 🔹 Identity & Basics
+            date_of_birth: formData.dateOfBirth,
+            gender: formData.gender,
+            address: formData.address,
+            // 🔹 Employment Info
+            employment_type: formData.employmentType,
+            manager_supervisor: formData.managerSupervisor,
+            work_location: formData.workLocation,
+            // 🔹 Emergency Info
+            emergency_contact_name: formData.emergencyContactName,
+            emergency_contact_phone: formData.emergencyContactPhone,
+            emergency_contact_relationship: formData.emergencyContactRelationship,
+            // 🔹 Payroll Basics
+            bank_name: formData.bankName,
+            bank_account_number: formData.bankAccountNumber,
+            tax_id_pin: formData.taxIdPin,
           })
           .eq('id', editingEmployee.id);
         if (error) throw error;
@@ -225,7 +312,23 @@ export function Employees() {
             join_date: joinStr,
             employee_id: empId,
             status: 'Active',
-            salary: parsedSalary
+            salary: parsedSalary,
+            // 🔹 Identity & Basics
+            date_of_birth: formData.dateOfBirth,
+            gender: formData.gender,
+            address: formData.address,
+            // 🔹 Employment Info
+            employment_type: formData.employmentType,
+            manager_supervisor: formData.managerSupervisor,
+            work_location: formData.workLocation,
+            // 🔹 Emergency Info
+            emergency_contact_name: formData.emergencyContactName,
+            emergency_contact_phone: formData.emergencyContactPhone,
+            emergency_contact_relationship: formData.emergencyContactRelationship,
+            // 🔹 Payroll Basics
+            bank_name: formData.bankName,
+            bank_account_number: formData.bankAccountNumber,
+            tax_id_pin: formData.taxIdPin,
           }])
           .select('id')
           .single();
@@ -326,61 +429,161 @@ export function Employees() {
             <Plus className="w-4 h-4 mr-2" />
             Add Employee
           </Button>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingEmployee ? 'Edit Employee' : 'Add New Employee'}</DialogTitle>
               <DialogDescription>{editingEmployee ? 'Update employee details' : 'Enter employee details to add them to the system'}</DialogDescription>
             </DialogHeader>
-            <div className="grid grid-cols-2 gap-4 mt-4">
-              <div>
-                <Label>Full Name *</Label>
-                <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Precious Kaipa" />
+            <div className="space-y-6">
+              {/* 🔹 Identity & Basics */}
+              <div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-800">
+                <h3 className="text-lg font-semibold mb-4 text-blue-600">🔹 Identity & Basics</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Full Name *</Label>
+                    <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Precious Kaipa" />
+                  </div>
+                  <div>
+                    <Label>Email *</Label>
+                    <Input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="john@company.com" disabled={!!editingEmployee} />
+                  </div>
+                  <div>
+                    <Label>Phone</Label>
+                    <Input value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="+265 991 234 567" />
+                  </div>
+                  <div>
+                    <Label>Date of Birth</Label>
+                    <Input type="date" value={formData.dateOfBirth} onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label>Gender</Label>
+                    <Select value={formData.gender} onValueChange={(val) => setFormData({ ...formData, gender: val })}>
+                      <SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Male">Male</SelectItem>
+                        <SelectItem value="Female">Female</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="md:col-span-2">
+                    <Label>Address</Label>
+                    <Input value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} placeholder="123 Main St, City, Country" />
+                  </div>
+                </div>
               </div>
-              <div>
-                <Label>Email *</Label>
-                <Input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="john@company.com" disabled={!!editingEmployee} />
+
+              {/* 🔹 Employment Info */}
+              <div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-800">
+                <h3 className="text-lg font-semibold mb-4 text-green-600">🔹 Employment Info</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Department *</Label>
+                    <Select value={formData.department} onValueChange={(val) => setFormData({ ...formData, department: val })}>
+                      <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="IT">IT</SelectItem>
+                        <SelectItem value="HR">HR</SelectItem>
+                        <SelectItem value="Finance">Finance</SelectItem>
+                        <SelectItem value="Sales">Sales</SelectItem>
+                        <SelectItem value="Marketing">Marketing</SelectItem>
+                        <SelectItem value="Operations">Operations</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Position</Label>
+                    <Input value={formData.position} onChange={(e) => setFormData({ ...formData, position: e.target.value })} placeholder="Software Engineer" />
+                  </div>
+                  <div>
+                    <Label>Employment Type</Label>
+                    <Select value={formData.employmentType} onValueChange={(val) => setFormData({ ...formData, employmentType: val })}>
+                      <SelectTrigger><SelectValue placeholder="Select employment type" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Full-time">Full-time</SelectItem>
+                        <SelectItem value="Part-time">Part-time</SelectItem>
+                        <SelectItem value="Contract">Contract</SelectItem>
+                        <SelectItem value="Intern">Intern</SelectItem>
+                        <SelectItem value="Temporary">Temporary</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Manager/Supervisor</Label>
+                    <Input value={formData.managerSupervisor} onChange={(e) => setFormData({ ...formData, managerSupervisor: e.target.value })} placeholder="John Smith" />
+                  </div>
+                  <div>
+                    <Label>Work Location</Label>
+                    <Input value={formData.workLocation} onChange={(e) => setFormData({ ...formData, workLocation: e.target.value })} placeholder="Main Office - Lilongwe" />
+                  </div>
+                  <div>
+                    <Label>Join Date</Label>
+                    <Input type="date" value={formData.joinDate} onChange={(e) => setFormData({ ...formData, joinDate: e.target.value })} />
+                  </div>
+                </div>
               </div>
-              <div>
-                <Label>Phone</Label>
-                <Input value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="+265 991 234 567" />
+
+              {/* 🔹 Emergency Info */}
+              <div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-800">
+                <h3 className="text-lg font-semibold mb-4 text-red-600">🔹 Emergency Info</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Emergency Contact Name</Label>
+                    <Input value={formData.emergencyContactName} onChange={(e) => setFormData({ ...formData, emergencyContactName: e.target.value })} placeholder="Jane Doe" />
+                  </div>
+                  <div>
+                    <Label>Emergency Contact Phone</Label>
+                    <Input value={formData.emergencyContactPhone} onChange={(e) => setFormData({ ...formData, emergencyContactPhone: e.target.value })} placeholder="+265 991 234 568" />
+                  </div>
+                  <div>
+                    <Label>Relationship</Label>
+                    <Select value={formData.emergencyContactRelationship} onValueChange={(val) => setFormData({ ...formData, emergencyContactRelationship: val })}>
+                      <SelectTrigger><SelectValue placeholder="Select relationship" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Spouse">Spouse</SelectItem>
+                        <SelectItem value="Parent">Parent</SelectItem>
+                        <SelectItem value="Sibling">Sibling</SelectItem>
+                        <SelectItem value="Child">Child</SelectItem>
+                        <SelectItem value="Friend">Friend</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </div>
-              <div>
-                <Label>Department *</Label>
-                <Select value={formData.department} onValueChange={(val) => setFormData({ ...formData, department: val })}>
-                  <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="IT">IT</SelectItem>
-                    <SelectItem value="HR">HR</SelectItem>
-                    <SelectItem value="Finance">Finance</SelectItem>
-                    <SelectItem value="Sales">Sales</SelectItem>
-                    <SelectItem value="Marketing">Marketing</SelectItem>
-                    <SelectItem value="Operations">Operations</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Position</Label>
-                <Input value={formData.position} onChange={(e) => setFormData({ ...formData, position: e.target.value })} placeholder="Software Engineer" />
-              </div>
-              <div>
-                <Label>Role</Label>
-                <Select value={formData.role} onValueChange={(val) => setFormData({ ...formData, role: val })}>
-                  <SelectTrigger><SelectValue placeholder="Select role" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Employee">Employee</SelectItem>
-                    <SelectItem value="HR">HR</SelectItem>
-                    <SelectItem value="Manager">Manager</SelectItem>
-                    <SelectItem value="Admin">Admin</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Salary</Label>
-                <Input value={formData.salary} onChange={(e) => setFormData({ ...formData, salary: e.target.value })} placeholder="MWK 850,000" />
-              </div>
-              <div className="col-span-2">
-                <Label>Join Date</Label>
-                <Input type="date" value={formData.joinDate} onChange={(e) => setFormData({ ...formData, joinDate: e.target.value })} />
+
+              {/* 🔹 Payroll Basics */}
+              <div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-800">
+                <h3 className="text-lg font-semibold mb-4 text-purple-600">🔹 Payroll Basics</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Bank Name</Label>
+                    <Input value={formData.bankName} onChange={(e) => setFormData({ ...formData, bankName: e.target.value })} placeholder="National Bank of Malawi" />
+                  </div>
+                  <div>
+                    <Label>Account Number</Label>
+                    <Input value={formData.bankAccountNumber} onChange={(e) => setFormData({ ...formData, bankAccountNumber: e.target.value })} placeholder="1234567890" />
+                  </div>
+                  <div>
+                    <Label>Tax ID / PIN</Label>
+                    <Input value={formData.taxIdPin} onChange={(e) => setFormData({ ...formData, taxIdPin: e.target.value })} placeholder="Tax ID or PIN" />
+                  </div>
+                  <div>
+                    <Label>Salary</Label>
+                    <Input value={formData.salary} onChange={(e) => setFormData({ ...formData, salary: e.target.value })} placeholder="50000" />
+                  </div>
+                  <div>
+                    <Label>Role</Label>
+                    <Select value={formData.role} onValueChange={(val) => setFormData({ ...formData, role: val })}>
+                      <SelectTrigger><SelectValue placeholder="Select role" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Employee">Employee</SelectItem>
+                        <SelectItem value="HR">HR</SelectItem>
+                        <SelectItem value="Manager">Manager</SelectItem>
+                        <SelectItem value="Admin">Admin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-4">
