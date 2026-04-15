@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router';
-import { Sidebar } from '../Sidebar';
-import { Header } from '../Header';
+import { Sidebar } from '../Sidebar-Mobile';
+import { Header } from '../Header-Mobile';
 
 export function RootLayout() {
   const navigate = useNavigate();
