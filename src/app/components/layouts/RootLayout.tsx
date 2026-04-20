@@ -102,7 +102,7 @@ export function RootLayout() {
           isDarkMode={isDarkMode}
           toggleTheme={toggleTheme}
         />
-        <main className="flex-1 overflow-y-auto p-8 space-y-8 max-w-[1400px] mx-auto w-full">
+        <main className="flex-1 overflow-y-auto p-8 space-y-8 w-full">
           <Outlet />
         </main>
         {/* Mobile Navigation */}

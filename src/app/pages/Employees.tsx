@@ -669,32 +669,66 @@ export function Employees() {
                 </div>
                 <div className="grid grid-cols-2 gap-y-4 text-sm mt-4">
                   <div>
-                    <p className="text-gray-500">Email Address</p>
+                    <p className="text-gray-500 font-semibold mb-1">Email Address</p>
                     <p className="font-medium">{viewingEmployee.email}</p>
                   </div>
                   <div>
-                    <p className="text-gray-500">Phone</p>
+                    <p className="text-gray-500 font-semibold mb-1">Phone</p>
                     <p className="font-medium">{viewingEmployee.phone || 'N/A'}</p>
                   </div>
-                  <div>
-                    <p className="text-gray-500">Department</p>
+                  <div className="border-t pt-2 mt-2">
+                    <p className="text-gray-500 font-semibold mb-1">Department</p>
                     <p className="font-medium">{viewingEmployee.department}</p>
                   </div>
+                  <div className="border-t pt-2 mt-2">
+                    <p className="text-gray-500 font-semibold mb-1">Position</p>
+                    <p className="font-medium">{viewingEmployee.position || 'N/A'}</p>
+                  </div>
                   <div>
-                    <p className="text-gray-500">Role</p>
+                    <p className="text-gray-500 font-semibold mb-1">Role</p>
                     <p className="font-medium">{viewingEmployee.role || 'Employee'}</p>
                   </div>
                   <div>
-                    <p className="text-gray-500">Position</p>
-                    <p className="font-medium">{viewingEmployee.position}</p>
+                    <p className="text-gray-500 font-semibold mb-1">Join Date</p>
+                    <p className="font-medium">{viewingEmployee.join_date || 'N/A'}</p>
                   </div>
                   <div>
-                    <p className="text-gray-500">Join Date</p>
-                    <p className="font-medium">{viewingEmployee.join_date}</p>
+                    <p className="text-gray-500 font-semibold mb-1">Employment Type</p>
+                    <p className="font-medium text-blue-600">{viewingEmployee.employment_type || 'N/A'}</p>
                   </div>
                   <div>
-                    <p className="text-gray-500">Salary</p>
+                    <p className="text-gray-500 font-semibold mb-1">Salary</p>
                     <p className="font-medium">MWK {Number(viewingEmployee.salary || 0).toLocaleString()}</p>
+                  </div>
+                  <div className="border-t pt-2 mt-2 col-span-2">
+                    <p className="text-gray-500 font-semibold mb-1">Work Location</p>
+                    <p className="font-medium">{viewingEmployee.work_location || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 font-semibold mb-1">Manager/Supervisor</p>
+                    <p className="font-medium">{viewingEmployee.manager_supervisor || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 font-semibold mb-1">Gender</p>
+                    <p className="font-medium">{viewingEmployee.gender || 'N/A'}</p>
+                  </div>
+                  <div className="border-t pt-2 mt-2 col-span-2">
+                    <p className="text-gray-500 font-semibold mb-1">Address</p>
+                    <p className="font-medium">{viewingEmployee.address || 'N/A'}</p>
+                  </div>
+                  <div className="border-t pt-2 mt-2 col-span-2 bg-red-50 p-2 rounded border border-red-100">
+                    <p className="text-red-700 font-bold mb-1 flex items-center gap-1">
+                      <Phone className="w-3 h-3" />
+                      Emergency Contact
+                    </p>
+                    <p className="font-medium text-gray-800">
+                      {viewingEmployee.emergency_contact_name || 'N/A'}
+                    </p>
+                    {viewingEmployee.emergency_contact_phone && (
+                      <p className="text-xs text-gray-600">
+                        {viewingEmployee.emergency_contact_phone} ({viewingEmployee.emergency_contact_relationship || 'Contact'})
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>

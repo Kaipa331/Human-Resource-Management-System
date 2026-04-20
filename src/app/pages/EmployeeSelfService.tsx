@@ -156,7 +156,7 @@ export function EmployeeSelfService() {
 
       const { data: employee, error } = await supabase
         .from('employees')
-        .select('employee_id, name, email, phone, department, position, join_date')
+        .select('*')
         .eq('email', emailToQuery)
         .maybeSingle();
 
@@ -174,10 +174,12 @@ export function EmployeeSelfService() {
           department: employee.department || user.department || '',
           position: employee.position || '',
           joinDate: employee.join_date ? new Date(employee.join_date).toISOString().split('T')[0] : '',
-          reportingTo: '',
-          location: '',
-          address: '',
-          emergencyContact: '',
+          reportingTo: employee.manager_supervisor || '',
+          location: employee.work_location || '',
+          address: employee.address || '',
+          emergencyContact: employee.emergency_contact_name 
+            ? `${employee.emergency_contact_name}${employee.emergency_contact_phone ? ` (${employee.emergency_contact_phone})` : ''}`
+            : '',
         });
       }
     } catch (err) {

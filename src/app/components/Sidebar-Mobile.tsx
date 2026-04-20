@@ -93,7 +93,7 @@ export function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
       </div>
 
       {/* Desktop Sidebar - Improved */}
-      <div className="hidden md:flex fixed inset-y-0 left-0 z-30 w-64 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex-col gap-2 p-6 border-r border-slate-200 dark:border-slate-800">
+      <div className="hidden md:flex w-64 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex-col gap-2 p-6 border-r border-slate-200 dark:border-slate-800">
         <div className="mb-8">
           <span className="text-lg font-black text-blue-900 dark:text-blue-400">HRMS Atelier</span>
         </div>

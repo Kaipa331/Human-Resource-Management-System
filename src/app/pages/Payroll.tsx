@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
-import { DollarSign, Download, FileText, TrendingUp, Users, Calendar, Plus, Play } from 'lucide-react';
+import { DollarSign, Download, FileText, TrendingUp, Users, Calendar, Plus, Play, Gift, MinusCircle, Percent, Briefcase } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { Input } from '../components/ui/input';
@@ -29,10 +29,24 @@ export function Payroll() {
     totalGross: 0,
     totalNet: 0,
     totalTax: 0,
+    totalBonuses: 0,
+    totalDeductions: 0,
+    totalAllowances: 0,
+    totalCTC: 0,
+    totalEmployerLiabilities: 0,
     averageSalary: 0
   });
-
-  // Load payroll data on component mount
+  const [showAdjustmentsModal, setShowAdjustmentsModal] = useState(false);
+  const [employeesForAdjustments, setEmployeesForAdjustments] = useState<any[]>([]);
+  const [adjustments, setAdjustments] = useState<Record<string, {
+    overtimeHours: number;
+    performanceBonus: number;
+    otherBonus: number;
+    manualDeduction: number;
+  }>>({});
+  const [showPayslipModal, setShowPayslipModal] = useState(false);
+  const [selectedPayslipRecord, setSelectedPayslipRecord] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState<string>('cycles');
   useEffect(() => {
     loadPayrollData();
   }, []);
@@ -92,44 +106,114 @@ export function Payroll() {
     }
   };
 
-  // Process payroll for selected cycle
-  const handleProcessPayroll = async () => {
+  const downloadMRAReport = () => {
+    if (!selectedCycle) return;
+    
+    const records = getFilteredRecords();
+    if (records.length === 0) {
+      toast.error('No records to export. Please process payroll first.');
+      return;
+    }
+
+    const headers = [
+      'Employee Name', 'PIN (Tax ID)', 'Gross Income', 'Pension (5%)', 
+      'Taxable Income', 'PAYE Tax', 'Net Pay', 'Employer Pension (10%)', 'TEVET Levy (1%)'
+    ];
+
+    const csvRows = records.map(record => [
+      record.employees?.name,
+      record.employees?.tax_id || 'N/A',
+      record.grossSalary,
+      record.pensionContrib,
+      record.grossSalary - record.pensionContrib,
+      record.payeTax,
+      record.netSalary,
+      record.employer_pension || record.grossSalary * 0.10, // Uses persisted Employer Pension (10%) or falls back to gross-based
+      record.tevet_levy || record.baseSalary * 0.01  // Uses persisted TEVET or falls back to base-based
+    ]);
+
+    const csvContent = [headers, ...csvRows].map(row => row.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const cycle = payrollCycles.find(c => c.id === selectedCycle);
+    const fileName = cycle ? `MRA_Report_${cycle.cycleName.replace(/\s+/g, '_')}.csv` : `MRA_Report_${selectedCycle}.csv`;
+    a.download = fileName;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    toast.success('MRA Report downloaded successfully');
+  };
+
+  const handleOpenAdjustments = async () => {
     if (!selectedCycle) {
-      toast.error('Please select a payroll cycle');
+      toast.error('Please select a payroll cycle first');
       return;
     }
 
     setIsProcessing(true);
     try {
-      // Get employees for payroll processing
       const { data: employees, error } = await supabase
         .from('employees')
         .select('*')
         .eq('status', 'Active');
 
       if (error) {
-        toast.error('Failed to fetch employees. Please check database connection.');
+        toast.error('Failed to fetch employees');
         return;
       }
 
       if (employees && employees.length > 0) {
-        const success = await PayrollService.processPayrollCycle(selectedCycle, employees);
-        
-        if (success) {
-          toast.success('Payroll processed successfully');
-          loadPayrollData();
-        } else {
-          toast.error('Failed to process payroll. Database schema may not be properly configured.');
-        }
+        setEmployeesForAdjustments(employees);
+        const initialAdjustments: Record<string, any> = {};
+        employees.forEach((emp: any) => {
+          initialAdjustments[emp.id] = {
+            overtimeHours: 0,
+            performanceBonus: 0,
+            otherBonus: 0,
+            manualDeduction: 0
+          };
+        });
+        setAdjustments(initialAdjustments);
+        setShowAdjustmentsModal(true);
       } else {
-        toast.error('No active employees found');
+        toast.error('No active employees found to process');
       }
-    } catch (error) {
-      console.error('Error processing payroll:', error);
-      toast.error('Failed to process payroll. Please ensure database schema is properly configured.');
+    } catch (err) {
+      console.error('Error opening adjustments:', err);
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const handleFinalProcess = async () => {
+    setIsProcessing(true);
+    try {
+      const result = await PayrollService.processPayrollCycle(selectedCycle, employeesForAdjustments, adjustments);
+
+      if (result.success) {
+        toast.success('Payroll processed successfully');
+        setShowAdjustmentsModal(false);
+        loadPayrollData();
+      } else {
+        toast.error(`Processing failed: ${result.error}`);
+      }
+    } catch (error: any) {
+      toast.error(`Unexpected error: ${error.message}`);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const updateAdjustment = (empId: string, field: string, value: string) => {
+    const numValue = parseFloat(value) || 0;
+    setAdjustments(prev => ({
+      ...prev,
+      [empId]: {
+        ...prev[empId],
+        [field]: numValue
+      }
+    }));
   };
 
   // Get filtered payroll records for selected cycle
@@ -176,15 +260,19 @@ export function Payroll() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Payroll Management</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Manage employee payroll and compensation</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Malawi Payroll Management</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">MRA & Pension Act Compliant Payroll System</p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" onClick={() => downloadMRAReport()} disabled={!selectedCycle}>
+            <Download className="w-4 h-4 mr-2" />
+            MRA Report
+          </Button>
           <Button onClick={() => setShowNewCycleDialog(true)}>
             <Plus className="w-4 h-4 mr-2" />
             New Cycle
           </Button>
-          <Button onClick={handleProcessPayroll} disabled={isProcessing || !selectedCycle}>
+          <Button onClick={handleOpenAdjustments} disabled={isProcessing || !selectedCycle}>
             <Play className="w-4 h-4 mr-2" />
             {isProcessing ? 'Processing...' : 'Process Payroll'}
           </Button>
@@ -192,7 +280,7 @@ export function Payroll() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Employees</CardTitle>
@@ -200,7 +288,7 @@ export function Payroll() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{payrollSummary.totalEmployees}</div>
-            <p className="text-xs text-muted-foreground">Active employees</p>
+            <p className="text-xs text-muted-foreground">Active staff</p>
           </CardContent>
         </Card>
 
@@ -228,7 +316,73 @@ export function Payroll() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Average Salary</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Tax (PAYE)</CardTitle>
+            <Percent className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(payrollSummary.totalTax)}</div>
+            <p className="text-xs text-muted-foreground">Income tax</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Bonuses</CardTitle>
+            <Gift className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(payrollSummary.totalBonuses)}</div>
+            <p className="text-xs text-muted-foreground">Performance & others</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Deductions</CardTitle>
+            <MinusCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(payrollSummary.totalDeductions)}</div>
+            <p className="text-xs text-muted-foreground">All deductions</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Allowances</CardTitle>
+            <Briefcase className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(payrollSummary.totalAllowances)}</div>
+            <p className="text-xs text-muted-foreground">Housing, transport, etc.</p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-blue-200 bg-blue-50/30">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Company Cost (CTC)</CardTitle>
+            <DollarSign className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-700">{formatCurrency(payrollSummary.totalCTC)}</div>
+            <p className="text-xs text-muted-foreground">Gross + Employer Pension + TEVET</p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-orange-200 bg-orange-50/30">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Liabilities (Due 14th)</CardTitle>
+            <FileText className="h-4 w-4 text-orange-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-700">{formatCurrency(payrollSummary.totalEmployerLiabilities)}</div>
+            <p className="text-xs text-muted-foreground">PAYE + All Pension + TEVET</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Average Net Pay</CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -239,7 +393,7 @@ export function Payroll() {
       </div>
 
       {/* Payroll Cycles and Records */}
-      <Tabs defaultValue="cycles" className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList>
           <TabsTrigger value="cycles">Payroll Cycles</TabsTrigger>
           <TabsTrigger value="records">Payroll Records</TabsTrigger>
@@ -266,7 +420,7 @@ export function Payroll() {
                         <div>
                           <h3 className="font-medium">{cycle.cycleName}</h3>
                           <p className="text-sm text-gray-500">
-                            {new Date(cycle.startDate).toLocaleDateString()} - {new Date(cycle.endDate).toLocaleDateString()}
+                            {cycle.startDate ? new Date(cycle.startDate).toLocaleDateString() : 'Invalid Date'} - {cycle.endDate ? new Date(cycle.endDate).toLocaleDateString() : 'Invalid Date'}
                           </p>
                         </div>
                         <Badge className={getStatusBadgeColor(cycle.status)}>
@@ -281,7 +435,12 @@ export function Payroll() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => setSelectedCycle(cycle.id)}
+                          onClick={() => {
+                            console.log('View Details clicked for cycle:', cycle.id);
+                            setSelectedCycle(cycle.id);
+                            setActiveTab('records');
+                          }}
+                          className="cursor-pointer"
                         >
                           View Details
                         </Button>
@@ -322,25 +481,60 @@ export function Payroll() {
                   </div>
                 ) : (
                   getFilteredRecords().map((record) => (
-                    <div key={record.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center space-x-4">
-                        <div>
-                          <h3 className="font-medium">{record.employees?.name}</h3>
-                          <p className="text-sm text-gray-500">{record.employees?.department}</p>
+                    <div key={record.id} className="border rounded-lg">
+                      <div className="flex items-center justify-between p-4 border-b">
+                        <div className="flex items-center space-x-4">
+                          <div>
+                            <h3 className="font-medium">{record.employees?.name}</h3>
+                            <p className="text-sm text-gray-500">{record.employees?.department} - {record.employees?.position}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-6">
+                          <div className="text-right">
+                            <p className="text-sm text-gray-500">Base</p>
+                            <p className="font-medium">{formatCurrency(record.baseSalary)}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm text-gray-500">Gross</p>
+                            <p className="font-medium">{formatCurrency(record.grossSalary)}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm text-gray-500">Net</p>
+                            <p className="font-medium">{formatCurrency(record.netSalary)}</p>
+                          </div>
+                          <Badge className={getStatusBadgeColor(record.paymentStatus)}>
+                            {record.paymentStatus}
+                          </Badge>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => {
+                              setSelectedPayslipRecord(record);
+                              setShowPayslipModal(true);
+                            }}
+                          >
+                            <Download className="w-4 h-4 mr-1" />
+                            Payslip
+                          </Button>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-6">
-                        <div className="text-right">
-                          <p className="text-sm text-gray-500">Gross</p>
-                          <p className="font-medium">{formatCurrency(record.grossSalary)}</p>
+                      <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div>
+                          <p className="text-gray-500">Allowances</p>
+                          <p className="font-medium">{formatCurrency(record.housingAllowance + record.transportAllowance + record.mealAllowance + record.otherAllowances)}</p>
                         </div>
-                        <div className="text-right">
-                          <p className="text-sm text-gray-500">Net</p>
-                          <p className="font-medium">{formatCurrency(record.netSalary)}</p>
+                        <div>
+                          <p className="text-gray-500">Deductions</p>
+                          <p className="font-medium">{formatCurrency(record.payeTax + record.pensionContrib + record.healthInsurance + record.otherDeductions)}</p>
                         </div>
-                        <Badge className={getStatusBadgeColor(record.paymentStatus)}>
-                          {record.paymentStatus}
-                        </Badge>
+                        <div>
+                          <p className="text-gray-500">Overtime</p>
+                          <p className="font-medium">{record.overtimeHours}h × {formatCurrency(record.overtimeRate)}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-500">Bonuses</p>
+                          <p className="font-medium">{formatCurrency(record.performanceBonus + record.otherBonus)}</p>
+                        </div>
                       </div>
                     </div>
                   ))
@@ -395,6 +589,209 @@ export function Payroll() {
             </Button>
             <Button onClick={handleCreateCycle}>
               Create Cycle
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      {/* Adjustments Modal */}
+      <Dialog open={showAdjustmentsModal} onOpenChange={setShowAdjustmentsModal}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Payroll Adjustments</DialogTitle>
+            <DialogDescription>
+              Enter variable pay items for each employee for the current cycle.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="border rounded-lg overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 dark:bg-gray-800">
+                  <tr>
+                    <th className="px-4 py-2 text-left">Employee</th>
+                    <th className="px-4 py-2 text-left">Overtime (Hrs)</th>
+                    <th className="px-4 py-2 text-left">Perf. Bonus</th>
+                    <th className="px-4 py-2 text-left">Other Bonus</th>
+                    <th className="px-4 py-2 text-left">Deductions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {employeesForAdjustments.map((emp) => (
+                    <tr key={emp.id}>
+                      <td className="px-4 py-2 font-medium">{emp.name}</td>
+                      <td className="px-4 py-2">
+                        <Input 
+                          type="number" 
+                          className="w-24 h-8"
+                          value={adjustments[emp.id]?.overtimeHours || 0}
+                          onChange={(e) => updateAdjustment(emp.id, 'overtimeHours', e.target.value)}
+                        />
+                      </td>
+                      <td className="px-4 py-2">
+                        <Input 
+                          type="number" 
+                          className="w-24 h-8"
+                          value={adjustments[emp.id]?.performanceBonus || 0}
+                          onChange={(e) => updateAdjustment(emp.id, 'performanceBonus', e.target.value)}
+                        />
+                      </td>
+                      <td className="px-4 py-2">
+                        <Input 
+                          type="number" 
+                          className="w-24 h-8"
+                          value={adjustments[emp.id]?.otherBonus || 0}
+                          onChange={(e) => updateAdjustment(emp.id, 'otherBonus', e.target.value)}
+                        />
+                      </td>
+                      <td className="px-4 py-2">
+                        <Input 
+                          type="number" 
+                          className="w-24 h-8"
+                          value={adjustments[emp.id]?.manualDeduction || 0}
+                          onChange={(e) => updateAdjustment(emp.id, 'manualDeduction', e.target.value)}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            
+            <div className="flex justify-end gap-3 mt-6">
+              <Button variant="outline" onClick={() => setShowAdjustmentsModal(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleFinalProcess} disabled={isProcessing}>
+                {isProcessing ? 'Processing...' : 'Confirm & Process Payroll'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Payslip Modal */}
+      <Dialog open={showPayslipModal} onOpenChange={setShowPayslipModal}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Employee Payslip</DialogTitle>
+          </DialogHeader>
+          
+          {selectedPayslipRecord && (
+            <div className="space-y-6 p-4 border rounded-lg bg-white overflow-hidden" id="printable-payslip">
+              <div className="flex justify-between border-b pb-4">
+                <div>
+                  <h2 className="text-xl font-bold">HR Management System</h2>
+                  <p className="text-sm text-gray-500">MRA & Pension Compliant Payroll</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-bold">PAYSLIP</p>
+                  <p className="text-sm text-gray-500">Period: {payrollCycles.find(c => c.id === selectedPayslipRecord.cycleId)?.cycleName}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-8 text-sm">
+                <div>
+                  <p className="text-gray-500 uppercase text-xs font-bold mb-1">Employee Details</p>
+                  <p className="font-bold">{selectedPayslipRecord.employees?.name}</p>
+                  <p>{selectedPayslipRecord.employees?.position}</p>
+                  <p>Dept: {selectedPayslipRecord.employees?.department}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-gray-500 uppercase text-xs font-bold mb-1">Payment Summary</p>
+                  <p>Pay Date: {new Date().toLocaleDateString()}</p>
+                  <p>Account: {selectedPayslipRecord.employees?.account_number || 'Bank Transfer'}</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="border rounded-lg overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50 uppercase text-xs font-bold">
+                      <tr>
+                        <th className="px-4 py-2 text-left">Earnings</th>
+                        <th className="px-4 py-2 text-right">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      <tr>
+                        <td className="px-4 py-2">Basic Salary</td>
+                        <td className="px-4 py-2 text-right">{formatCurrency(selectedPayslipRecord.baseSalary)}</td>
+                      </tr>
+                      {(selectedPayslipRecord.housingAllowance > 0) && (
+                        <tr>
+                          <td className="px-4 py-2">Housing Allowance</td>
+                          <td className="px-4 py-2 text-right">{formatCurrency(selectedPayslipRecord.housingAllowance)}</td>
+                        </tr>
+                      )}
+                      {(selectedPayslipRecord.performanceBonus > 0) && (
+                        <tr>
+                          <td className="px-4 py-2 text-blue-600">Performance Bonus</td>
+                          <td className="px-4 py-2 text-right text-blue-600">{formatCurrency(selectedPayslipRecord.performanceBonus)}</td>
+                        </tr>
+                      )}
+                      {(selectedPayslipRecord.overtimePay > 0) && (
+                        <tr>
+                          <td className="px-4 py-2">Overtime ({selectedPayslipRecord.overtimeHours} hours)</td>
+                          <td className="px-4 py-2 text-right">{formatCurrency(selectedPayslipRecord.overtimePay)}</td>
+                        </tr>
+                      )}
+                      <tr className="bg-gray-50 font-bold border-t-2">
+                        <td className="px-4 py-2">Gross Salary</td>
+                        <td className="px-4 py-2 text-right">{formatCurrency(selectedPayslipRecord.grossSalary)}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="border rounded-lg overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50 uppercase text-xs font-bold">
+                      <tr>
+                        <th className="px-4 py-2 text-left">Deductions</th>
+                        <th className="px-4 py-2 text-right">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      <tr>
+                        <td className="px-4 py-2">PAYE Tax (MRA)</td>
+                        <td className="px-4 py-2 text-right text-red-600">{formatCurrency(selectedPayslipRecord.payeTax)}</td>
+                      </tr>
+                      <tr>
+                        <td className="px-4 py-2">Pension Contribution (5%)</td>
+                        <td className="px-4 py-2 text-right text-red-600">{formatCurrency(selectedPayslipRecord.pensionContrib)}</td>
+                      </tr>
+                      {selectedPayslipRecord.otherDeductions > 0 && (
+                        <tr>
+                          <td className="px-4 py-2">Other Deductions</td>
+                          <td className="px-4 py-2 text-right text-red-600">{formatCurrency(selectedPayslipRecord.otherDeductions)}</td>
+                        </tr>
+                      )}
+                      <tr className="bg-gray-50 font-bold border-t-2">
+                        <td className="px-4 py-2">Total Deductions</td>
+                        <td className="px-4 py-2 text-right">{formatCurrency(selectedPayslipRecord.totalDeductions)}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="bg-blue-600 text-white p-4 rounded-lg flex justify-between items-center">
+                  <span className="font-bold text-lg uppercase tracking-wider">Net Pay</span>
+                  <span className="text-2xl font-black">{formatCurrency(selectedPayslipRecord.netSalary)}</span>
+                </div>
+                
+                <div className="text-[10px] text-gray-400 italic text-center">
+                  This is a computer-generated document and is valid without a signature.
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <div className="flex justify-end gap-3 mt-4">
+            <Button variant="outline" onClick={() => setShowPayslipModal(false)}>
+              Close
+            </Button>
+            <Button onClick={() => window.print()}>
+              Print Payslip
             </Button>
           </div>
         </DialogContent>

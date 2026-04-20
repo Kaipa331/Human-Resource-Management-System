@@ -479,6 +479,8 @@ ALTER TABLE public.payroll
     ADD COLUMN IF NOT EXISTS cycle_id UUID REFERENCES public.payroll_cycles(id) ON DELETE CASCADE,
     ADD COLUMN IF NOT EXISTS gross_salary NUMERIC DEFAULT 0,
     ADD COLUMN IF NOT EXISTS tax_deduction NUMERIC DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS employer_pension NUMERIC DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS tevet_levy NUMERIC DEFAULT 0,
     ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT now();
 
 -- Update Training Courses with additional fields
