@@ -56,8 +56,11 @@ DO $$ BEGIN
 EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 DO $$ BEGIN
-    CREATE POLICY "Allow all access to attendance" ON public.attendance FOR ALL USING (true);
+    CREATE POLICY "Allow all access to attendance" ON public.attendance FOR ALL USING (true) WITH CHECK (true);
 EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
+GRANT ALL ON public.attendance TO authenticated;
+GRANT ALL ON public.attendance TO anon;
 
 -- Leave Requests Table
 CREATE TABLE IF NOT EXISTS public.leave_requests (
@@ -75,8 +78,11 @@ DO $$ BEGIN
 EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 DO $$ BEGIN
-    CREATE POLICY "Allow all access to leave_requests" ON public.leave_requests FOR ALL USING (true);
+    CREATE POLICY "Allow all access to leave_requests" ON public.leave_requests FOR ALL USING (true) WITH CHECK (true);
 EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
+GRANT ALL ON public.leave_requests TO authenticated;
+GRANT ALL ON public.leave_requests TO anon;
 
 -- Payroll Table
 CREATE TABLE IF NOT EXISTS public.payroll (
@@ -406,8 +412,11 @@ DO $$ BEGIN
 EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 DO $$ BEGIN
-    CREATE POLICY "Allow all access to performance_goals" ON public.performance_goals FOR ALL USING (true);
+    CREATE POLICY "Allow all access to performance_goals" ON public.performance_goals FOR ALL USING (true) WITH CHECK (true);
 EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
+GRANT ALL ON public.performance_goals TO authenticated;
+GRANT ALL ON public.performance_goals TO anon;
 
 -- Departments Table
 CREATE TABLE IF NOT EXISTS public.departments (
@@ -427,8 +436,11 @@ DO $$ BEGIN
 EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 DO $$ BEGIN
-    CREATE POLICY "Allow all access to departments" ON public.departments FOR ALL USING (true);
+    CREATE POLICY "Allow all access to departments" ON public.departments FOR ALL USING (true) WITH CHECK (true);
 EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
+GRANT ALL ON public.departments TO authenticated;
+GRANT ALL ON public.departments TO anon;
 
 -- Succession Planning Table
 CREATE TABLE IF NOT EXISTS public.succession_plans (
@@ -449,8 +461,11 @@ DO $$ BEGIN
 EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 DO $$ BEGIN
-    CREATE POLICY "Allow all access to succession_plans" ON public.succession_plans FOR ALL USING (true);
+    CREATE POLICY "Allow all access to succession_plans" ON public.succession_plans FOR ALL USING (true) WITH CHECK (true);
 EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
+GRANT ALL ON public.succession_plans TO authenticated;
+GRANT ALL ON public.succession_plans TO anon;
 
 -- Payroll Cycles Table
 CREATE TABLE IF NOT EXISTS public.payroll_cycles (
@@ -471,8 +486,11 @@ DO $$ BEGIN
 EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 DO $$ BEGIN
-    CREATE POLICY "Allow all access to payroll_cycles" ON public.payroll_cycles FOR ALL USING (true);
+    CREATE POLICY "Allow all access to payroll_cycles" ON public.payroll_cycles FOR ALL USING (true) WITH CHECK (true);
 EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
+GRANT ALL ON public.payroll_cycles TO authenticated;
+GRANT ALL ON public.payroll_cycles TO anon;
 
 -- Update Payroll Table to reference cycles
 ALTER TABLE public.payroll
