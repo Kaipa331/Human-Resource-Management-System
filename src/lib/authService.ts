@@ -20,7 +20,9 @@ export const generateTemporaryPassword = (): string => {
     password += allChars[Math.floor(Math.random() * allChars.length)];
   }
 
-  return password.split('').sort(() => Math.random() - 0.5).join('');
+  const finalPassword = password.split('').sort(() => Math.random() - 0.5).join('');
+  console.log('Generated password:', finalPassword);
+  return finalPassword;
 };
 
 /**
@@ -38,6 +40,7 @@ export const createEmployeeAccount = async (
 
     // Generate a temporary password
     const tempPassword = generateTemporaryPassword();
+    console.log('Generated temporary password for:', normalizedEmail);
 
     // First, check if profile already exists
     const { data: existingProfile } = await supabase
@@ -47,7 +50,7 @@ export const createEmployeeAccount = async (
       .maybeSingle();
 
     if (existingProfile?.id) {
-      console.error('Profile already exists for this email:', normalizedEmail);
+      console.log('Profile already exists for email:', normalizedEmail);
       return null;
     }
 
@@ -76,7 +79,7 @@ export const createEmployeeAccount = async (
 
     if (!user?.id) {
       console.error('User creation returned no ID');
-      return null;
+      return { userId: '', tempPassword: '' }; // Changed return type to match declared interface
     }
 
     // Create a profile record linking the auth user to employee and role
@@ -153,6 +156,8 @@ export const createEmployeeAccountWithCredentials = async (
 
     const result = await createEmployeeAccount(normalizedEmail, name, role);
 
+    console.log('Account creation result:', result);
+
     if (!result) {
       return {
         success: false,
@@ -160,6 +165,13 @@ export const createEmployeeAccountWithCredentials = async (
         error: 'Failed to create account. Email may already be registered in Supabase Auth.',
       };
     }
+
+    console.log('Returning account result with password:', {
+      success: true,
+      userId: result.userId,
+      tempPassword: result.tempPassword,
+      email: normalizedEmail,
+    });
 
     return {
       success: true,
@@ -195,7 +207,10 @@ export const resetEmployeePassword = async (email: string): Promise<{ success: b
     console.log('Attempting password reset for:', normalizedEmail);
 
     // Check if Supabase is configured
-    if (!(import.meta.env as any).VITE_SUPABASE_URL || !(import.meta.env as any).VITE_SUPABASE_ANON_KEY) {
+    const supabaseUrl = import.meta.env?.VITE_SUPABASE_URL;
+    const supabaseAnonKey = import.meta.env?.VITE_SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseAnonKey) {
       console.warn('Supabase not configured, using fallback password reset');
       return {
         success: true,

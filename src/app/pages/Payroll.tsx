@@ -84,11 +84,11 @@ export function Payroll() {
         setNewCycleData({ cycleName: '', startDate: '', endDate: '' });
         loadPayrollData();
       } else {
-        toast.error('Failed to create payroll cycle');
+        toast.error('Failed to create payroll cycle. Database schema may not be properly configured.');
       }
     } catch (error) {
       console.error('Error creating payroll cycle:', error);
-      toast.error('Failed to create payroll cycle');
+      toast.error('Failed to create payroll cycle. Please ensure database schema is properly configured.');
     }
   };
 
@@ -107,7 +107,10 @@ export function Payroll() {
         .select('*')
         .eq('status', 'Active');
 
-      if (error) throw error;
+      if (error) {
+        toast.error('Failed to fetch employees. Please check database connection.');
+        return;
+      }
 
       if (employees && employees.length > 0) {
         const success = await PayrollService.processPayrollCycle(selectedCycle, employees);
@@ -116,14 +119,14 @@ export function Payroll() {
           toast.success('Payroll processed successfully');
           loadPayrollData();
         } else {
-          toast.error('Failed to process payroll');
+          toast.error('Failed to process payroll. Database schema may not be properly configured.');
         }
       } else {
         toast.error('No active employees found');
       }
     } catch (error) {
       console.error('Error processing payroll:', error);
-      toast.error('Failed to process payroll');
+      toast.error('Failed to process payroll. Please ensure database schema is properly configured.');
     } finally {
       setIsProcessing(false);
     }

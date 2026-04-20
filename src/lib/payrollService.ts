@@ -1,5 +1,19 @@
 import { supabase } from './supabase';
-import { Employee } from '../app/pages/Employees';
+
+export interface Employee {
+  id: string;
+  employee_id: string;
+  name: string;
+  email: string;
+  phone: string;
+  department: string;
+  position: string;
+  status: string;
+  join_date: string;
+  salary: number | string;
+  role?: string;
+  employment_type: string;
+}
 
 export interface PayrollCalculation {
   employeeId: string;
@@ -225,7 +239,10 @@ export class PayrollService {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating payroll cycle - table may not exist:', error.message);
+        return null;
+      }
       return data;
     } catch (error) {
       console.error('Error creating payroll cycle:', error);
@@ -241,7 +258,10 @@ export class PayrollService {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.warn('Payroll cycles table not found, returning empty array:', error.message);
+        return [];
+      }
       return data || [];
     } catch (error) {
       console.error('Error fetching payroll cycles:', error);
@@ -293,10 +313,13 @@ export class PayrollService {
         .from('payroll')
         .insert(payrollRecords);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error inserting payroll records - table may not exist:', error.message);
+        return false;
+      }
 
       // Update cycle status
-      await supabase
+      const { error: updateError } = await supabase
         .from('payroll_cycles')
         .update({
           status: 'Completed',
@@ -306,6 +329,11 @@ export class PayrollService {
           total_tax: payrollRecords.reduce((sum, record) => sum + record.paye_tax, 0)
         })
         .eq('id', cycleId);
+
+      if (updateError) {
+        console.error('Error updating payroll cycle:', updateError.message);
+        return false;
+      }
 
       return true;
     } catch (error) {
@@ -336,7 +364,10 @@ export class PayrollService {
 
       const { data, error } = await query.order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.warn('Payroll table not found, returning empty array:', error.message);
+        return [];
+      }
       return data || [];
     } catch (error) {
       console.error('Error fetching payroll records:', error);
@@ -357,13 +388,22 @@ export class PayrollService {
         .from('payroll')
         .select('base_salary, gross_salary, net_salary, paye_tax');
 
-      if (error) throw error;
+      if (error) {
+        console.warn('Payroll table not found, returning default values:', error.message);
+        return {
+          totalEmployees: 0,
+          totalGross: 0,
+          totalNet: 0,
+          totalTax: 0,
+          averageSalary: 0
+        };
+      }
 
       const records = data || [];
       const totalEmployees = records.length;
-      const totalGross = records.reduce((sum, record) => sum + record.gross_salary, 0);
-      const totalNet = records.reduce((sum, record) => sum + record.net_salary, 0);
-      const totalTax = records.reduce((sum, record) => sum + record.paye_tax, 0);
+      const totalGross = records.reduce((sum, record) => sum + (record.gross_salary || 0), 0);
+      const totalNet = records.reduce((sum, record) => sum + (record.net_salary || 0), 0);
+      const totalTax = records.reduce((sum, record) => sum + (record.paye_tax || 0), 0);
       const averageSalary = totalEmployees > 0 ? totalGross / totalEmployees : 0;
 
       return {

@@ -1,0 +1,192 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url       = env("DATABASE_URL")
+}
+
+// Auth schema
+model Account {
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  type              String    @default("email")
+  provider          String?   @default("email")
+  providerAccountId   String?
+  refreshToken      String?   @db.Text
+  accessToken       String?   @db.Text
+  expiresAt         DateTime?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  token        String   @unique
+  expires      DateTime
+  created      DateTime @default(now())
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
+  name          String?
+  image         String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+}
+
+model VerificationToken {
+  id      String   @id @default(cuid())
+  token   String   @unique
+  email   String
+  expires DateTime
+  createdAt DateTime @default(now())
+}
+
+// HRMS Tables
+model Employee {
+  id                String    @id @default(cuid())
+  employeeId        String    @unique @map("employee_id")
+  name              String
+  email             String    @unique
+  phone             String?
+  department        String
+  position          String
+  joinDate          DateTime  @map("join_date")
+  status            String    @default("Active")
+  salary            Float
+  dateOfBirth        DateTime? @map("date_of_birth")
+  gender            String?
+  address           String?
+  employmentType    String?   @map("employment_type")
+  managerSupervisor  String?   @map("manager_supervisor")
+  workLocation      String?   @map("work_location")
+  emergencyContactName      String?   @map("emergency_contact_name")
+  emergencyContactPhone     String?   @map("emergency_contact_phone")
+  emergencyContactRelationship String?   @map("emergency_contact_relationship")
+  bankName             String?   @map("bank_name")
+  bankAccountNumber      String?   @map("bank_account_number")
+  taxIdPin             String?   @map("tax_id_pin")
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+}
+
+model Profile {
+  id       String   @id @default(cuid())
+  email    String   @unique
+  role     String
+  employeeId String?   @map("employee_id")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PayrollCycle {
+  id           String    @id @default(cuid())
+  cycleName    String    @map("cycle_name")
+  startDate    DateTime @map("start_date")
+  endDate      DateTime @map("end_date")
+  status       String
+  totalEmployees Int    @default(0) @map("total_employees")
+  totalGross    Float     @default(0) @map("total_gross")
+  totalNet      Float     @default(0) @map("total_net")
+  totalTax      Float     @default(0) @map("total_tax")
+  createdBy    String?   @map("created_by")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+}
+
+model Payroll {
+  id                   String    @id @default(cuid())
+  employeeId           String    @map("employee_id")
+  cycleId             String    @map("cycle_id")
+  payPeriod            String    @map("pay_period")
+  baseSalary           Float     @map("base_salary")
+  housingAllowance       Float     @default(0) @map("housing_allowance")
+  transportAllowance    Float     @default(0) @map("transport_allowance")
+  mealAllowance         Float     @default(0) @map("meal_allowance")
+  otherAllowances       Float     @default(0) @map("other_allowances")
+  payeTax             Float     @default(0) @map("paye_tax")
+  pensionContrib         Float     @default(0) @map("pension_contrib")
+  healthInsurance        Float     @default(0) @map("health_insurance")
+  otherDeductions      Float     @default(0) @map("other_deductions")
+  overtimeHours         Float     @default(0) @map("overtime_hours")
+  overtimeRate          Float     @default(0) @map("overtime_rate")
+  overtimePay           Float     @default(0) @map("overtime_pay")
+  performanceBonus      Float     @default(0) @map("performance_bonus")
+  otherBonus           Float     @default(0) @map("other_bonus")
+  grossSalary          Float     @default(0) @map("gross_salary")
+  totalDeductions     Float     @default(0) @map("total_deductions")
+  netSalary            Float     @default(0) @map("net_salary")
+  payDate              DateTime? @map("pay_date")
+  paymentStatus        String    @default("Pending") @map("payment_status")
+  bankReference        String?   @map("bank_reference")
+  notes                String?
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+}
+
+model PerformanceReview {
+  id                   String    @id @default(cuid())
+  employeeId            String    @map("employee_id")
+  reviewerId            String?   @map("reviewer_id")
+  reviewPeriod          String    @map("review_period")
+  reviewType           String    @default("Quarterly") @map("review_type")
+  qualityOfWork         Float     @map("quality_of_work")
+  productivity          Float     @map("productivity")
+  teamwork             Float     @map("teamwork")
+  communication        Float     @map("communication")
+  initiative           Float     @map("initiative")
+  attendance           Float     @map("attendance")
+  overallRating        Float     @map("overall_rating")
+  strengths            String?
+  areasForImprovement String? @map("areas_for_improvement")
+  goals                String?
+  employeeComments      String? @map("employee_comments")
+  reviewerComments      String? @map("reviewer_comments")
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model TrainingCourse {
+  id                   String    @id @default(cuid())
+  courseName           String    @map("course_name")
+  courseCode           String    @map("course_code")
+  description          String?
+  instructor           String?
+  duration             Int?
+  category             String?
+  status               String    @default("Active")
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model TrainingEnrollment {
+  id                   String    @id @default(cuid())
+  employeeId            String    @map("employee_id")
+  courseId             String    @map("course_id")
+  enrollmentDate        DateTime @map("enrollment_date")
+  completionDate       DateTime? @map("completion_date")
+  status               String    @default("Active")
+  progress             Int      @default(0)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model ReportSchedule {
+  id                   String    @id @default(cuid())
+  name                 String
+  description           String?
+  reportType           String    @map("report_type")
+  frequency            String?
+  scheduledFor         DateTime @map("scheduled_for")
+  status               String    @default("Pending")
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}

@@ -9,41 +9,53 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
+import { ReportsService } from '../../lib/reportsService';
 
 export function Reports() {
-  const [headcountData, setHeadcountData] = useState([
-    { month: 'Jan', employees: 242, hired: 8, left: 3 },
-    { month: 'Feb', employees: 247, hired: 7, left: 2 },
-    { month: 'Mar', employees: 252, hired: 9, left: 4 },
-    { month: 'Apr', employees: 257, hired: 6, left: 1 },
-    { month: 'May', employees: 262, hired: 8, left: 3 },
-    { month: 'Jun', employees: 267, hired: 7, left: 2 },
-  ]);
+  const [headcountData, setHeadcountData] = useState([]);
+  const [turnoverData, setTurnoverData] = useState([]);
+  const [leaveData, setLeaveData] = useState([]);
+  const [payrollTrend, setPayrollTrend] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const [turnoverData, setTurnoverData] = useState([
-    { department: 'IT', rate: 8.5, color: '#3b82f6' },
-    { department: 'Sales', rate: 12.3, color: '#10b981' },
-    { department: 'HR', rate: 4.2, color: '#f59e0b' },
-    { department: 'Finance', rate: 6.1, color: '#8b5cf6' },
-    { department: 'Marketing', rate: 9.8, color: '#ec4899' },
-  ]);
+  useEffect(() => {
+    fetchReportsData();
+  }, []);
 
-  const [leaveData, setLeaveData] = useState([
-    { type: 'Annual', count: 145, color: '#3b82f6' },
-    { type: 'Sick', count: 78, color: '#10b981' },
-    { type: 'Emergency', count: 23, color: '#f59e0b' },
-    { type: 'Maternity', count: 12, color: '#8b5cf6' },
-    { type: 'Paternity', count: 8, color: '#ec4899' },
-  ]);
-
-  const [payrollTrend, setPayrollTrend] = useState([
-    { month: 'Jan', gross: 206400000, net: 165120000 },
-    { month: 'Feb', gross: 208800000, net: 167040000 },
-    { month: 'Mar', gross: 210450000, net: 168360000 },
-    { month: 'Apr', gross: 214200000, net: 171360000 },
-    { month: 'May', gross: 218400000, net: 174720000 },
-    { month: 'Jun', gross: 222600000, net: 178080000 },
-  ]);
+  const fetchReportsData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch headcount trends
+      const headcountReport = await ReportsService.generateHRReport('headcount');
+      if (headcountReport && headcountReport.data) {
+        setHeadcountData(headcountReport.data);
+      }
+      
+      // Fetch turnover data
+      const turnoverReport = await ReportsService.generateHRReport('turnover');
+      if (turnoverReport && turnoverReport.data) {
+        setTurnoverData(turnoverReport.data);
+      }
+      
+      // Fetch leave data
+      const leaveReport = await ReportsService.generateHRReport('leave');
+      if (leaveReport && leaveReport.data) {
+        setLeaveData(leaveReport.data);
+      }
+      
+      // Fetch payroll trends
+      const payrollReport = await ReportsService.generateHRReport('payroll');
+      if (payrollReport && payrollReport.data) {
+        setPayrollTrend(payrollReport.data);
+      }
+    } catch (error) {
+      console.error('Error fetching reports data:', error);
+      toast.error('Failed to load reports data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const [uploadedReports, setUploadedReports] = useState<any[]>([]);
   const [uploading, setUploading] = useState(false);

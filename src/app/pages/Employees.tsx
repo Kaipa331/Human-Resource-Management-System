@@ -63,6 +63,7 @@ export function Employees() {
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
   
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [viewingEmployee, setViewingEmployee] = useState<Employee | null>(null);
@@ -125,7 +126,7 @@ export function Employees() {
 
   useEffect(() => {
     fetchEmployees();
-  }, []);
+  }, [refreshKey]);
 
   const fetchEmployees = async () => {
     try {
@@ -232,6 +233,14 @@ export function Employees() {
     }
 
     const normalizedEmail = formData.email.toLowerCase().trim();
+    console.log('🔍 DEBUG: Starting employee creation with data:', {
+      name: formData.name,
+      email: normalizedEmail,
+      department: formData.department,
+      position: formData.position,
+      salary: formData.salary,
+      role: formData.role
+    });
 
     try {
       const parsedSalary = typeof formData.salary === 'string' ? parseFloat(formData.salary.replace(/[^\d.]/g, '')) || 0 : formData.salary;
@@ -249,22 +258,19 @@ export function Employees() {
             position: formData.position,
             salary: parsedSalary,
             join_date: joinStr,
-            // 🔹 Identity & Basics
-            date_of_birth: formData.dateOfBirth,
-            gender: formData.gender,
-            address: formData.address,
-            // 🔹 Employment Info
-            employment_type: formData.employmentType,
-            manager_supervisor: formData.managerSupervisor,
-            work_location: formData.workLocation,
-            // 🔹 Emergency Info
-            emergency_contact_name: formData.emergencyContactName,
-            emergency_contact_phone: formData.emergencyContactPhone,
-            emergency_contact_relationship: formData.emergencyContactRelationship,
-            // 🔹 Payroll Basics
-            bank_name: formData.bankName,
-            bank_account_number: formData.bankAccountNumber,
-            tax_id_pin: formData.taxIdPin,
+            // Only include additional fields if they exist in database
+            ...(formData.dateOfBirth && { date_of_birth: formData.dateOfBirth }),
+            ...(formData.gender && { gender: formData.gender }),
+            ...(formData.address && { address: formData.address }),
+            ...(formData.employmentType && { employment_type: formData.employmentType }),
+            ...(formData.managerSupervisor && { manager_supervisor: formData.managerSupervisor }),
+            ...(formData.workLocation && { work_location: formData.workLocation }),
+            ...(formData.emergencyContactName && { emergency_contact_name: formData.emergencyContactName }),
+            ...(formData.emergencyContactPhone && { emergency_contact_phone: formData.emergencyContactPhone }),
+            ...(formData.emergencyContactRelationship && { emergency_contact_relationship: formData.emergencyContactRelationship }),
+            ...(formData.bankName && { bank_name: formData.bankName }),
+            ...(formData.bankAccountNumber && { bank_account_number: formData.bankAccountNumber }),
+            ...(formData.taxIdPin && { tax_id_pin: formData.taxIdPin }),
           })
           .eq('id', editingEmployee.id);
         if (error) throw error;
@@ -284,23 +290,66 @@ export function Employees() {
         toast.success('Employee updated successfully');
       } else {
         // Adding new employee - create account AND employee record
-        const empId = `EMP${String(employees.length + 1).padStart(3, '0')}`;
+        const empId = `EMP${Date.now()}`;
         const normalizedEmail = formData.email.toLowerCase().trim();
         
+        // Fix 1: Check for duplicate email before proceeding
+        console.log('🔍 DEBUG: Checking for duplicate email:', normalizedEmail);
+        const { data: existingEmployee } = await supabase
+          .from('employees')
+          .select('id')
+          .eq('email', normalizedEmail)
+          .maybeSingle();
+
+        if (existingEmployee) {
+          console.error('❌ Employee with this email already exists:', normalizedEmail);
+          toast.error('Employee with this email already exists');
+          return;
+        }
+        
         // Step 1: Create Supabase Auth account and profile
+        console.log('🔍 DEBUG: Creating account for:', normalizedEmail);
         const accountResult = await createEmployeeAccountWithCredentials(
           normalizedEmail,
           formData.name,
           formData.role || 'Employee'
         );
 
+        console.log('🔍 DEBUG: Account creation result:', accountResult);
+
         if (!accountResult.success) {
           // Account creation failed - don't create employee record
+          console.error('❌ Account creation failed:', accountResult.error);
           toast.error(`Failed to create account: ${accountResult.error}`);
           return;
         }
 
+        // Fix 2: Clean enum values and validate
+        const cleanGender = formData.gender?.trim();
+        const cleanEmploymentType = formData.employmentType?.trim();
+        
+        // Fix 3: Debug log exact values being sent
+        console.log('🚨 VALUES BEING SENT:', {
+          gender: formData.gender,
+          employmentType: formData.employmentType,
+          cleanGender: cleanGender,
+          cleanEmploymentType: cleanEmploymentType
+        });
+
         // Step 2: Create employee record in database
+        console.log('🔍 DEBUG: Inserting employee record with data:', {
+          name: formData.name,
+          email: normalizedEmail,
+          phone: formData.phone,
+          department: formData.department,
+          position: formData.position,
+          join_date: joinStr,
+          employee_id: empId,
+          status: 'Active',
+          salary: parsedSalary
+        });
+
+        // Only insert basic fields that definitely exist in database
         const { data: insertedEmployee, error: empError } = await supabase
           .from('employees')
           .insert([{
@@ -313,28 +362,35 @@ export function Employees() {
             employee_id: empId,
             status: 'Active',
             salary: parsedSalary,
-            // 🔹 Identity & Basics
-            date_of_birth: formData.dateOfBirth,
-            gender: formData.gender,
-            address: formData.address,
-            // 🔹 Employment Info
-            employment_type: formData.employmentType,
-            manager_supervisor: formData.managerSupervisor,
-            work_location: formData.workLocation,
-            // 🔹 Emergency Info
-            emergency_contact_name: formData.emergencyContactName,
-            emergency_contact_phone: formData.emergencyContactPhone,
-            emergency_contact_relationship: formData.emergencyContactRelationship,
-            // 🔹 Payroll Basics
-            bank_name: formData.bankName,
-            bank_account_number: formData.bankAccountNumber,
-            tax_id_pin: formData.taxIdPin,
+            // Only include additional fields if they exist in database (with cleaned values)
+            ...(formData.dateOfBirth && { date_of_birth: formData.dateOfBirth }),
+            ...(cleanGender && { gender: cleanGender }),
+            ...(formData.address && { address: formData.address }),
+            ...(cleanEmploymentType && { employment_type: cleanEmploymentType }),
+            ...(formData.managerSupervisor && { manager_supervisor: formData.managerSupervisor }),
+            ...(formData.workLocation && { work_location: formData.workLocation }),
+            ...(formData.emergencyContactName && { emergency_contact_name: formData.emergencyContactName }),
+            ...(formData.emergencyContactPhone && { emergency_contact_phone: formData.emergencyContactPhone }),
+            ...(formData.emergencyContactRelationship && { emergency_contact_relationship: formData.emergencyContactRelationship }),
+            ...(formData.bankName && { bank_name: formData.bankName }),
+            ...(formData.bankAccountNumber && { bank_account_number: formData.bankAccountNumber }),
+            ...(formData.taxIdPin && { tax_id_pin: formData.taxIdPin }),
           }])
           .select('id')
           .single();
+
+        console.log('🔍 DEBUG: Employee insertion result:', { insertedEmployee, empError });
         
-        if (empError || !insertedEmployee?.id) {
-          toast.error('Failed to create employee record: ' + (empError?.message || 'Unknown error'));
+        // Fix 4: Better error handling with exact error message
+        if (empError) {
+          console.error('🚨 INSERT FAILED:', empError);
+          toast.error(empError.message);
+          return;
+        }
+        
+        if (!insertedEmployee?.id) {
+          console.error('❌ Employee record insertion failed: No ID returned');
+          toast.error('Failed to create employee record: No ID returned');
           return;
         }
 
@@ -360,7 +416,7 @@ export function Employees() {
       }
 
       setIsDialogOpen(false);
-      fetchEmployees();
+      setRefreshKey(prev => prev + 1); // Force re-render and re-fetch
     } catch (error: any) {
       toast.error(`Error ${editingEmployee ? 'updating' : 'adding'} employee: ` + error.message);
     }
@@ -372,7 +428,7 @@ export function Employees() {
       const { error } = await supabase.from('employees').delete().eq('id', id);
       if (error) throw error;
       toast.success('Employee removed');
-      fetchEmployees();
+      setRefreshKey(prev => prev + 1); // Force re-render and re-fetch
     } catch (error: any) {
       toast.error('Error deleting employee: ' + error.message);
     }
@@ -659,6 +715,10 @@ export function Employees() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <Input placeholder="Search employees..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-9 w-64" />
               </div>
+              <Button variant="outline" onClick={() => setRefreshKey(prev => prev + 1)}>
+                <Loader2 className="w-4 h-4 mr-2" />
+                Refresh
+              </Button>
               <Button variant="outline" onClick={handleExport}>
                 <Download className="w-4 h-4 mr-2" />
                 Export

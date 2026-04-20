@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Users, Calendar, TrendingUp, UserCheck, Loader2, BriefcaseBusiness, Clock3, FileText } from 'lucide-react';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { supabase } from '../../lib/supabase';
-import { MobileLayout, MobileCard, MobileGrid, MobileStatCard, MobileTable } from '../components/MobileLayout';
 
 export function Dashboard() {
   const navigate = useNavigate();
@@ -17,15 +17,62 @@ export function Dashboard() {
   const [presentToday, setPresentToday] = useState(0);
   const [pendingLeaves, setPendingLeaves] = useState(0);
   const [departmentData, setDepartmentData] = useState<{ name: string; value: number; color: string }[]>([]);
-  const [recentEmployees, setRecentEmployees] = useState<{ name: string; department: string; join_date: string }[]>([]);
-  const [recentLeaves, setRecentLeaves] = useState<{ employee_name: string; type: string; status: string; start_date: string }[]>([]);
-  const [daysPresentThisMonth, setDaysPresentThisMonth] = useState(0);
-  const [approvedPersonalLeaves, setApprovedPersonalLeaves] = useState(0);
+  const [recentEmployees, setRecentEmployees] = useState<any[]>([]);
+  const [recentLeaves, setRecentLeaves] = useState<any[]>([]);
 
-  const departmentColors: Record<string, string> = {
-    IT: '#3b82f6', Sales: '#10b981', HR: '#f59e0b',
-    Finance: '#8b5cf6', Marketing: '#ec4899', Operations: '#06b6d4',
-  };
+  const stats = [
+    {
+      title: 'Total Employees',
+      value: totalEmployees,
+      change: '+12%',
+      icon: Users,
+      bg: 'bg-blue-50',
+      color: 'text-blue-600'
+    },
+    {
+      title: 'Present Today',
+      value: presentToday,
+      change: '+5%',
+      icon: UserCheck,
+      bg: 'bg-green-50',
+      color: 'text-green-600'
+    },
+    {
+      title: 'Pending Leaves',
+      value: pendingLeaves,
+      change: '-3%',
+      icon: Calendar,
+      bg: 'bg-yellow-50',
+      color: 'text-yellow-600'
+    },
+    {
+      title: 'Departments',
+      value: departmentData.length,
+      change: '+2',
+      icon: BriefcaseBusiness,
+      bg: 'bg-purple-50',
+      color: 'text-purple-600'
+    }
+  ];
+
+  const employeeStats = [
+    {
+      title: 'Days Present',
+      value: '22',
+      change: 'This month',
+      icon: UserCheck,
+      bg: 'bg-green-50',
+      color: 'text-green-600'
+    },
+    {
+      title: 'Leave Balance',
+      value: '12',
+      change: 'Days remaining',
+      icon: Calendar,
+      bg: 'bg-blue-50',
+      color: 'text-blue-600'
+    }
+  ];
 
   useEffect(() => {
     fetchDashboardData();
@@ -34,235 +81,234 @@ export function Dashboard() {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
+      
+      // Fetch employees
+      const { data: employees, error: employeesError } = await supabase
+        .from('employees')
+        .select('*');
+      
+      if (employeesError) throw employeesError;
+      setTotalEmployees(employees?.length || 0);
+      setPresentToday(Math.floor((employees?.length || 0) * 0.85));
 
-      if (isEmployee) {
-        // Employee-specific data
-        setDaysPresentThisMonth(18);
-        setApprovedPersonalLeaves(2);
-      } else {
-        // Admin/HR data
-        setTotalEmployees(247);
-        setPresentToday(235);
-        setPendingLeaves(8);
-        setDepartmentData([
-          { name: 'IT', value: 45, color: departmentColors.IT },
-          { name: 'Sales', value: 62, color: departmentColors.Sales },
-          { name: 'HR', value: 18, color: departmentColors.HR },
-          { name: 'Finance', value: 28, color: departmentColors.Finance },
-          { name: 'Marketing', value: 35, color: departmentColors.Marketing },
-          { name: 'Operations', value: 59, color: departmentColors.Operations },
-        ]);
-        setRecentEmployees([
-          { name: 'John Doe', department: 'IT', join_date: '2026-03-15' },
-          { name: 'Jane Smith', department: 'Sales', join_date: '2026-03-14' },
-          { name: 'Mike Johnson', department: 'HR', join_date: '2026-03-13' },
-        ]);
-        setRecentLeaves([
-          { employee_name: 'Alice Brown', type: 'Annual', status: 'Pending', start_date: '2026-03-20' },
-          { employee_name: 'Bob Wilson', type: 'Sick', status: 'Approved', start_date: '2026-03-18' },
-          { employee_name: 'Carol Davis', type: 'Personal', status: 'Pending', start_date: '2026-03-22' },
-        ]);
-      }
+      // Fetch pending leaves
+      const { data: leaves, error: leavesError } = await supabase
+        .from('leave_requests')
+        .select('*')
+        .eq('status', 'Pending');
+      
+      if (leavesError) throw leavesError;
+      setPendingLeaves(leaves?.length || 0);
+      setRecentLeaves(leaves?.slice(0, 5) || []);
+
+      // Calculate department data
+      const deptCounts = employees?.reduce((acc: any, emp: any) => {
+        const dept = emp.department || 'Unknown';
+        acc[dept] = (acc[dept] || 0) + 1;
+        return acc;
+      }, {});
+
+      const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+      const deptData = Object.entries(deptCounts || {}).map(([name, value], index) => ({
+        name,
+        value: value as number,
+        color: colors[index % colors.length]
+      }));
+      setDepartmentData(deptData);
+
+      // Get recent employees
+      const recentEmps = employees
+        ?.sort((a: any, b: any) => new Date(b.join_date).getTime() - new Date(a.join_date).getTime())
+        ?.slice(0, 5) || [];
+      setRecentEmployees(recentEmps);
+
     } catch (error) {
-      console.error('Error fetching dashboard data', error);
+      console.error('Error fetching dashboard data:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const stats = [
-    { title: 'Total Employees', value: String(totalEmployees), icon: Users, change: '', color: 'text-blue-600', bg: 'bg-blue-50' },
-    { title: 'Present Today', value: String(presentToday), icon: UserCheck, change: totalEmployees > 0 ? `${((presentToday / totalEmployees) * 100).toFixed(1)}%` : '0%', color: 'text-green-600', bg: 'bg-green-50' },
-    { title: 'Pending Leaves', value: String(pendingLeaves), icon: Calendar, change: '', color: 'text-orange-600', bg: 'bg-orange-50' },
-    { title: 'Departments', value: String(departmentData.length), icon: TrendingUp, change: '', color: 'text-purple-600', bg: 'bg-purple-50' },
-  ];
-
-  const employeeStats = [
-    { title: 'My Role', value: user?.role || 'Employee', helper: 'Access level', icon: BriefcaseBusiness, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { title: 'Department', value: user?.department || 'General', helper: 'Current team', icon: Users, color: 'text-violet-600', bg: 'bg-violet-50' },
-    { title: 'Pending Leave', value: String(pendingLeaves), helper: 'Awaiting approval', icon: Calendar, color: 'text-amber-600', bg: 'bg-amber-50' },
-    { title: 'Days Present', value: String(daysPresentThisMonth), helper: 'This month', icon: Clock3, color: 'text-green-600', bg: 'bg-green-50' },
-  ];
-
-  const heroTitle = isEmployee
-    ? `Welcome back, ${user?.name || 'Team Member'}`
-    : 'Accelerate your HR operations';
-  const heroSubtitle = isEmployee
-    ? 'Manage your attendance, leave requests, and employee details in one beautiful workspace.'
-    : 'A modern HR dashboard built for employee lifecycle, payroll, attendance, and performance.';
-
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin" />
       </div>
     );
   }
 
   if (isEmployee) {
     return (
-      <MobileLayout
-        title={heroTitle}
-        subtitle={heroSubtitle}
-      >
-        <div className="space-y-6">
-          {/* Stats Grid */}
-          <MobileGrid cols={2} gap={4}>
-            {employeeStats.map((stat, index) => (
-              <MobileStatCard
-                key={index}
-                title={stat.title}
-                value={stat.value}
-                change={stat.helper}
-                icon={stat.icon}
-              />
-            ))}
-          </MobileGrid>
-
-          {/* Recent Activity */}
-          <MobileCard title="Recent Activity" subtitle="Your latest updates">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-600 dark:text-slate-400">Days Present This Month</span>
-                <Badge variant="secondary">{daysPresentThisMonth}</Badge>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-600 dark:text-slate-400">Approved Personal Leaves</span>
-                <Badge variant="secondary">{approvedPersonalLeaves}</Badge>
-              </div>
-            </div>
-          </MobileCard>
-
-          {/* Quick Actions */}
-          <MobileCard title="Quick Actions" subtitle="Common tasks">
-            <div className="grid grid-cols-2 gap-3">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate('/app/self-service?tab=attendance')}
-                className="w-full"
-              >
-                <Clock3 className="w-4 h-4 mr-2" />
-                Attendance
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate('/app/self-service?tab=leave')}
-                className="w-full"
-              >
-                <Calendar className="w-4 h-4 mr-2" />
-                Leave
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate('/app/self-service?tab=personal')}
-                className="w-full"
-              >
-                <FileText className="w-4 h-4 mr-2" />
-                Profile
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate('/app/self-service?tab=settings')}
-                className="w-full"
-              >
-                <Users className="w-4 h-4 mr-2" />
-                Settings
-              </Button>
-            </div>
-          </MobileCard>
+      <div className="space-y-6 p-6">
+        <div>
+          <h1 className="text-3xl font-bold">Welcome back, {user?.name || 'Employee'}</h1>
+          <p className="text-gray-600 mt-2">Here's what's happening with your work today.</p>
         </div>
-      </MobileLayout>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {employeeStats.map((stat, index) => (
+            <Card key={index}>
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500">{stat.title}</p>
+                    <h3 className="text-2xl font-bold mt-2">{stat.value}</h3>
+                    <p className="text-sm text-gray-400 mt-1">{stat.change}</p>
+                  </div>
+                  <div className={`p-3 rounded-lg ${stat.bg}`}>
+                    <stat.icon className={`w-6 h-6 ${stat.color}`} />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4">
+              <Button variant="outline" onClick={() => navigate('/app/attendance')}>
+                <Clock3 className="w-4 h-4 mr-2" />
+                Mark Attendance
+              </Button>
+              <Button variant="outline" onClick={() => navigate('/app/leave')}>
+                <Calendar className="w-4 h-4 mr-2" />
+                Request Leave
+              </Button>
+              <Button variant="outline" onClick={() => navigate('/app/profile')}>
+                <FileText className="w-4 h-4 mr-2" />
+                Update Profile
+              </Button>
+              <Button variant="outline" onClick={() => navigate('/app/documents')}>
+                <FileText className="w-4 h-4 mr-2" />
+                View Documents
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <MobileLayout
-      title={heroTitle}
-      subtitle={heroSubtitle}
-      actions={
-        <div className="flex gap-2">
-          <Button size="sm" onClick={() => navigate('/app/self-service')}>
-            My Portal
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => navigate('/app/attendance')}>
-            Attendance
-          </Button>
-        </div>
-      }
-    >
-      <div className="space-y-6">
-        {/* Stats Grid */}
-        <MobileGrid cols={2} gap={4}>
-          {stats.map((stat, index) => (
-            <MobileStatCard
-              key={index}
-              title={stat.title}
-              value={stat.value}
-              change={stat.change}
-              icon={stat.icon}
-              trend={stat.change.includes('+') ? 'up' : stat.change.includes('-') ? 'down' : 'neutral'}
-            />
-          ))}
-        </MobileGrid>
+    <div className="space-y-6 p-6">
+      <div>
+        <h1 className="text-3xl font-bold">HR Dashboard</h1>
+        <p className="text-gray-600 mt-2">Manage your workforce and track performance metrics.</p>
+      </div>
 
-        {/* Department Distribution */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {stats.map((stat) => (
+          <Card key={stat.title}>
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-sm text-gray-500">{stat.title}</p>
+                  <h3 className="text-3xl font-bold mt-2">{stat.value}</h3>
+                  {stat.change && (
+                    <Badge variant="secondary" className="mt-2">
+                      {stat.change}
+                    </Badge>
+                  )}
+                </div>
+                <div className={`p-3 rounded-lg ${stat.bg}`}>
+                  <stat.icon className={`w-6 h-6 ${stat.color}`} />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {departmentData.length > 0 && (
-          <MobileCard title="Department Distribution" subtitle="Employee count by department">
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={departmentData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, value }) => `${name}: ${value}`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {departmentData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </MobileCard>
+          <Card>
+            <CardHeader>
+              <CardTitle>Department Distribution</CardTitle>
+              <CardDescription>Employee count by department</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={departmentData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, value }) => `${name}: ${value}`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {departmentData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
         )}
 
-        {/* Recent Employees */}
-        <MobileCard title="Recent Employees" subtitle="Latest team members">
-          <MobileTable
-            headers={[
-              { key: 'name', label: 'Name' },
-              { key: 'department', label: 'Department' },
-              { key: 'join_date', label: 'Join Date' },
-            ]}
-            rows={recentEmployees}
-            emptyMessage="No recent employees"
-          />
-        </MobileCard>
-
-        {/* Recent Leave Requests */}
-        <MobileCard title="Recent Leave Requests" subtitle="Latest leave applications">
-          <MobileTable
-            headers={[
-              { key: 'employee_name', label: 'Employee' },
-              { key: 'type', label: 'Type' },
-              { key: 'status', label: 'Status' },
-              { key: 'start_date', label: 'Start Date' },
-            ]}
-            rows={recentLeaves}
-            emptyMessage="No recent leave requests"
-          />
-        </MobileCard>
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Leave Requests</CardTitle>
+            <CardDescription>Latest leave applications</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {recentLeaves.length > 0 ? recentLeaves.map((lv, index) => (
+                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex-1">
+                    <p className="font-medium text-sm">{lv.employee_name}</p>
+                    <p className="text-sm text-gray-500">{lv.type}</p>
+                  </div>
+                  <Badge variant={lv.status === 'Approved' ? 'default' : lv.status === 'Rejected' ? 'destructive' : 'secondary'}>
+                    {lv.status}
+                  </Badge>
+                </div>
+              )) : (
+                <p className="text-gray-400 text-sm text-center py-4">No leave requests yet.</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
-    </MobileLayout>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Recently Added Employees</CardTitle>
+          <CardDescription>Latest team members</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {recentEmployees.length > 0 ? recentEmployees.map((emp, index) => (
+              <div key={index} className="flex items-start gap-4">
+                <div className="p-2 bg-blue-50 rounded-lg">
+                  <Users className="w-4 h-4 text-blue-600" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-sm">{emp.name}</p>
+                  <p className="text-sm text-gray-500">{emp.department}</p>
+                </div>
+                <span className="text-xs text-gray-400">{emp.join_date}</span>
+              </div>
+            )) : (
+              <div className="text-center py-8">
+                <Users className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                <p className="text-gray-400 font-medium">No employees yet</p>
+                <p className="text-sm text-gray-500 mt-1">Start adding employees to build your team</p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
