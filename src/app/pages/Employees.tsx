@@ -22,7 +22,8 @@ import {
 } from '../components/ui/dialog';
 import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Search, Plus, Edit, Trash2, Eye, Download, Loader2, Key, CheckCircle, Copy } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, Eye, Download, X, Loader2, Key, CheckCircle, Copy, User, Briefcase, Phone, CreditCard, Calendar, MapPin, Activity, Building2 } from 'lucide-react';
+import { FormField, FormSection, FormActions } from '../components/ui/form-field';
 import { toast } from 'sonner';
 import { supabase } from '../../lib/supabase';
 import { createEmployeeAccountWithCredentials, resetEmployeePassword } from '../../lib/authService';
@@ -485,166 +486,252 @@ export function Employees() {
             <Plus className="w-4 h-4 mr-2" />
             Add Employee
           </Button>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>{editingEmployee ? 'Edit Employee' : 'Add New Employee'}</DialogTitle>
-              <DialogDescription>{editingEmployee ? 'Update employee details' : 'Enter employee details to add them to the system'}</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-6">
-              {/* 🔹 Identity & Basics */}
-              <div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-800">
-                <h3 className="text-lg font-semibold mb-4 text-blue-600">🔹 Identity & Basics</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label>Full Name *</Label>
-                    <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Precious Kaipa" />
-                  </div>
-                  <div>
-                    <Label>Email *</Label>
-                    <Input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="john@company.com" disabled={!!editingEmployee} />
-                  </div>
-                  <div>
-                    <Label>Phone</Label>
-                    <Input value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="+265 991 234 567" />
-                  </div>
-                  <div>
-                    <Label>Date of Birth</Label>
-                    <Input type="date" value={formData.dateOfBirth} onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })} />
-                  </div>
-                  <div>
-                    <Label>Gender</Label>
-                    <Select value={formData.gender} onValueChange={(val) => setFormData({ ...formData, gender: val })}>
-                      <SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Male">Male</SelectItem>
-                        <SelectItem value="Female">Female</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="md:col-span-2">
-                    <Label>Address</Label>
-                    <Input value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} placeholder="123 Main St, City, Country" />
-                  </div>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 border-none shadow-2xl">
+            <div className="sticky top-0 z-10 bg-white dark:bg-slate-950 px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
+                  <User className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white">
+                    {editingEmployee ? 'Update Profile' : 'Nurture Talent'}
+                  </DialogTitle>
+                  <DialogDescription className="text-sm text-slate-500 font-medium tracking-tight">
+                    {editingEmployee ? `Refining details for ${editingEmployee.name}` : 'Onboard a new team member to the organization'}
+                  </DialogDescription>
                 </div>
               </div>
+              <DialogClose asChild>
+                <button className="p-2 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-full transition-colors text-slate-400">
+                  <X className="w-5 h-5" />
+                </button>
+              </DialogClose>
+            </div>
+
+            <div className="p-6 space-y-6 bg-slate-50/50 dark:bg-slate-900/20">
+              {/* 🔹 Identity & Basics */}
+              <FormSection
+                title="Identity & Personal Basics"
+                description="Core information about the individual"
+                icon={<User className="w-4 h-4 text-blue-600" />}
+                accentColor="border-blue-500"
+              >
+                <FormField label="Full Name" required hint="Legal name as per ID">
+                  <input
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="e.g. Precious Kaipa"
+                    className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
+                  />
+                </FormField>
+                <FormField label="Email Address" required hint="Used for system login">
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="e.g. john@company.com"
+                    disabled={!!editingEmployee}
+                    className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none disabled:bg-slate-50 dark:disabled:bg-slate-950 disabled:text-slate-400"
+                  />
+                </FormField>
+                <FormField label="Phone Number" hint="Primary contact number">
+                  <input
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    placeholder="+265 991 234 567"
+                    className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
+                  />
+                </FormField>
+                <FormField label="Date of Birth">
+                  <input
+                    type="date"
+                    value={formData.dateOfBirth}
+                    onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+                    className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
+                  />
+                </FormField>
+                <FormField label="Gender">
+                  <Select value={formData.gender} onValueChange={(val) => setFormData({ ...formData, gender: val })}>
+                    <SelectTrigger className="rounded-xl border-2 border-slate-200 dark:border-slate-700 h-11"><SelectValue placeholder="Select gender" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Male">Male</SelectItem>
+                      <SelectItem value="Female">Female</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormField>
+                <div className="md:col-span-2">
+                  <FormField label="Residential Address" hint="Full home address">
+                    <input
+                      value={formData.address}
+                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                      placeholder="123 Main St, Area 47, Lilongwe"
+                      className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
+                    />
+                  </FormField>
+                </div>
+              </FormSection>
 
               {/* 🔹 Employment Info */}
-              <div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-800">
-                <h3 className="text-lg font-semibold mb-4 text-green-600">🔹 Employment Info</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label>Department *</Label>
-                    <Select value={formData.department} onValueChange={(val) => setFormData({ ...formData, department: val })}>
-                      <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="IT">IT</SelectItem>
-                        <SelectItem value="HR">HR</SelectItem>
-                        <SelectItem value="Finance">Finance</SelectItem>
-                        <SelectItem value="Sales">Sales</SelectItem>
-                        <SelectItem value="Marketing">Marketing</SelectItem>
-                        <SelectItem value="Operations">Operations</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>Position</Label>
-                    <Input value={formData.position} onChange={(e) => setFormData({ ...formData, position: e.target.value })} placeholder="Software Engineer" />
-                  </div>
-                  <div>
-                    <Label>Employment Type</Label>
-                    <Select value={formData.employmentType} onValueChange={(val) => setFormData({ ...formData, employmentType: val })}>
-                      <SelectTrigger><SelectValue placeholder="Select employment type" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Full-time">Full-time</SelectItem>
-                        <SelectItem value="Part-time">Part-time</SelectItem>
-                        <SelectItem value="Contract">Contract</SelectItem>
-                        <SelectItem value="Intern">Intern</SelectItem>
-                        <SelectItem value="Temporary">Temporary</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>Manager/Supervisor</Label>
-                    <Input value={formData.managerSupervisor} onChange={(e) => setFormData({ ...formData, managerSupervisor: e.target.value })} placeholder="John Smith" />
-                  </div>
-                  <div>
-                    <Label>Work Location</Label>
-                    <Input value={formData.workLocation} onChange={(e) => setFormData({ ...formData, workLocation: e.target.value })} placeholder="Main Office - Lilongwe" />
-                  </div>
-                  <div>
-                    <Label>Join Date</Label>
-                    <Input type="date" value={formData.joinDate} onChange={(e) => setFormData({ ...formData, joinDate: e.target.value })} />
-                  </div>
-                </div>
-              </div>
+              <FormSection
+                title="Employment Information"
+                description="Professional role and assignment"
+                icon={<Briefcase className="w-4 h-4 text-green-600" />}
+                accentColor="border-green-500"
+              >
+                <FormField label="Department" required>
+                  <Select value={formData.department} onValueChange={(val) => setFormData({ ...formData, department: val })}>
+                    <SelectTrigger className="rounded-xl border-2 border-slate-200 dark:border-slate-700 h-11"><SelectValue placeholder="Select department" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="IT">Information Technology</SelectItem>
+                      <SelectItem value="HR">Human Resources</SelectItem>
+                      <SelectItem value="Finance">Finance & Accounts</SelectItem>
+                      <SelectItem value="Sales">Sales & Marketing</SelectItem>
+                      <SelectItem value="Operations">Operations</SelectItem>
+                      <SelectItem value="Customer Support">Customer Support</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormField>
+                <FormField label="Position / Title">
+                  <input
+                    value={formData.position}
+                    onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                    placeholder="e.g. Software Engineer"
+                    className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all outline-none"
+                  />
+                </FormField>
+                <FormField label="Employment Type">
+                  <Select value={formData.employmentType} onValueChange={(val) => setFormData({ ...formData, employmentType: val })}>
+                    <SelectTrigger className="rounded-xl border-2 border-slate-200 dark:border-slate-700 h-11"><SelectValue placeholder="Select type" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Full-time">Full-time</SelectItem>
+                      <SelectItem value="Part-time">Part-time</SelectItem>
+                      <SelectItem value="Contract">Contract</SelectItem>
+                      <SelectItem value="Probation">Probation</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormField>
+                <FormField label="Manager / Supervisor">
+                  <input
+                    value={formData.managerSupervisor}
+                    onChange={(e) => setFormData({ ...formData, managerSupervisor: e.target.value })}
+                    placeholder="Search managers..."
+                    className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all outline-none"
+                  />
+                </FormField>
+                <FormField label="Work Location">
+                  <input
+                    value={formData.workLocation}
+                    onChange={(e) => setFormData({ ...formData, workLocation: e.target.value })}
+                    placeholder="e.g. Main Office - Lilongwe"
+                    className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all outline-none"
+                  />
+                </FormField>
+                <FormField label="Join Date">
+                  <input
+                    type="date"
+                    value={formData.joinDate}
+                    onChange={(e) => setFormData({ ...formData, joinDate: e.target.value })}
+                    className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all outline-none"
+                  />
+                </FormField>
+              </FormSection>
 
               {/* 🔹 Emergency Info */}
-              <div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-800">
-                <h3 className="text-lg font-semibold mb-4 text-red-600">🔹 Emergency Info</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label>Emergency Contact Name</Label>
-                    <Input value={formData.emergencyContactName} onChange={(e) => setFormData({ ...formData, emergencyContactName: e.target.value })} placeholder="Jane Doe" />
-                  </div>
-                  <div>
-                    <Label>Emergency Contact Phone</Label>
-                    <Input value={formData.emergencyContactPhone} onChange={(e) => setFormData({ ...formData, emergencyContactPhone: e.target.value })} placeholder="+265 991 234 568" />
-                  </div>
-                  <div>
-                    <Label>Relationship</Label>
-                    <Select value={formData.emergencyContactRelationship} onValueChange={(val) => setFormData({ ...formData, emergencyContactRelationship: val })}>
-                      <SelectTrigger><SelectValue placeholder="Select relationship" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Spouse">Spouse</SelectItem>
-                        <SelectItem value="Parent">Parent</SelectItem>
-                        <SelectItem value="Sibling">Sibling</SelectItem>
-                        <SelectItem value="Child">Child</SelectItem>
-                        <SelectItem value="Friend">Friend</SelectItem>
-                        <SelectItem value="Other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
+              <FormSection
+                title="Emergency Contact"
+                description="In case of medical or critical events"
+                icon={<Activity className="w-4 h-4 text-red-600" />}
+                accentColor="border-red-500"
+              >
+                <FormField label="Contact Person Name">
+                  <input
+                    value={formData.emergencyContactName}
+                    onChange={(e) => setFormData({ ...formData, emergencyContactName: e.target.value })}
+                    placeholder="Next of kin name"
+                    className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm focus:border-red-500 focus:ring-4 focus:ring-red-500/10 transition-all outline-none"
+                  />
+                </FormField>
+                <FormField label="Contact Phone">
+                  <input
+                    value={formData.emergencyContactPhone}
+                    onChange={(e) => setFormData({ ...formData, emergencyContactPhone: e.target.value })}
+                    placeholder="Emergency number"
+                    className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm focus:border-red-500 focus:ring-4 focus:ring-red-500/10 transition-all outline-none"
+                  />
+                </FormField>
+                <FormField label="Relationship">
+                  <Select value={formData.emergencyContactRelationship} onValueChange={(val) => setFormData({ ...formData, emergencyContactRelationship: val })}>
+                    <SelectTrigger className="rounded-xl border-2 border-slate-200 dark:border-slate-700 h-11"><SelectValue placeholder="Select relationship" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Spouse">Spouse</SelectItem>
+                      <SelectItem value="Parent">Parent</SelectItem>
+                      <SelectItem value="Sibling">Sibling</SelectItem>
+                      <SelectItem value="Friend">Friend</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormField>
+              </FormSection>
 
               {/* 🔹 Payroll Basics */}
-              <div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-800">
-                <h3 className="text-lg font-semibold mb-4 text-purple-600">🔹 Payroll Basics</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label>Bank Name</Label>
-                    <Input value={formData.bankName} onChange={(e) => setFormData({ ...formData, bankName: e.target.value })} placeholder="National Bank of Malawi" />
-                  </div>
-                  <div>
-                    <Label>Account Number</Label>
-                    <Input value={formData.bankAccountNumber} onChange={(e) => setFormData({ ...formData, bankAccountNumber: e.target.value })} placeholder="1234567890" />
-                  </div>
-                  <div>
-                    <Label>Tax ID / PIN</Label>
-                    <Input value={formData.taxIdPin} onChange={(e) => setFormData({ ...formData, taxIdPin: e.target.value })} placeholder="Tax ID or PIN" />
-                  </div>
-                  <div>
-                    <Label>Salary</Label>
-                    <Input value={formData.salary} onChange={(e) => setFormData({ ...formData, salary: e.target.value })} placeholder="50000" />
-                  </div>
-                  <div>
-                    <Label>Role</Label>
-                    <Select value={formData.role} onValueChange={(val) => setFormData({ ...formData, role: val })}>
-                      <SelectTrigger><SelectValue placeholder="Select role" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Employee">Employee</SelectItem>
-                        <SelectItem value="HR">HR</SelectItem>
-                        <SelectItem value="Manager">Manager</SelectItem>
-                        <SelectItem value="Admin">Admin</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
+              <FormSection
+                title="Financial & Payroll"
+                description="Salary and banking details"
+                icon={<CreditCard className="w-4 h-4 text-purple-600" />}
+                accentColor="border-purple-500"
+              >
+                <FormField label="Bank Name">
+                  <input
+                    value={formData.bankName}
+                    onChange={(e) => setFormData({ ...formData, bankName: e.target.value })}
+                    placeholder="e.g. Standard Bank"
+                    className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all outline-none"
+                  />
+                </FormField>
+                <FormField label="Account Number">
+                  <input
+                    value={formData.bankAccountNumber}
+                    onChange={(e) => setFormData({ ...formData, bankAccountNumber: e.target.value })}
+                    placeholder="Checking account number"
+                    className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all outline-none"
+                  />
+                </FormField>
+                <FormField label="Tax ID / PIN">
+                  <input
+                    value={formData.taxIdPin}
+                    onChange={(e) => setFormData({ ...formData, taxIdPin: e.target.value })}
+                    placeholder="MRA Tax Number"
+                    className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all outline-none"
+                  />
+                </FormField>
+                <FormField label="Salary (Monthly Gross)">
+                  <input
+                    value={formData.salary}
+                    onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
+                    placeholder="e.g. 500000"
+                    className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all outline-none font-bold"
+                  />
+                </FormField>
+                <FormField label="System Role / Permissions">
+                  <Select value={formData.role} onValueChange={(val) => setFormData({ ...formData, role: val })}>
+                    <SelectTrigger className="rounded-xl border-2 border-slate-200 dark:border-slate-700 h-11"><SelectValue placeholder="Select role" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Employee">Employee (Normal Access)</SelectItem>
+                      <SelectItem value="Manager">Manager (Team Oversight)</SelectItem>
+                      <SelectItem value="HR">HR Officer (People Management)</SelectItem>
+                      <SelectItem value="Admin">Administrator (Full Control)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormField>
+              </FormSection>
             </div>
-            <div className="flex justify-end gap-2 mt-4">
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-              <Button onClick={handleSubmit}>{editingEmployee ? 'Update Employee' : 'Add Employee'}</Button>
+
+            <div className="p-6 bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800">
+              <FormActions
+                onCancel={() => setIsDialogOpen(false)}
+                onSubmit={handleSubmit}
+                submitLabel={editingEmployee ? 'Update Records' : 'Onboard Employee'}
+              />
             </div>
           </DialogContent>
         </Dialog>

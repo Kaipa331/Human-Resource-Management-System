@@ -2,10 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
-import { Clock, Calendar as CalendarIcon, MapPin, CheckCircle, XCircle, Loader2, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { Clock, Calendar as CalendarIcon, MapPin, CheckCircle, XCircle, Loader2, ShieldCheck, AlertTriangle, Info, FileText } from 'lucide-react';
 import { Calendar } from '../components/ui/calendar';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { Label } from '../components/ui/label';
+import { FormField, FormSection, FormActions } from '../components/ui/form-field';
 import { Textarea } from '../components/ui/textarea';
 import { toast } from 'sonner';
 import { supabase, supabaseUrl } from '../../lib/supabase';
@@ -763,32 +764,52 @@ export function Attendance() {
 
               <Dialog open={correctionOpen} onOpenChange={setCorrectionOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="outline" className="w-full" disabled={!currentEmployee || actionLoading !== null}>
+                  <Button variant="outline" className="w-full rounded-xl border-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all font-bold" disabled={!currentEmployee || actionLoading !== null}>
                     Request Manual Correction
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Request Manual Attendance Correction</DialogTitle>
-                    <DialogDescription>
-                      Use this if you missed a punch or your GPS verification could not be confirmed.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4 mt-2">
-                    <div>
-                      <Label htmlFor="correction-reason">Reason</Label>
-                      <Textarea
-                        id="correction-reason"
-                        value={correctionReason}
-                        onChange={(event) => setCorrectionReason(event.target.value)}
-                        placeholder="Example: My browser blocked location access when I arrived at the office."
-                        rows={4}
-                      />
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 border-none shadow-2xl">
+                  <div className="sticky top-0 z-10 bg-white dark:bg-slate-950 px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-2xl bg-orange-600 flex items-center justify-center shadow-lg shadow-orange-500/30">
+                        <AlertTriangle className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white">Correction Request</DialogTitle>
+                        <DialogDescription className="text-sm text-slate-500 font-medium">Explain why manual attendance logging is required</DialogDescription>
+                      </div>
                     </div>
-                    <Button onClick={handleManualCorrection} className="w-full" disabled={actionLoading !== null}>
-                      {actionLoading === 'correction' ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                      Submit for Approval
-                    </Button>
+                  </div>
+
+                  <div className="p-6 space-y-6 bg-slate-50/50 dark:bg-slate-900/20">
+                    <FormSection
+                      title="Correction Context"
+                      description="Describe the issue with your punch"
+                      icon={<Info className="w-4 h-4 text-orange-600" />}
+                      accentColor="border-orange-500"
+                    >
+                      <div className="md:col-span-2">
+                        <FormField label="Reason for Correction" required hint="e.g. GPS failure, forgot to clock out, etc.">
+                          <Textarea
+                            id="correction-reason"
+                            value={correctionReason}
+                            onChange={(event) => setCorrectionReason(event.target.value)}
+                            placeholder="Explain clearly to your manager..."
+                            rows={4}
+                            className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-3 text-sm focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 transition-all outline-none resize-none"
+                          />
+                        </FormField>
+                      </div>
+                    </FormSection>
+                  </div>
+
+                  <div className="p-6 bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800">
+                    <FormActions
+                      onCancel={() => setCorrectionOpen(false)}
+                      onSubmit={handleManualCorrection}
+                      submitLabel="Submit for Approval"
+                      isSubmitting={actionLoading === 'correction'}
+                    />
                   </div>
                 </DialogContent>
               </Dialog>

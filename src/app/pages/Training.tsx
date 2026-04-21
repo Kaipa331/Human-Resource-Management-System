@@ -3,10 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Progress } from '../components/ui/progress';
-import { GraduationCap, BookOpen, Award, Clock, Plus } from 'lucide-react';
+import { GraduationCap, BookOpen, Award, Clock, Plus, List, Building, FileText, Calendar } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { Label } from '../components/ui/label';
+import { FormField, FormSection, FormActions } from '../components/ui/form-field';
 import { Input } from '../components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { toast } from 'sonner';
@@ -53,10 +54,12 @@ export function Training() {
     description: '',
     category: '',
     durationHours: '',
-    cost: '',
-    instructor: ''
+    cost: '0',
+    instructor: '',
+    startDate: '',
+    endDate: ''
   });
-  const [isCreateCourseOpen, setIsCreateCourseOpen] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchTrainingData();
@@ -98,18 +101,27 @@ export function Training() {
       // Fetch employee enrollments for current user
       const user = JSON.parse(localStorage.getItem('hrms_user') || '{}');
       if (user?.email) {
-        const enrollments = await TrainingService.getEmployeeEnrollments(user.email);
-        const transformedEnrollments = enrollments.map(enrollment => ({
-          id: enrollment.id,
-          title: enrollment.courseName,
-          category: enrollment.category || 'General',
-          progress: enrollment.progress,
-          status: enrollment.status,
-          dueDate: enrollment.completionDate || '2026-12-31',
-          completedModules: Math.floor(enrollment.progress / 10),
-          totalModules: 10
-        }));
-        setMyTrainings(transformedEnrollments);
+        // First get the employee ID from email
+        const { data: emp } = await supabase.from('employees').select('id').eq('email', user.email).maybeSingle();
+        const employeeId = emp?.id;
+
+        if (employeeId) {
+          const enrollments = await TrainingService.getEmployeeTrainingEnrollments(employeeId);
+          const transformedEnrollments = enrollments.map(enrollment => {
+            const course = (enrollment as any).course;
+            return {
+              id: enrollment.id,
+              title: course?.course_name || 'Untitled Course',
+              category: course?.category || 'General',
+              progress: (enrollment as any).progress || 0,
+              status: enrollment.status,
+              dueDate: (enrollment as any).due_date || '2026-12-31',
+              completedModules: (enrollment as any).completed_modules || 0,
+              totalModules: (enrollment as any).total_modules || 10
+            };
+          });
+          setMyTrainings(transformedEnrollments);
+        }
       }
     } catch (error) {
       console.error('Error fetching training data:', error);
@@ -126,29 +138,34 @@ export function Training() {
     }
 
     try {
-      const course = await TrainingService.createTrainingCourse({
-        courseName: newCourse.courseName,
-        courseCode: newCourse.courseCode,
-        description: newCourse.description,
-        category: newCourse.category,
-        durationHours: parseInt(newCourse.durationHours) || 0,
-        cost: parseFloat(newCourse.cost) || 0,
-        instructor: newCourse.instructor
-      });
+      const course = await TrainingService.createTrainingCourse(
+        newCourse.courseName,
+        newCourse.courseCode,
+        newCourse.description,
+        newCourse.category,
+        parseInt(newCourse.durationHours) || 0,
+        parseFloat(newCourse.cost) || 0,
+        newCourse.instructor
+      );
 
       if (course) {
         toast.success('Training course created successfully');
-        setIsCreateCourseOpen(false);
+        setIsDialogOpen(false);
         setNewCourse({
           courseName: '',
           courseCode: '',
           description: '',
           category: '',
           durationHours: '',
-          cost: '',
-          instructor: ''
+          cost: '0',
+          instructor: '',
+          startDate: '',
+          endDate: ''
         });
-        fetchTrainingData();
+        const loadTrainingData = async () => { // local refresh logic matches the useEffect one
+           window.location.reload(); // Simple refresh to ensure all metrics and lists sync
+        };
+        loadTrainingData();
       } else {
         toast.error('Failed to create training course');
       }
@@ -302,7 +319,7 @@ export function Training() {
   }, []);
 
     
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
 
   
   const handleEnrollCourse = (courseId: string) => {
@@ -401,48 +418,107 @@ export function Training() {
               Create Training Program
             </Button>
           </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create Training Program</DialogTitle>
-              <DialogDescription>Add a new course for employees.</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 mt-4">
-              <div>
-                <Label>Course Title *</Label>
-                <Input value={newCourse.title} onChange={e => setNewCourse({...newCourse, title: e.target.value})} />
-              </div>
-              <div>
-                <Label>Category *</Label>
-                <Select onValueChange={v => setNewCourse({...newCourse, category: v})}>
-                  <SelectTrigger><SelectValue placeholder="Select Category" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Technical Skills">Technical Skills</SelectItem>
-                    <SelectItem value="Leadership">Leadership</SelectItem>
-                    <SelectItem value="Compliance">Compliance</SelectItem>
-                    <SelectItem value="Professional Development">Professional Development</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Provider</Label>
-                <Input value={newCourse.provider} onChange={e => setNewCourse({...newCourse, provider: e.target.value})} />
-              </div>
-              <div>
-                <Label>Duration (Hours)</Label>
-                <Input type="number" value={newCourse.duration} onChange={e => setNewCourse({...newCourse, duration: e.target.value})} />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Start Date</Label>
-                  <Input type="date" value={newCourse.startDate} onChange={e => setNewCourse({...newCourse, startDate: e.target.value})} />
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 border-none shadow-2xl">
+            <div className="sticky top-0 z-10 bg-white dark:bg-slate-950 px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
+                  <GraduationCap className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <Label>End Date</Label>
-                  <Input type="date" value={newCourse.endDate} onChange={e => setNewCourse({...newCourse, endDate: e.target.value})} />
+                  <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white">New Training Program</DialogTitle>
+                  <DialogDescription className="text-sm text-slate-500 font-medium">Design a new growth journey for your employees</DialogDescription>
                 </div>
               </div>
             </div>
-            <Button onClick={handleCreateCourse}>Create Program</Button>
+
+            <div className="p-6 space-y-6 bg-slate-50/50 dark:bg-slate-900/20">
+              <FormSection
+                title="Course Definition"
+                description="Core academic details"
+                icon={<List className="w-4 h-4 text-blue-600" />}
+                accentColor="border-blue-500"
+              >
+                <div className="md:col-span-2">
+                  <FormField label="Course Title" required hint="e.g. Advanced React Architecture">
+                    <input
+                      value={newCourse.courseName}
+                      onChange={e => setNewCourse({...newCourse, courseName: e.target.value})}
+                      placeholder="Enter course name"
+                      className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
+                    />
+                  </FormField>
+                </div>
+                <FormField label="Course Code" required hint="Unique identifier">
+                  <input 
+                    value={newCourse.courseCode} 
+                    onChange={e => setNewCourse({...newCourse, courseCode: e.target.value})} 
+                    placeholder="e.g. TR-2026-001" 
+                    className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
+                  />
+                </FormField>
+                <FormField label="Category" required>
+                  <Select value={newCourse.category} onValueChange={v => setNewCourse({...newCourse, category: v})}>
+                    <SelectTrigger className="rounded-xl border-2 border-slate-200 dark:border-slate-700 h-11"><SelectValue placeholder="Select category" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Technical Skills">Technical Skills</SelectItem>
+                      <SelectItem value="Leadership">Leadership</SelectItem>
+                      <SelectItem value="Compliance">Compliance</SelectItem>
+                      <SelectItem value="Professional Development">Professional Development</SelectItem>
+                      <SelectItem value="Soft Skills">Soft Skills</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormField>
+              </FormSection>
+
+              <FormSection
+                title="Logistics & Delivery"
+                description="Who teaches and which provider"
+                icon={<Building className="w-4 h-4 text-green-600" />}
+                accentColor="border-green-500"
+              >
+                <FormField label="Instructor / Facilitator">
+                  <input
+                    value={newCourse.instructor}
+                    onChange={e => setNewCourse({...newCourse, instructor: e.target.value})}
+                    placeholder="Internal Facilitator / Vendor"
+                    className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all outline-none"
+                  />
+                </FormField>
+                <FormField label="Total Duration (Hours)">
+                  <input
+                    type="number"
+                    value={newCourse.durationHours}
+                    onChange={e => setNewCourse({...newCourse, durationHours: e.target.value})}
+                    placeholder="0"
+                    className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all outline-none"
+                  />
+                </FormField>
+                <FormField label="Start Date">
+                  <input
+                    type="date"
+                    value={newCourse.startDate}
+                    onChange={e => setNewCourse({...newCourse, startDate: e.target.value})}
+                    className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all outline-none"
+                  />
+                </FormField>
+                <FormField label="End Date">
+                  <input
+                    type="date"
+                    value={newCourse.endDate}
+                    onChange={e => setNewCourse({...newCourse, endDate: e.target.value})}
+                    className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all outline-none"
+                  />
+                </FormField>
+              </FormSection>
+            </div>
+
+            <div className="p-6 bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800">
+              <FormActions
+                onCancel={() => setIsDialogOpen(false)}
+                onSubmit={handleCreateCourse}
+                submitLabel="Launch Training Program"
+              />
+            </div>
           </DialogContent>
         </Dialog>
       </div>

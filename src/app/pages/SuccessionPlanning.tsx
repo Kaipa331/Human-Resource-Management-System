@@ -7,7 +7,8 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Textarea } from '../components/ui/textarea';
-import { Plus, FileText, CircleDollarSign, Users, ArrowUpRight, X, Download, Trash2, Pencil } from 'lucide-react';
+import { Plus, FileText, CircleDollarSign, Users, ArrowUpRight, X, Download, Trash2, Pencil, Briefcase, Award, TrendingUp, ShieldAlert, ListChecks } from 'lucide-react';
+import { FormField, FormSection, FormActions } from '../components/ui/form-field';
 import { toast } from 'sonner';
 import { supabase } from '../../lib/supabase';
 
@@ -63,7 +64,7 @@ export function SuccessionPlanning() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   
   const initialSuccessor = (level: string) => ({
     level,
@@ -231,7 +232,7 @@ export function SuccessionPlanning() {
       notes: plan.notes,
       successors
     });
-    setDialogOpen(true);
+    setIsDialogOpen(true);
   };
 
   const handleDeletePlan = async (id: string) => {
@@ -310,7 +311,7 @@ export function SuccessionPlanning() {
       }
 
       toast.success(newPlan.id ? 'Talent Matrix updated' : 'Talent Matrix created');
-      setDialogOpen(false);
+      setIsDialogOpen(false);
       
       // Cleanup & Refresh
       setNewPlan({
@@ -421,8 +422,8 @@ export function SuccessionPlanning() {
             <Download className="w-4 h-4" />
             Download Matrix
           </Button>
-          <Dialog open={dialogOpen} onOpenChange={(open) => {
-            setDialogOpen(open);
+          <Dialog open={isDialogOpen} onOpenChange={(open) => {
+            setIsDialogOpen(open);
             if (!open) setNewPlan({
               id: undefined,
               role: '',
@@ -436,136 +437,153 @@ export function SuccessionPlanning() {
             });
           }}>
             <DialogTrigger asChild>
-              <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">
+              <Button className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-lg shadow-emerald-500/20 px-6">
                 <Plus className="w-4 h-4 mr-2" />
                 Add New Succession Plan
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-[95vw] w-[1200px] max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>{newPlan.id ? 'Edit Talent Matrix Assessment' : 'Talent Matrix Assessment Form'}</DialogTitle>
-                <DialogDescription>Enter position details and evaluate successors across all levels.</DialogDescription>
-              </DialogHeader>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 border-none shadow-2xl">
+              <div className="sticky top-0 z-10 bg-white dark:bg-slate-950 px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                    <TrendingUp className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white">{newPlan.id ? 'Edit Talent Matrix' : 'Talent Matrix Assessment'}</DialogTitle>
+                    <DialogDescription className="text-sm text-slate-500 font-medium">Map your organization's future leadership pipeline</DialogDescription>
+                  </div>
+                </div>
+              </div>
 
-              <div className="space-y-8 py-4">
-                {/* Section 1: Position & Incumbent */}
-                <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
-                  <h3 className="text-sm font-bold uppercase text-slate-500 mb-4">I. Position & Current Incumbent</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label>Target Position</Label>
-                      <Input value={newPlan.role} onChange={e => setNewPlan({...newPlan, role: e.target.value})} placeholder="e.g. Chief Finance Officer" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Department</Label>
-                      <Select value={newPlan.department} onValueChange={v => setNewPlan({...newPlan, department: v})}>
-                        <SelectTrigger><SelectValue placeholder="Select dept" /></SelectTrigger>
-                        <SelectContent>
-                          {departments.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Current Incumbent</Label>
-                      <Select value={newPlan.currentHolder} onValueChange={v => setNewPlan({...newPlan, currentHolder: v})}>
-                        <SelectTrigger><SelectValue placeholder="Select employee" /></SelectTrigger>
-                        <SelectContent>
-                          {employees.map(e => <SelectItem key={e.id} value={e.name}>{e.name}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Grade</Label>
-                      <Input value={newPlan.incumbentGrade} onChange={e => setNewPlan({...newPlan, incumbentGrade: e.target.value})} placeholder="e.g. 7" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Risk of Losing</Label>
-                      <Select value={newPlan.riskOfLosing} onValueChange={v => setNewPlan({...newPlan, riskOfLosing: v})}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {riskOptions.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Overall Status</Label>
-                      <Select value={newPlan.status} onValueChange={v => setNewPlan({...newPlan, status: v})}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
+              <div className="p-6 space-y-6 bg-slate-50/50 dark:bg-slate-900/20">
+                <FormSection
+                  title="Position & Incumbent"
+                  description="Core details for the role being assessed"
+                  icon={<Briefcase className="w-4 h-4 text-emerald-600" />}
+                  accentColor="border-emerald-500"
+                >
+                  <FormField label="Target Position" required hint="The role requiring a succession plan">
+                    <input 
+                      value={newPlan.role} 
+                      onChange={e => setNewPlan({...newPlan, role: e.target.value})} 
+                      placeholder="e.g. Chief Technical Officer" 
+                      className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none"
+                    />
+                  </FormField>
+                  <FormField label="Department" required>
+                    <Select value={newPlan.department} onValueChange={v => setNewPlan({...newPlan, department: v})}>
+                      <SelectTrigger className="rounded-xl border-2 border-slate-200 dark:border-slate-700 h-11"><SelectValue placeholder="Select dept" /></SelectTrigger>
+                      <SelectContent>
+                        {departments.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </FormField>
+                  <FormField label="Current Incumbent">
+                    <Select value={newPlan.currentHolder} onValueChange={v => setNewPlan({...newPlan, currentHolder: v})}>
+                      <SelectTrigger className="rounded-xl border-2 border-slate-200 dark:border-slate-700 h-11"><SelectValue placeholder="Select employee" /></SelectTrigger>
+                      <SelectContent>
+                        {employees.map(e => <SelectItem key={e.id} value={e.name}>{e.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </FormField>
+                  <FormField label="Current Grade">
+                    <input 
+                      value={newPlan.incumbentGrade} 
+                      onChange={e => setNewPlan({...newPlan, incumbentGrade: e.target.value})} 
+                      placeholder="e.g. 7" 
+                      className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none"
+                    />
+                  </FormField>
+                  <FormField label="Risk of Losing">
+                    <Select value={newPlan.riskOfLosing} onValueChange={v => setNewPlan({...newPlan, riskOfLosing: v})}>
+                      <SelectTrigger className="rounded-xl border-2 border-slate-200 dark:border-slate-700 h-11"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {riskOptions.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </FormField>
+                  <FormField label="Status">
+                     <Select value={newPlan.status} onValueChange={v => setNewPlan({...newPlan, status: v})}>
+                        <SelectTrigger className="rounded-xl border-2 border-slate-200 dark:border-slate-700 h-11"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           {statusOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                         </SelectContent>
                       </Select>
-                    </div>
-                  </div>
-                </div>
+                  </FormField>
+                </FormSection>
 
-                {/* Section 2: Successors */}
-                <h3 className="text-sm font-bold uppercase text-slate-500 -mb-4">II. Potential Successors (1st, 2nd, 3rd)</h3>
-                <div className="grid grid-cols-1 gap-6">
-                  {newPlan.successors.map((succ, idx) => (
-                    <div key={idx} className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
-                      <div className="bg-slate-100 dark:bg-slate-800 px-4 py-2 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
-                        <span className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">{succ.level} Level Successor</span>
-                        <Badge variant="secondary">{idx + 1}</Badge>
+                <FormSection
+                   title="Potential Successors"
+                   description="Evaluation of candidates across 3 levels"
+                   icon={<Users className="w-4 h-4 text-blue-600" />}
+                   accentColor="border-blue-500"
+                >
+                  <div className="md:col-span-2 space-y-4">
+                    {newPlan.successors.map((succ, idx) => (
+                      <div key={idx} className="p-4 rounded-2xl bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 shadow-sm">
+                        <div className="flex items-center gap-2 mb-4">
+                          <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black ${idx === 0 ? 'bg-blue-600 text-white' : 'bg-slate-200 dark:bg-slate-700'}`}>
+                            {idx + 1}
+                          </div>
+                          <span className="text-xs font-bold uppercase tracking-wider text-slate-500">{succ.level} Level Candidate</span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <FormField label="Successor Name">
+                            <Select value={succ.successor_name} onValueChange={v => handleUpdateSuccessorField(idx, 'successor_name', v)}>
+                              <SelectTrigger className="rounded-xl border border-slate-200 dark:border-slate-700 h-10"><SelectValue placeholder="Pick candidate" /></SelectTrigger>
+                              <SelectContent>
+                                {employees.map(e => <SelectItem key={e.id} value={e.name}>{e.name} ({e.department})</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                          </FormField>
+                          <FormField label="Availability">
+                            <Select value={succ.availability} onValueChange={v => handleUpdateSuccessorField(idx, 'availability', v)}>
+                              <SelectTrigger className="rounded-xl border border-slate-200 dark:border-slate-700 h-10"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                {availabilityOptions.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                          </FormField>
+                          <FormField label="Grade">
+                            <input value={succ.grade || ''} onChange={e => handleUpdateSuccessorField(idx, 'grade', e.target.value)} className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm outline-none" />
+                          </FormField>
+                          <FormField label="Matrix Placement">
+                            <Select value={succ.matrix_placement} onValueChange={v => handleUpdateSuccessorField(idx, 'matrix_placement', v)}>
+                              <SelectTrigger className="rounded-xl border border-slate-200 dark:border-slate-700 h-10"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                {matrixOptions.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                          </FormField>
+                          <FormField label="Timeframe">
+                            <Select value={succ.readiness} onValueChange={v => handleUpdateSuccessorField(idx, 'readiness', v)}>
+                              <SelectTrigger className="rounded-xl border border-slate-200 dark:border-slate-700 h-10"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                {readinessTimeOptions.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                          </FormField>
+                          <FormField label="Personality">
+                            <input value={succ.personality || ''} onChange={e => handleUpdateSuccessorField(idx, 'personality', e.target.value)} className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm outline-none" placeholder="e.g. Driver" />
+                          </FormField>
+                          <div className="md:col-span-3">
+                            <FormField label="Development Initiatives">
+                              <input value={succ.development_plan || ''} onChange={e => handleUpdateSuccessorField(idx, 'development_plan', e.target.value)} className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm outline-none" placeholder="Mentorship, Training..." />
+                            </FormField>
+                          </div>
+                        </div>
                       </div>
-                      <div className="p-4 grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div className="space-y-2">
-                          <Label className="text-xs">Successor Name</Label>
-                          <Select value={succ.successor_name} onValueChange={v => handleUpdateSuccessorField(idx, 'successor_name', v)}>
-                            <SelectTrigger><SelectValue placeholder="Pick candidate" /></SelectTrigger>
-                            <SelectContent>
-                              {employees.map(e => <SelectItem key={e.id} value={e.name}>{e.name} ({e.department})</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-xs">Availability</Label>
-                          <Select value={succ.availability} onValueChange={v => handleUpdateSuccessorField(idx, 'availability', v)}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              {availabilityOptions.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-xs">Grade</Label>
-                          <Input value={succ.grade} onChange={e => handleUpdateSuccessorField(idx, 'grade', e.target.value)} placeholder="e.g. 6" />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-xs">Matrix Placement</Label>
-                          <Select value={succ.matrix_placement} onValueChange={v => handleUpdateSuccessorField(idx, 'matrix_placement', v)}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              {matrixOptions.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-xs">Readiness</Label>
-                          <Select value={succ.readiness} onValueChange={v => handleUpdateSuccessorField(idx, 'readiness', v)}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              {readinessTimeOptions.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-xs">Personality (Psych)</Label>
-                          <Input value={succ.personality} onChange={e => handleUpdateSuccessorField(idx, 'personality', e.target.value)} placeholder="e.g. Analyzer" />
-                        </div>
-                        <div className="md:col-span-2 space-y-2">
-                          <Label className="text-xs">Development Plan</Label>
-                          <Input value={succ.development_plan} onChange={e => handleUpdateSuccessorField(idx, 'development_plan', e.target.value)} placeholder="Coaching, Leadership trainings..." />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                </FormSection>
               </div>
 
-              <div className="flex justify-end gap-3 pt-6 border-t">
-                <Button variant="outline" onClick={() => setDialogOpen(false)}>Discard</Button>
-                <Button onClick={handleCreatePlan} className="bg-emerald-600 hover:bg-emerald-700 text-white px-8">Commit Talent Matrix</Button>
+              <div className="p-6 bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800">
+                <FormActions
+                  onCancel={() => setIsDialogOpen(false)}
+                  onSubmit={handleCreatePlan}
+                  submitLabel="Commit Talent Matrix"
+                />
               </div>
             </DialogContent>
           </Dialog>

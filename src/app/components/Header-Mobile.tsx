@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Settings, LogOut, User, Menu, Search, Bell, HelpCircle, Sun, Moon } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import {
@@ -9,6 +10,8 @@ import {
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
 import { supabase } from '../../lib/supabase';
+import { SearchService, SearchResult } from '../../lib/searchService';
+import { Users, GraduationCap, Briefcase, Target, Search as SearchIcon } from 'lucide-react';
 
 interface HeaderProps {
   user: any;
@@ -49,6 +52,34 @@ export function Header({ user, setUser, toggleSidebar, isDarkMode = false, toggl
     navigate('/login');
   };
 
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(async () => {
+      if (searchQuery.length >= 2) {
+        setIsSearching(true);
+        const results = await SearchService.universalSearch(searchQuery);
+        setSearchResults(results);
+        setIsSearching(false);
+        setShowResults(true);
+      } else {
+        setSearchResults([]);
+        setShowResults(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery]);
+
+  const handleResultClick = (link: string) => {
+    navigate(link);
+    setShowResults(false);
+    setSearchQuery('');
+  };
+
   return (
     <header className="bg-white/80 dark:bg-slate-950/95 backdrop-blur-md sticky top-0 z-40 w-full h-14 md:h-16 flex justify-between items-center px-3 md:px-6 border-b border-slate-200 dark:border-slate-800 shadow-sm">
       {/* Mobile: Hamburger + Logo */}
@@ -70,9 +101,60 @@ export function Header({ user, setUser, toggleSidebar, isDarkMode = false, toggl
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             className="w-full bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-lg py-2 pl-10 pr-4 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400"
-            placeholder="Search employee performance..."
+            placeholder="Search employees, training, jobs..."
             type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={() => searchQuery.length >= 2 && setShowResults(true)}
           />
+
+          {showResults && (
+            <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl overflow-hidden z-50 max-h-[400px] overflow-y-auto backdrop-blur-lg">
+              {isSearching ? (
+                <div className="p-4 text-center text-sm text-slate-500 flex items-center justify-center gap-2">
+                  <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                  Searching across modules...
+                </div>
+              ) : searchResults.length > 0 ? (
+                <div className="py-2">
+                  {['Employee', 'Training', 'Recruitment', 'Performance'].map(type => {
+                    const group = searchResults.filter(r => r.type === type);
+                    if (group.length === 0) return null;
+                    return (
+                      <div key={type}>
+                        <div className="px-4 py-2 text-[10px] uppercase font-black text-slate-400 tracking-wider flex items-center gap-2 bg-slate-50/50 dark:bg-slate-900/50">
+                          {type === 'Employee' && <Users className="w-3 h-3" />}
+                          {type === 'Training' && <GraduationCap className="w-3 h-3" />}
+                          {type === 'Recruitment' && <Briefcase className="w-3 h-3" />}
+                          {type === 'Performance' && <Target className="w-3 h-3" />}
+                          {type === 'Employee' ? 'Team Members' : type + 's'}
+                        </div>
+                        {group.map(result => (
+                          <div
+                            key={result.id}
+                            className="px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer transition-colors border-b last:border-0 border-slate-100 dark:border-slate-900 flex items-center justify-between group"
+                            onClick={() => handleResultClick(result.link)}
+                          >
+                            <div>
+                              <p className="text-sm font-bold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors uppercase tracking-tight">{result.title}</p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">{result.subtitle}</p>
+                            </div>
+                            <span className="material-symbols-outlined text-slate-300 text-[18px]">arrow_forward</span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="p-8 text-center">
+                   <SearchIcon className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                   <p className="text-sm text-slate-500 font-medium">No matches found for "{searchQuery}"</p>
+                   <p className="text-xs text-slate-400 mt-1">Try searching for a name, department, or course title</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

@@ -4,9 +4,10 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { Plus, Briefcase, Users, Calendar, CheckCircle, Loader2 } from 'lucide-react';
+import { Plus, Briefcase, Users, Calendar, CheckCircle, Loader2, MapPin, Clock, FileText, Building2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { Label } from '../components/ui/label';
+import { FormField, FormSection, FormActions } from '../components/ui/form-field';
 import { Textarea } from '../components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { toast } from 'sonner';
@@ -126,53 +127,101 @@ export function Recruitment() {
               Create Job Posting
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Create Job Posting</DialogTitle>
-              <DialogDescription>Post a new job opening</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 mt-4">
-              <div>
-                <Label>Job Title *</Label>
-                <Input value={newJob.title} onChange={(e) => setNewJob({ ...newJob, title: e.target.value })} placeholder="e.g. Senior Software Engineer" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader className="pb-4 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
+                  <Briefcase className="w-5 h-5 text-white" />
+                </div>
                 <div>
-                  <Label>Department *</Label>
+                  <DialogTitle className="text-xl font-black text-slate-900 dark:text-white">Create Job Posting</DialogTitle>
+                  <DialogDescription className="text-sm text-slate-500">Post a new opening to attract qualified candidates</DialogDescription>
+                </div>
+              </div>
+            </DialogHeader>
+
+            <div className="space-y-4 mt-4">
+              <FormSection
+                title="Position Details"
+                description="Basic information about the role"
+                icon={<Briefcase className="w-4 h-4 text-blue-600" />}
+                accentColor="border-blue-500"
+              >
+                <div className="md:col-span-2">
+                  <FormField label="Job Title" required hint="Be specific, e.g. 'Senior Software Engineer'">
+                    <input
+                      value={newJob.title}
+                      onChange={(e) => setNewJob({ ...newJob, title: e.target.value })}
+                      placeholder="e.g. Customer Service Manager"
+                      className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-3 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+                    />
+                  </FormField>
+                </div>
+                <FormField label="Department" required>
                   <Select value={newJob.department} onValueChange={(val) => setNewJob({ ...newJob, department: val })}>
-                    <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
+                    <SelectTrigger className="rounded-xl border-2 border-slate-200 dark:border-slate-700 py-3 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10">
+                      <SelectValue placeholder="Select department" />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="IT">IT</SelectItem>
                       <SelectItem value="HR">HR</SelectItem>
                       <SelectItem value="Finance">Finance</SelectItem>
                       <SelectItem value="Sales">Sales</SelectItem>
                       <SelectItem value="Marketing">Marketing</SelectItem>
+                      <SelectItem value="Operations">Operations</SelectItem>
                     </SelectContent>
                   </Select>
+                </FormField>
+                <FormField label="Employment Type">
+                  <Select value={newJob.type} onValueChange={(val) => setNewJob({ ...newJob, type: val })}>
+                    <SelectTrigger className="rounded-xl border-2 border-slate-200 dark:border-slate-700 py-3">
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Full-time">Full-time</SelectItem>
+                      <SelectItem value="Part-time">Part-time</SelectItem>
+                      <SelectItem value="Contract">Contract</SelectItem>
+                      <SelectItem value="Internship">Internship</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormField>
+                <div className="md:col-span-2">
+                  <FormField label="Location" hint="City, office name, or 'Remote'">
+                    <input
+                      value={newJob.location}
+                      onChange={(e) => setNewJob({ ...newJob, location: e.target.value })}
+                      placeholder="e.g. Lilongwe, Blantyre"
+                      className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-3 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 focus:outline-none transition-all"
+                    />
+                  </FormField>
                 </div>
-                <div>
-                  <Label>Location</Label>
-                  <Input value={newJob.location} onChange={(e) => setNewJob({ ...newJob, location: e.target.value })} placeholder="Lilongwe, Blantyre, etc." />
+              </FormSection>
+
+              <FormSection
+                title="Job Description"
+                description="Describe responsibilities, requirements & benefits"
+                icon={<FileText className="w-4 h-4 text-purple-600" />}
+                accentColor="border-purple-500"
+              >
+                <div className="md:col-span-2">
+                  <Textarea
+                    value={newJob.description}
+                    onChange={(e) => setNewJob({ ...newJob, description: e.target.value })}
+                    placeholder="Enter job description, key responsibilities, qualifications required..."
+                    rows={6}
+                    className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-3 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 focus:outline-none transition-all resize-none"
+                  />
                 </div>
-              </div>
-              <div>
-                <Label>Employment Type</Label>
-                <Select value={newJob.type} onValueChange={(val) => setNewJob({ ...newJob, type: val })}>
-                  <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Full-time">Full-time</SelectItem>
-                    <SelectItem value="Part-time">Part-time</SelectItem>
-                    <SelectItem value="Contract">Contract</SelectItem>
-                    <SelectItem value="Internship">Internship</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Job Description</Label>
-                <Textarea value={newJob.description} onChange={(e) => setNewJob({ ...newJob, description: e.target.value })} placeholder="Enter job description, requirements, and responsibilities..." rows={6} />
-              </div>
+              </FormSection>
             </div>
-            <Button onClick={handleAddJob} className="mt-4">Post Job</Button>
+
+            <div className="mt-4">
+              <FormActions
+                onCancel={() => {}}
+                onSubmit={handleAddJob}
+                submitLabel="Post Job Opening"
+              />
+            </div>
           </DialogContent>
         </Dialog>
 

@@ -1,6 +1,7 @@
 import { createBrowserRouter } from "react-router";
 import { lazy, Suspense } from "react";
 import { RootLayout } from "./components/layouts/RootLayout";
+import { ErrorPage } from "./pages/ErrorPage";
 
 // Lazy load components for better performance
 const Home = lazy(() => import("./pages/Home").then(module => ({ default: module.Home })));
@@ -35,6 +36,7 @@ export const router = createBrowserRouter([
         <Home />
       </Suspense>
     ),
+    errorElement: <ErrorPage />,
   },
   {
     path: "/login",
@@ -55,6 +57,7 @@ export const router = createBrowserRouter([
   {
     path: "/app",
     Component: RootLayout,
+    errorElement: <ErrorPage />,
     children: [
       {
         index: true,

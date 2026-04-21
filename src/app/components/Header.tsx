@@ -9,6 +9,9 @@ import {
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
 import { supabase } from '../../lib/supabase';
+import { SearchService, SearchResult } from '../../lib/searchService';
+import { useEffect, useState } from 'react';
+import { Users, GraduationCap, Briefcase, Target, Search as SearchIcon } from 'lucide-react';
 
 interface HeaderProps {
   user: any;
@@ -49,6 +52,34 @@ export function Header({ user, setUser, toggleSidebar, isDarkMode = false, toggl
     navigate('/login');
   };
 
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(async () => {
+      if (searchQuery.length >= 2) {
+        setIsSearching(true);
+        const results = await SearchService.universalSearch(searchQuery);
+        setSearchResults(results);
+        setIsSearching(false);
+        setShowResults(true);
+      } else {
+        setSearchResults([]);
+        setShowResults(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery]);
+
+  const handleResultClick = (link: string) => {
+    navigate(link);
+    setShowResults(false);
+    setSearchQuery('');
+  };
+
   return (
     <header className="bg-white/80 dark:bg-slate-950/95 backdrop-blur-md sticky top-0 z-40 w-full h-16 flex justify-between items-center px-8 border-b border-slate-200 dark:border-slate-800 shadow-[0px_12px_32px_rgba(15,23,42,0.06)]">
       <div className="flex items-center gap-4 flex-1 text-slate-900 dark:text-slate-100">
@@ -62,9 +93,68 @@ export function Header({ user, setUser, toggleSidebar, isDarkMode = false, toggl
           <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[20px]">search</span>
           <input
             className="w-full bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-full py-2 pl-10 pr-4 focus:ring-2 focus:ring-slate-400 dark:focus:ring-slate-600 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400"
-            placeholder="Search employee performance..."
+            placeholder="Search employees, training, jobs..."
             type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={() => searchQuery.length >= 2 && setShowResults(true)}
           />
+
+          {showResults && (
+            <div className="absolute top-full left-0 right-0 mt-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-50 max-h-[500px] overflow-y-auto backdrop-blur-xl">
+              {isSearching ? (
+                <div className="p-6 text-center text-sm text-slate-500 flex items-center justify-center gap-2">
+                  <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                  Searching HRMS...
+                </div>
+              ) : searchResults.length > 0 ? (
+                <div className="py-2">
+                  {['Employee', 'Training', 'Recruitment', 'Performance'].map(type => {
+                    const group = searchResults.filter(r => r.type === type);
+                    if (group.length === 0) return null;
+                    return (
+                      <div key={type}>
+                        <div className="px-5 py-3 text-[10px] uppercase font-black text-slate-400 tracking-wider flex items-center gap-2 bg-slate-50/50 dark:bg-slate-900/50">
+                          {type === 'Employee' && <Users className="w-3 h-3" />}
+                          {type === 'Training' && <GraduationCap className="w-3 h-3" />}
+                          {type === 'Recruitment' && <Briefcase className="w-3 h-3" />}
+                          {type === 'Performance' && <Target className="w-3 h-3" />}
+                          {type === 'Employee' ? 'Team Members' : type + 's'}
+                        </div>
+                        {group.map(result => (
+                          <div
+                            key={result.id}
+                            className="px-5 py-4 hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer transition-all border-b last:border-0 border-slate-100 dark:border-slate-900 flex items-center justify-between group"
+                            onClick={() => handleResultClick(result.link)}
+                          >
+                            <div className="flex items-center gap-4">
+                              <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:bg-blue-100 dark:group-hover:bg-blue-900 transition-colors">
+                                {type === 'Employee' ? <Users className="w-5 h-5" /> : 
+                                 type === 'Training' ? <GraduationCap className="w-5 h-5" /> :
+                                 type === 'Recruitment' ? <Briefcase className="w-5 h-5" /> :
+                                 <Target className="w-5 h-5" />}
+                              </div>
+                              <div>
+                                <p className="text-sm font-bold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors uppercase tracking-tight">{result.title}</p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">{result.subtitle}</p>
+                              </div>
+                            </div>
+                            <span className="material-symbols-outlined text-transparent group-hover:text-blue-400 text-[20px] transition-all -translate-x-2 group-hover:translate-x-0">arrow_forward</span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="p-12 text-center">
+                   <SearchIcon className="w-12 h-12 text-slate-200 dark:text-slate-800 mx-auto mb-4" />
+                   <p className="text-base text-slate-900 dark:text-slate-100 font-bold">No results found for "{searchQuery}"</p>
+                   <p className="text-sm text-slate-500 mt-1 max-w-[240px] mx-auto leading-relaxed">We couldn't find any employees, courses, or jobs matching your query.</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
       <div className="flex items-center gap-6 ml-4">

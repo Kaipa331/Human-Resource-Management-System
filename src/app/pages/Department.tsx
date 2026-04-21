@@ -3,8 +3,10 @@ import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Input } from '../components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
-import { Plus, Trash2, Edit, Search } from 'lucide-react';
+import { Plus, Trash2, Edit, Search, Building, User, Activity, PieChart, Info, X } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
+import { Label } from '../components/ui/label';
+import { FormField, FormSection, FormActions } from '../components/ui/form-field';
 import { supabase } from '../../lib/supabase';
 
 interface Department {
@@ -152,48 +154,90 @@ export function Department() {
         </div>
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg shadow-blue-500/20 px-6">
               <Plus className="w-4 h-4 mr-2" />
               New Department
             </Button>
           </DialogTrigger>
-          <DialogContent className="dark:bg-slate-900">
-            <DialogHeader>
-              <DialogTitle className="dark:text-white">Create Department</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <Input
-                placeholder="Department Name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="dark:bg-slate-800 dark:text-white"
-              />
-              <Input
-                placeholder="Head of Department"
-                value={formData.head_of_department}
-                onChange={(e) => setFormData({ ...formData, head_of_department: e.target.value })}
-                className="dark:bg-slate-800 dark:text-white"
-              />
-              <select
-                value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="w-full px-3 py-2 border rounded dark:bg-slate-800 dark:text-white dark:border-slate-700"
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 border-none shadow-2xl">
+            <div className="sticky top-0 z-10 bg-white dark:bg-slate-950 px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
+                  <Building className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white">Create Department</DialogTitle>
+                  <DialogDescription className="text-sm text-slate-500 font-medium">Add a new operational unit to the organization</DialogDescription>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-6 bg-slate-50/50 dark:bg-slate-900/20">
+              <FormSection
+                title="Department Identity"
+                description="Core details and leadership"
+                icon={<Info className="w-4 h-4 text-blue-600" />}
+                accentColor="border-blue-500"
               >
-                <option value="CORE">CORE</option>
-                <option value="URGENT HIRE">URGENT HIRE</option>
-                <option value="STABLE">STABLE</option>
-                <option value="CREATIVE">CREATIVE</option>
-              </select>
-              <Input
-                type="number"
-                placeholder="Budget Utilization %"
-                min="0"
-                max="100"
-                value={formData.budget_utilization}
-                onChange={(e) => setFormData({ ...formData, budget_utilization: parseInt(e.target.value) })}
-                className="dark:bg-slate-800 dark:text-white"
+                <div className="md:col-span-2">
+                  <FormField label="Department Name" required hint="e.g. Engineering, Sales, Human Resources">
+                    <input
+                      value={formData.name}
+                      onChange={e => setFormData({...formData, name: e.target.value})}
+                      placeholder="Enter department name"
+                      className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
+                    />
+                  </FormField>
+                </div>
+                <div className="md:col-span-2">
+                  <FormField label="Head of Department" required hint="Full name of the department leader">
+                    <input
+                      value={formData.head_of_department}
+                      onChange={e => setFormData({...formData, head_of_department: e.target.value})}
+                      placeholder="Enter HOD name"
+                      className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
+                    />
+                  </FormField>
+                </div>
+              </FormSection>
+
+              <FormSection
+                title="Resource Planning"
+                description="Budget and operational status"
+                icon={<PieChart className="w-4 h-4 text-purple-600" />}
+                accentColor="border-purple-500"
+              >
+                <FormField label="Operational Status" required>
+                  <select
+                    value={formData.status}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                    className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all outline-none"
+                  >
+                    <option value="CORE">CORE</option>
+                    <option value="URGENT HIRE">URGENT HIRE</option>
+                    <option value="STABLE">STABLE</option>
+                    <option value="CREATIVE">CREATIVE</option>
+                  </select>
+                </FormField>
+                <FormField label="Budget Utilization %" required hint="Projected resource usage">
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={formData.budget_utilization}
+                    onChange={(e) => setFormData({ ...formData, budget_utilization: parseInt(e.target.value) })}
+                    className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all outline-none"
+                  />
+                </FormField>
+              </FormSection>
+            </div>
+
+            <div className="p-6 bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800">
+              <FormActions
+                onCancel={() => setIsCreateDialogOpen(false)}
+                onSubmit={handleCreateDept}
+                submitLabel="Establish Department"
               />
-              <Button onClick={handleCreateDept} className="w-full bg-blue-600">Create</Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -244,26 +288,88 @@ export function Department() {
                         size="sm"
                         variant="outline"
                         onClick={() => openEditDialog(dept)}
-                        className="flex-1 dark:bg-slate-800"
+                        className="flex-1 rounded-xl border-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all font-bold"
                       >
                         <Edit className="w-3 h-3 mr-1" /> Edit
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="dark:bg-slate-900">
-                      <DialogHeader>
-                        <DialogTitle className="dark:text-white">Edit Department</DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="dark:bg-slate-800 dark:text-white" />
-                        <Input value={formData.head_of_department} onChange={(e) => setFormData({ ...formData, head_of_department: e.target.value })} className="dark:bg-slate-800 dark:text-white" />
-                        <select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value })} className="w-full px-3 py-2 border rounded dark:bg-slate-800 dark:text-white dark:border-slate-700">
-                          <option value="CORE">CORE</option>
-                          <option value="URGENT HIRE">URGENT HIRE</option>
-                          <option value="STABLE">STABLE</option>
-                          <option value="CREATIVE">CREATIVE</option>
-                        </select>
-                        <Input type="number" min="0" max="100" value={formData.budget_utilization} onChange={(e) => setFormData({ ...formData, budget_utilization: parseInt(e.target.value) })} className="dark:bg-slate-800 dark:text-white" />
-                        <Button onClick={handleUpdateDept} className="w-full bg-blue-600">Update</Button>
+                    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 border-none shadow-2xl">
+                      <div className="sticky top-0 z-10 bg-white dark:bg-slate-950 px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
+                            <Edit className="w-6 h-6 text-white" />
+                          </div>
+                          <div>
+                            <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white">Edit Department</DialogTitle>
+                            <DialogDescription className="text-sm text-slate-500 font-medium">Update departmental details and status</DialogDescription>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="p-6 space-y-6 bg-slate-50/50 dark:bg-slate-900/20">
+                        <FormSection
+                          title="Department Identity"
+                          description="Core details and leadership"
+                          icon={<Info className="w-4 h-4 text-blue-600" />}
+                          accentColor="border-blue-500"
+                        >
+                          <div className="md:col-span-2">
+                            <FormField label="Department Name" required>
+                              <input
+                                value={formData.name}
+                                onChange={e => setFormData({...formData, name: e.target.value})}
+                                className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
+                              />
+                            </FormField>
+                          </div>
+                          <div className="md:col-span-2">
+                            <FormField label="Head of Department" required>
+                              <input
+                                value={formData.head_of_department}
+                                onChange={e => setFormData({...formData, head_of_department: e.target.value})}
+                                className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
+                              />
+                            </FormField>
+                          </div>
+                        </FormSection>
+
+                        <FormSection
+                          title="Resource Planning"
+                          description="Budget and operational status"
+                          icon={<PieChart className="w-4 h-4 text-purple-600" />}
+                          accentColor="border-purple-500"
+                        >
+                          <FormField label="Operational Status" required>
+                            <select
+                              value={formData.status}
+                              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                              className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all outline-none"
+                            >
+                              <option value="CORE">CORE</option>
+                              <option value="URGENT HIRE">URGENT HIRE</option>
+                              <option value="STABLE">STABLE</option>
+                              <option value="CREATIVE">CREATIVE</option>
+                            </select>
+                          </FormField>
+                          <FormField label="Budget Utilization %" required>
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              value={formData.budget_utilization}
+                              onChange={(e) => setFormData({ ...formData, budget_utilization: parseInt(e.target.value) })}
+                              className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all outline-none"
+                            />
+                          </FormField>
+                        </FormSection>
+                      </div>
+
+                      <div className="p-6 bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800">
+                        <FormActions
+                          onCancel={() => setIsEditDialogOpen(false)}
+                          onSubmit={handleUpdateDept}
+                          submitLabel="Update Department"
+                        />
                       </div>
                     </DialogContent>
                   </Dialog>

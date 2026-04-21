@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
-import { Calendar, Check, X, Clock, Loader2 } from 'lucide-react';
+import { Calendar, Check, X, Clock, Loader2, FileText, Info } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { Label } from '../components/ui/label';
+import { FormField, FormSection, FormActions } from '../components/ui/form-field';
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
@@ -252,56 +253,88 @@ export function LeaveManagement() {
                 Apply for Leave
               </Button>
             </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Apply for Leave</DialogTitle>
-              <DialogDescription>Submit your leave request</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 mt-4">
-              <div>
-                <Label>Leave Type</Label>
-                <Select value={newLeave.type} onValueChange={(val) => setNewLeave({ ...newLeave, type: val })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select leave type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Annual Leave">Annual Leave</SelectItem>
-                    <SelectItem value="Sick Leave">Sick Leave</SelectItem>
-                    <SelectItem value="Emergency Leave">Emergency Leave</SelectItem>
-                    <SelectItem value="Maternity Leave">Maternity Leave</SelectItem>
-                    <SelectItem value="Paternity Leave">Paternity Leave</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 border-none shadow-2xl">
+            <div className="sticky top-0 z-10 bg-white dark:bg-slate-950 px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
+                  <Calendar className="w-6 h-6 text-white" />
+                </div>
                 <div>
-                  <Label>Start Date</Label>
-                  <Input
+                  <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white">Apply for Leave</DialogTitle>
+                  <DialogDescription className="text-sm text-slate-500 font-medium">Request time off for rest, health, or personal needs</DialogDescription>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-6 bg-slate-50/50 dark:bg-slate-900/20">
+              <FormSection
+                title="Leave Details"
+                description="Type and duration of your request"
+                icon={<Info className="w-4 h-4 text-blue-600" />}
+                accentColor="border-blue-500"
+              >
+                <div className="md:col-span-2">
+                  <FormField label="Leave Type" required hint="Select the category that best fits your needs">
+                    <Select value={newLeave.type} onValueChange={(val) => setNewLeave({ ...newLeave, type: val })}>
+                      <SelectTrigger className="rounded-xl border-2 border-slate-200 dark:border-slate-700 h-11">
+                        <SelectValue placeholder="Select leave type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Annual Leave">Annual Leave (Vacation)</SelectItem>
+                        <SelectItem value="Sick Leave">Sick Leave (Medical)</SelectItem>
+                        <SelectItem value="Emergency Leave">Emergency Leave</SelectItem>
+                        <SelectItem value="Maternity Leave">Maternity Leave</SelectItem>
+                        <SelectItem value="Paternity Leave">Paternity Leave</SelectItem>
+                        <SelectItem value="Unpaid Leave">Unpaid Leave</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormField>
+                </div>
+                <FormField label="Start Date" required>
+                  <input
                     type="date"
                     value={newLeave.startDate}
                     onChange={(e) => setNewLeave({ ...newLeave, startDate: e.target.value })}
+                    className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
                   />
-                </div>
-                <div>
-                  <Label>End Date</Label>
-                  <Input
+                </FormField>
+                <FormField label="End Date" required>
+                  <input
                     type="date"
                     value={newLeave.endDate}
                     onChange={(e) => setNewLeave({ ...newLeave, endDate: e.target.value })}
+                    className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
                   />
+                </FormField>
+              </FormSection>
+
+              <FormSection
+                title="Additional Context"
+                description="Optional details for your manager"
+                icon={<FileText className="w-4 h-4 text-purple-600" />}
+                accentColor="border-purple-500"
+              >
+                <div className="md:col-span-2">
+                  <FormField label="Reason for Leave" hint="Provide a brief explanation if necessary">
+                    <Textarea
+                      value={newLeave.reason}
+                      onChange={(e) => setNewLeave({ ...newLeave, reason: e.target.value })}
+                      placeholder="e.g. Attending a family event, Medical appointment, etc."
+                      rows={4}
+                      className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-3 text-sm focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all outline-none resize-none"
+                    />
+                  </FormField>
                 </div>
-              </div>
-              <div>
-                <Label>Reason</Label>
-                <Textarea
-                  value={newLeave.reason}
-                  onChange={(e) => setNewLeave({ ...newLeave, reason: e.target.value })}
-                  placeholder="Explain the reason for your leave..."
-                  rows={4}
-                />
-              </div>
+              </FormSection>
             </div>
-            <Button onClick={handleSubmitLeave} className="mt-4">Submit Request</Button>
+
+            <div className="p-6 bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800">
+              <FormActions
+                onCancel={() => setDialogOpen(false)}
+                onSubmit={handleSubmitLeave}
+                submitLabel="Submit Leave Request"
+              />
+            </div>
           </DialogContent>
         </Dialog>
         )}

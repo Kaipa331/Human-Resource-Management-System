@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
-import { DollarSign, Download, FileText, TrendingUp, Users, Calendar, Plus, Play, Gift, MinusCircle, Percent, Briefcase } from 'lucide-react';
+import { DollarSign, Download, FileText, TrendingUp, Users, Calendar, Plus, Play, Gift, MinusCircle, Percent, Briefcase, Info, Clock, X, Calculator, Search } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
+import { FormField, FormSection, FormActions } from '../components/ui/form-field';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { toast } from 'sonner';
 import { supabase } from '../../lib/supabase';
@@ -47,6 +48,7 @@ export function Payroll() {
   const [showPayslipModal, setShowPayslipModal] = useState(false);
   const [selectedPayslipRecord, setSelectedPayslipRecord] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<string>('cycles');
+  const [searchTerm, setSearchTerm] = useState('');
   useEffect(() => {
     loadPayrollData();
   }, []);
@@ -206,7 +208,7 @@ export function Payroll() {
   };
 
   const updateAdjustment = (empId: string, field: string, value: string) => {
-    const numValue = parseFloat(value) || 0;
+    const numValue = Math.max(0, parseFloat(value) || 0);
     setAdjustments(prev => ({
       ...prev,
       [empId]: {
@@ -547,123 +549,171 @@ export function Payroll() {
 
       {/* New Cycle Dialog */}
       <Dialog open={showNewCycleDialog} onOpenChange={setShowNewCycleDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create New Payroll Cycle</DialogTitle>
-            <DialogDescription>
-              Create a new payroll cycle for processing employee payments.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="cycleName">Cycle Name</Label>
-              <Input
-                id="cycleName"
-                value={newCycleData.cycleName}
-                onChange={(e) => setNewCycleData({ ...newCycleData, cycleName: e.target.value })}
-                placeholder="e.g., March 2026"
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 border-none shadow-2xl">
+            <div className="sticky top-0 z-10 bg-white dark:bg-slate-950 px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
+                  <Clock className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white">New Payroll Cycle</DialogTitle>
+                  <DialogDescription className="text-sm text-slate-500 font-medium">Define a new payment period for your organization</DialogDescription>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-6 bg-slate-50/50 dark:bg-slate-900/20">
+              <FormSection
+                title="Cycle Definition"
+                description="Core period and identity"
+                icon={<Info className="w-4 h-4 text-blue-600" />}
+                accentColor="border-blue-500"
+              >
+                <div className="md:col-span-2">
+                  <FormField label="Cycle Name" required hint="e.g. April 2026 Monthly Payroll">
+                    <input
+                      value={newCycleData.cycleName}
+                      onChange={e => setNewCycleData({...newCycleData, cycleName: e.target.value})}
+                      placeholder="Enter cycle name"
+                      className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
+                    />
+                  </FormField>
+                </div>
+                <FormField label="Start Date" required>
+                  <input
+                    type="date"
+                    value={newCycleData.startDate}
+                    onChange={e => setNewCycleData({...newCycleData, startDate: e.target.value})}
+                    className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
+                  />
+                </FormField>
+                <FormField label="End Date" required>
+                  <input
+                    type="date"
+                    value={newCycleData.endDate}
+                    onChange={e => setNewCycleData({...newCycleData, endDate: e.target.value})}
+                    className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
+                  />
+                </FormField>
+              </FormSection>
+            </div>
+
+            <div className="p-6 bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800">
+              <FormActions
+                onCancel={() => setShowNewCycleDialog(false)}
+                onSubmit={handleCreateCycle}
+                submitLabel="Initialize Payroll Cycle"
               />
             </div>
-            <div>
-              <Label htmlFor="startDate">Start Date</Label>
-              <Input
-                id="startDate"
-                type="date"
-                value={newCycleData.startDate}
-                onChange={(e) => setNewCycleData({ ...newCycleData, startDate: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="endDate">End Date</Label>
-              <Input
-                id="endDate"
-                type="date"
-                value={newCycleData.endDate}
-                onChange={(e) => setNewCycleData({ ...newCycleData, endDate: e.target.value })}
-              />
-            </div>
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setShowNewCycleDialog(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleCreateCycle}>
-              Create Cycle
-            </Button>
-          </div>
-        </DialogContent>
+          </DialogContent>
       </Dialog>
       {/* Adjustments Modal */}
       <Dialog open={showAdjustmentsModal} onOpenChange={setShowAdjustmentsModal}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Payroll Adjustments</DialogTitle>
-            <DialogDescription>
-              Enter variable pay items for each employee for the current cycle.
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto p-0 border-none shadow-2xl rounded-3xl">
+          <div className="sticky top-0 z-10 bg-white dark:bg-slate-950 px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
+                <Calculator className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white">
+                  Payroll Adjustments
+                </DialogTitle>
+                <DialogDescription className="text-sm text-slate-500 font-medium tracking-tight">
+                  Enter variable pay items for each employee for the current cycle.
+                </DialogDescription>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-4 flex-1 max-w-md mx-6">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Input 
+                  placeholder="Search employee..." 
+                  className="pl-9 h-10 rounded-xl bg-slate-50 dark:bg-slate-900 border-none focus:ring-2 focus:ring-blue-500/20"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <button 
+              onClick={() => setShowAdjustmentsModal(false)}
+              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-full transition-colors text-slate-400"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
           
-          <div className="space-y-4 py-4">
-            <div className="border rounded-lg overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 dark:bg-gray-800">
-                  <tr>
-                    <th className="px-4 py-2 text-left">Employee</th>
-                    <th className="px-4 py-2 text-left">Overtime (Hrs)</th>
-                    <th className="px-4 py-2 text-left">Perf. Bonus</th>
-                    <th className="px-4 py-2 text-left">Other Bonus</th>
-                    <th className="px-4 py-2 text-left">Deductions</th>
+          <div className="p-4 space-y-4 bg-slate-50/50 dark:bg-slate-900/20">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 overflow-hidden shadow-sm">
+              <table className="w-full text-sm border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
+                    <th className="px-4 py-3 text-left font-bold text-slate-600 dark:text-slate-400">Employee</th>
+                    <th className="px-4 py-3 text-left font-bold text-slate-600 dark:text-slate-400">Overtime (Hrs)</th>
+                    <th className="px-4 py-3 text-left font-bold text-slate-600 dark:text-slate-400">Perf. Bonus</th>
+                    <th className="px-4 py-3 text-left font-bold text-slate-600 dark:text-slate-400">Other Bonus</th>
+                    <th className="px-4 py-3 text-left font-bold text-slate-600 dark:text-slate-400">Deductions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y">
-                  {employeesForAdjustments.map((emp) => (
-                    <tr key={emp.id}>
-                      <td className="px-4 py-2 font-medium">{emp.name}</td>
-                      <td className="px-4 py-2">
-                        <Input 
-                          type="number" 
-                          className="w-24 h-8"
-                          value={adjustments[emp.id]?.overtimeHours || 0}
-                          onChange={(e) => updateAdjustment(emp.id, 'overtimeHours', e.target.value)}
-                        />
-                      </td>
-                      <td className="px-4 py-2">
-                        <Input 
-                          type="number" 
-                          className="w-24 h-8"
-                          value={adjustments[emp.id]?.performanceBonus || 0}
-                          onChange={(e) => updateAdjustment(emp.id, 'performanceBonus', e.target.value)}
-                        />
-                      </td>
-                      <td className="px-4 py-2">
-                        <Input 
-                          type="number" 
-                          className="w-24 h-8"
-                          value={adjustments[emp.id]?.otherBonus || 0}
-                          onChange={(e) => updateAdjustment(emp.id, 'otherBonus', e.target.value)}
-                        />
-                      </td>
-                      <td className="px-4 py-2">
-                        <Input 
-                          type="number" 
-                          className="w-24 h-8"
-                          value={adjustments[emp.id]?.manualDeduction || 0}
-                          onChange={(e) => updateAdjustment(emp.id, 'manualDeduction', e.target.value)}
-                        />
-                      </td>
-                    </tr>
-                  ))}
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {employeesForAdjustments
+                    .filter(emp => emp.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                    .map((emp) => (
+                      <tr key={emp.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
+                        <td className="px-4 py-2 font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                          {emp.name}
+                        </td>
+                        <td className="px-4 py-2">
+                          <Input 
+                            type="number" 
+                            min="0"
+                            className="w-28 h-8 rounded-lg border-slate-200 dark:border-slate-800 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
+                            value={adjustments[emp.id]?.overtimeHours || 0}
+                            onChange={(e) => updateAdjustment(emp.id, 'overtimeHours', e.target.value)}
+                          />
+                        </td>
+                        <td className="px-4 py-2">
+                          <Input 
+                            type="number" 
+                            min="0"
+                            className="w-28 h-8 rounded-lg border-slate-200 dark:border-slate-800 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none font-medium text-blue-600 dark:text-blue-400"
+                            value={adjustments[emp.id]?.performanceBonus || 0}
+                            onChange={(e) => updateAdjustment(emp.id, 'performanceBonus', e.target.value)}
+                          />
+                        </td>
+                        <td className="px-4 py-2">
+                          <Input 
+                            type="number" 
+                            min="0"
+                            className="w-28 h-8 rounded-lg border-slate-200 dark:border-slate-800 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
+                            value={adjustments[emp.id]?.otherBonus || 0}
+                            onChange={(e) => updateAdjustment(emp.id, 'otherBonus', e.target.value)}
+                          />
+                        </td>
+                        <td className="px-4 py-2">
+                          <Input 
+                            type="number" 
+                            min="0"
+                            className="w-28 h-8 rounded-lg border-slate-200 dark:border-slate-800 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none font-medium text-red-600 dark:text-red-400"
+                            value={adjustments[emp.id]?.manualDeduction || 0}
+                            onChange={(e) => updateAdjustment(emp.id, 'manualDeduction', e.target.value)}
+                          />
+                        </td>
+                      </tr>
+                    ))}
                 </tbody>
               </table>
             </div>
             
-            <div className="flex justify-end gap-3 mt-6">
-              <Button variant="outline" onClick={() => setShowAdjustmentsModal(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleFinalProcess} disabled={isProcessing}>
-                {isProcessing ? 'Processing...' : 'Confirm & Process Payroll'}
-              </Button>
+            <div className="sticky bottom-0 z-10 bg-white dark:bg-slate-950 px-6 py-4 border-t border-slate-100 dark:border-slate-800 mt-2 rounded-2xl overflow-hidden shadow-sm">
+              <FormActions
+                onCancel={() => setShowAdjustmentsModal(false)}
+                onSubmit={handleFinalProcess}
+                submitLabel={isProcessing ? 'Processing Cycle...' : 'Authorize & Process Payroll'}
+                isLoading={isProcessing}
+              />
             </div>
           </div>
         </DialogContent>

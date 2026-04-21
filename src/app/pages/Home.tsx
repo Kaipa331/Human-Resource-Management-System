@@ -1,227 +1,249 @@
 import { Link } from 'react-router';
 import { Button } from '../components/ui/button';
+import { 
+  Sparkles, 
+  ShieldCheck, 
+  Users, 
+  BarChart3, 
+  Zap, 
+  Clock, 
+  ChevronRight, 
+  ArrowRight,
+  PlayCircle,
+  Globe,
+  Terminal,
+  Share2
+} from 'lucide-react';
 
 export function Home() {
   return (
-    <div className="min-h-screen bg-surface text-on-surface">
-      <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl shadow-sm">
-        <div className="flex justify-between items-center px-8 py-4 max-w-7xl mx-auto">
-          <div className="text-2xl font-bold tracking-tight text-blue-900">Lumina HR</div>
-          <div className="hidden md:flex items-center space-x-8">
-            <a className="text-blue-700 border-b-2 border-blue-700 pb-1 font-medium" href="#features">Features</a>
-            <a className="text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium" href="#solutions">Solutions</a>
-            <a className="text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium" href="#pricing">Pricing</a>
+    <div className="min-h-screen bg-[#fafafa] dark:bg-slate-950 selection:bg-blue-100 selection:text-blue-900 transition-colors duration-500">
+      {/* Premium Glass Nav */}
+      <nav className="fixed top-0 w-full z-50 bg-white/60 dark:bg-slate-950/60 backdrop-blur-2xl border-b border-slate-200/50 dark:border-slate-800/50">
+        <div className="flex justify-between items-center px-6 md:px-12 py-5 max-w-[1400px] mx-auto">
+          <div className="flex items-center gap-2 group cursor-pointer">
+            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/20 group-hover:rotate-12 transition-transform duration-500">
+              <Zap className="w-6 h-6 text-white fill-white" />
+            </div>
+            <span className="text-2xl font-black tracking-tighter text-slate-900 dark:text-white uppercase">Lumina <span className="text-blue-600">HR</span></span>
           </div>
-          <div className="flex items-center gap-4">
-            <Link to="/login" className="px-5 py-2 text-primary font-semibold hover:text-blue-800 transition-all">Login</Link>
-            <Link to="/login" className="px-6 py-2.5 bg-primary text-white rounded-xl font-semibold shadow-lg shadow-primary/20 hover:opacity-90 active:scale-95 transition-all">Get Started</Link>
+          
+          <div className="hidden lg:flex items-center space-x-10">
+            <a className="text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-500 transition-all uppercase tracking-widest" href="#features">Experience</a>
+            <a className="text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-500 transition-all uppercase tracking-widest" href="#solutions">Intelligence</a>
+            <a className="text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-500 transition-all uppercase tracking-widest" href="#impact">Impact</a>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Link to="/login" className="px-6 py-2.5 text-sm font-black text-slate-700 dark:text-slate-300 hover:text-blue-600 transition-colors uppercase tracking-widest">
+              Login
+            </Link>
+            <Link to="/login" className="hidden sm:flex px-7 py-3 bg-slate-900 dark:bg-blue-600 text-white rounded-full font-black text-sm shadow-xl shadow-slate-900/10 dark:shadow-blue-600/20 hover:scale-105 active:scale-95 transition-all uppercase tracking-widest">
+              Register
+            </Link>
           </div>
         </div>
       </nav>
 
-      <header className="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden bg-surface">
-        <div className="max-w-7xl mx-auto px-8 relative z-10">
-          <div className="max-w-3xl">
-            <span className="inline-block py-1 px-3 mb-6 rounded-full bg-primary-fixed text-on-primary-fixed text-xs font-bold uppercase tracking-widest">Digital Atelier Experience</span>
-            <h1 className="text-5xl md:text-7xl font-extrabold text-on-surface leading-[1.05] mb-8 tracking-tight">
-              The Future of <span className="text-primary">People Management</span>
-            </h1>
-            <p className="text-lg md:text-xl text-on-surface-variant leading-relaxed mb-10 max-w-2xl font-medium">
-              Experience a curated workspace where precision meets empathy. Lumina HR transforms complex admin tasks into a seamless editorial flow, empowering your workforce with clarity and high-end automation.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Link to="/login" className="px-8 py-4 bg-primary text-white rounded-xl font-bold text-lg shadow-xl shadow-primary/25 hover:opacity-90 transition-all">
-                Get Started
-              </Link>
-              <a href="#features" className="px-8 py-4 bg-surface-container-lowest text-primary rounded-xl font-bold text-lg flex items-center justify-center gap-2 border border-outline-variant/30 hover:bg-surface-container transition-all">
-                <span className="material-symbols-outlined">play_circle</span>
-                Watch Demo
-              </a>
+      <main>
+        {/* Dynamic Hero Section */}
+        <header className="relative pt-40 pb-20 md:pt-64 md:pb-48 overflow-hidden bg-[#fafafa] dark:bg-slate-950">
+          <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+            <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-100/50 dark:bg-blue-900/10 rounded-full blur-[120px]" />
+            <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-emerald-100/50 dark:bg-emerald-900/10 rounded-full blur-[100px]" />
+          </div>
+
+          <div className="max-w-[1400px] mx-auto px-6 md:px-12 relative z-10">
+            <div className="max-w-4xl">
+              <div className="inline-flex items-center gap-2 py-2 px-4 mb-8 rounded-full bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50">
+                <Sparkles className="w-4 h-4 text-blue-600 animate-pulse" />
+                <span className="text-[10px] font-black text-blue-700 dark:text-blue-300 uppercase tracking-[0.2em]">Next-Gen People Operations</span>
+              </div>
+              
+              <h1 className="text-6xl md:text-8xl font-black text-slate-900 dark:text-white leading-[0.9] mb-10 tracking-tightest">
+                Designing the <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-emerald-500 underline decoration-emerald-200 dark:decoration-emerald-900/30">Future of Work</span>
+              </h1>
+              
+              <p className="text-xl md:text-2xl text-slate-500 dark:text-slate-400 leading-relaxed mb-12 max-w-2xl font-medium tracking-tight">
+                Experience a curated ecosystem where architectural precision meets human empathy. Lumina HR transforms complex admin into a seamless, high-velocity flow.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row gap-5">
+                <Link to="/login" className="group px-10 py-5 bg-blue-600 text-white rounded-2xl font-black text-lg shadow-2xl shadow-blue-600/30 hover:bg-blue-700 transition-all flex items-center justify-center gap-3 active:scale-95">
+                  Get Started 
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </Link>
+                <Button variant="ghost" className="h-auto px-10 py-5 bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-2xl font-black text-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all flex items-center justify-center gap-3">
+                  <PlayCircle className="w-6 h-6 text-blue-600" />
+                  Watch Demo
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
+        </header>
 
-        <div className="absolute top-0 right-0 w-1/2 h-full hidden lg:block">
-          <div className="relative w-full h-full">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/5 rounded-full blur-3xl"></div>
-            <img alt="HR Dashboard Preview" className="absolute top-1/2 right-[-10%] -translate-y-1/2 w-[120%] max-w-4xl rounded-2xl shadow-2xl border border-white/20" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCp2r4pLG9s46ODiUlj5Mkaj1retJKe5_xCvcoFwSXeLzG4zO_h_Bsj9ZnCDCyEfzD2je5croDf2t6aZ3cOnBgarJUgjzBO8MsG60IdN9iacpfHcIV3qu9n06N4exxByg-lrDLFHD6VOmGDjo2aoxqHD6Jqi69lPSoBGzS-zdBtewiNumr1CihVK4y_A99UDI-X2DHd16bDhQAFAlBPkiZKFgLTwrjzkjKHE75a4Fl_L2R_ZQdwB9D4i9eCmaW0EMr8W873qHTx-xI" />
-          </div>
-        </div>
-      </header>
+        {/* Feature Intelligence Grid */}
+        <section id="features" className="py-32 bg-white dark:bg-slate-950">
+          <div className="max-w-[1400px] mx-auto px-6 md:px-12">
+            <div className="flex flex-col md:flex-row md:items-end justify-between mb-24 gap-8">
+              <div className="max-w-2xl">
+                <h2 className="text-4xl md:text-6xl font-black text-slate-900 dark:text-white mb-6 tracking-tight">Strategic Intelligence</h2>
+                <p className="text-xl text-slate-500 dark:text-slate-400 font-medium">Tools designed for the modern workspace, where every interaction is an opportunity for growth.</p>
+              </div>
+              <div className="hidden md:flex gap-4">
+                <div className="w-14 h-14 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-400">
+                  <Users className="w-6 h-6" />
+                </div>
+                <div className="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
+                  <BarChart3 className="w-6 h-6" />
+                </div>
+              </div>
+            </div>
 
-      <section id="solutions" className="py-16 bg-surface-container-low">
-        <div className="max-w-7xl mx-auto px-8">
-          <p className="text-center text-on-surface-variant text-sm font-semibold uppercase tracking-widest mb-10 opacity-60">Trusted by Global Innovators</p>
-          <div className="flex flex-wrap justify-center items-center gap-12 md:gap-20 grayscale opacity-50 hover:grayscale-0 hover:opacity-100 transition-all duration-500">
-            <img alt="Partner Logo" className="h-8 w-auto" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD__TGXIKW3Qn6GGcxT8Dc9WyQhs3RBA6Vs3ccFKa3v2FDMuk6Ztq8YOIhklJlgl-orch3xRxivBzxmxeGo5f8uAmT9hxmmvOk3h1zGSFAY4_RY0B1zS7v_E5mrkO1vrLollP99buLYrRwXN8q9j01G9gU0DiGdda_Y94RjAgLgHAndI2uyqJOXN1C8Hl5yGTsknUyiHTAVYceOzjUh9_tTUaUR4-4iDrPO03UBNNLUQkt_X7E3fJUx3GD84DZQi7OqEhgUPus99IQ" />
-            <img alt="Partner Logo" className="h-8 w-auto" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC3u9hWCPQO0O-6_o9TtKygnV5lHD368e92K_v662fNeebATKXWR9e6Atgl6Sjlyn9-5TyCZaH3Mga307QUozhEka4DYJrxfUZ6xrDH830HPRVJrAg_aNOZxOuaErYiXImYWxgsu0Hrs9XyJJIzuzdkG6R4e530imgBARRpsadW8lNyH9IYHWp0wYEDfGrYw2nrwn_1phz6t5omBmhu5SYFfKHefA3F216pgWkgUvbSk0CCLgGowzz5wkVaxzWTPvycw2YuKmYyonw" />
-            <img alt="Partner Logo" className="h-8 w-auto" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCi7sqFBCgzE3ZShkO4zmm3nasDnsagHElhVmKU-Hi-mI1sY_HccuJpJUC-3gTBfBamche6afkoRcOazzRYdvT0Z7tSxXIRCWoRU_O3wvHxKRWjPHBRkfrHjH1npDgKmtAjlbZ_3kr7qSaciLgjl2Zvd7bfy6laroPxrvBzhi6f-M_dboSxR0vLdH5U6Fp-Hwsi0egW__aPwzyIG9_yfoIpMDDrKuBT6ZheipKGC4k-O0oCsyD0Rf0hHgh-Z3be_40RARFWeqzvU_o" />
-            <img alt="Partner Logo" className="h-8 w-auto" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDxlbIuKM0PATq7p5ySIgA00vKn4ZF-RaheZJzK9cUCpwPoKcDZ_EmPdUo7AxJKSSQ46-04BMpAsgo8gcu2fcJs85lA8gIhGVcEnpP7xNVk-1AQ_hA7waCEjumHFK3NGiHJ_MWixixIKv4he985pL4Ctia60zcDCTchPXKG_Qpy8SJdiQw4lpBaSi41LOs3vSP3I46IRfrFddh4aVk7CXy3CdO5un0mfPIxme4QCyp-NF8SVqpFvTqv4MIhy3rotQ_iGMOs4Z0daNQ" />
-            <img alt="Partner Logo" className="h-8 w-auto" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDygmpfwQ2uE1pJbsoTIj7Sko29uvCBsIfiBxMPwDND5V4S4EGf-Ven5-5wIceSw3k6US9Td0Bmwu9T8-TrfQfTlLa8lU3WvZupvzvKYll9zhrVdZr36Ve0ZidFYHe1wiWYcOZNQlIEFGtRC5MpK1nsqRhbqtcToFB_A9Hf1j_TXJm7j3DPaWIXBlyA1dFmRJ-dnFBrWoCVqFMtAIsmBNOU3knPC9ND_bMG6SHqRqMSlxfmX1nXco7OYjM2tF7JTS1V2UdENL60cIg" />
-          </div>
-        </div>
-      </section>
-
-      <section id="features" className="py-24 bg-surface">
-        <div className="max-w-7xl mx-auto px-8">
-          <div className="mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-on-surface mb-4">Masterfully Crafted Features</h2>
-            <p className="text-on-surface-variant max-w-2xl font-medium">Elevate your operational excellence with tools designed for the modern atelier of work.</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-            <div className="md:col-span-8 group bg-surface-container-lowest p-10 rounded-[2rem] border border-outline-variant/10 hover:shadow-xl hover:shadow-primary/5 transition-all duration-500">
-              <div className="flex flex-col h-full justify-between">
-                <div>
-                  <div className="w-14 h-14 bg-primary-fixed rounded-2xl flex items-center justify-center mb-8 text-primary group-hover:scale-110 transition-transform">
-                    <span className="material-symbols-outlined text-3xl">person_celebrate</span>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {[
+                {
+                  title: "Self-Service",
+                  desc: "Give your team the autonomy they deserve with a bespoke portal for leave, docs, and growth.",
+                  icon: Users,
+                  color: "blue"
+                },
+                {
+                  title: "Payroll Automation",
+                  desc: "Precision compensation with a single click. Seamless tax integration and audit-ready reports.",
+                  icon: Zap,
+                  color: "emerald"
+                },
+                {
+                  title: "Performance IQ",
+                  desc: "Go beyond reviews. Leverage data-driven insights to nurture talent and align goals.",
+                  icon: BarChart3,
+                  color: "purple"
+                }
+              ].map((feature, i) => (
+                <div key={i} className="group p-10 bg-[#fcfcfc] dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 hover:shadow-2xl hover:scale-[1.02] transition-all duration-500">
+                  <div className={`w-16 h-16 bg-blue-500/10 rounded-2xl flex items-center justify-center mb-8 text-blue-500`}>
+                    <feature.icon className="w-8 h-8" />
                   </div>
-                  <h3 className="text-2xl font-bold text-on-surface mb-4">Employee Self-Service</h3>
-                  <p className="text-on-surface-variant max-w-md leading-relaxed">Give your team the autonomy they deserve. A bespoke portal for leave requests, document management, and personal growth tracking.</p>
+                  <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-4 uppercase tracking-tighter">{feature.title}</h3>
+                  <p className="text-slate-500 dark:text-slate-400 leading-relaxed font-medium mb-10">{feature.desc}</p>
+                  <div className="flex items-center gap-2 text-sm font-black text-blue-600 uppercase tracking-widest cursor-pointer group-hover:gap-4 transition-all">
+                    Explore <ChevronRight className="w-4 h-4" />
+                  </div>
                 </div>
-                <div className="mt-12 flex items-center text-primary font-bold gap-2 cursor-pointer">
-                  Learn more <span className="material-symbols-outlined">arrow_forward</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="md:col-span-4 group bg-primary p-10 rounded-[2rem] text-on-primary hover:shadow-xl hover:shadow-primary/20 transition-all duration-500">
-              <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center mb-8">
-                <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>payments</span>
-              </div>
-              <h3 className="text-2xl font-bold mb-4">Payroll Automation</h3>
-              <p className="text-on-primary/80 leading-relaxed">Error-free compensation with a single click. Seamless tax integration and automated compliance.</p>
-            </div>
-
-            <div className="md:col-span-4 group bg-surface-container-low p-10 rounded-[2rem] border border-outline-variant/10 hover:shadow-xl transition-all duration-500">
-              <div className="w-14 h-14 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-8 text-primary">
-                <span className="material-symbols-outlined text-3xl">analytics</span>
-              </div>
-              <h3 className="text-2xl font-bold text-on-surface mb-4">Performance Intelligence</h3>
-              <p className="text-on-surface-variant leading-relaxed">Go beyond simple reviews. Leverage data-driven insights to nurture talent and align goals.</p>
-            </div>
-
-            <div className="md:col-span-8 group bg-surface-container-lowest p-10 rounded-[2rem] border border-outline-variant/10 hover:shadow-xl hover:shadow-primary/5 transition-all duration-500 overflow-hidden relative">
-              <div className="relative z-10">
-                <div className="w-14 h-14 bg-primary-fixed rounded-2xl flex items-center justify-center mb-8 text-primary">
-                  <span className="material-symbols-outlined text-3xl">group_add</span>
-                </div>
-                <h3 className="text-2xl font-bold text-on-surface mb-4">Recruitment Pipeline</h3>
-                <p className="text-on-surface-variant max-w-sm leading-relaxed">An editorial-style workflow for finding and onboarding your next industry leaders. Seamless, visual, and highly efficient.</p>
-              </div>
-              <img alt="Recruitment Pipeline UI" className="absolute bottom-[-20%] right-[-10%] w-2/3 rounded-xl shadow-2xl opacity-40 group-hover:opacity-100 transition-opacity duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA4VyuQnt77cP6s8fCmfM4qdF1l3S1_3f7IJu2ENPbarLzAcfpJATknxYYLLYp8A1BACpCULsQ3TiEEIbfhgznadzKSKvPlG9Jnwynpt26NKsbkyKxscx38QIjsBAKgkjF2fgw0JGq91_cZloIlDiZB0vPQwaaYVorYL4taHpXK0XTrlyIx1yL8FdV0e022KI8yQFzN07Xopg6mPortoAt_gOipbX8ii4WE2yH8cPKVA-oWzzVYuLG0eCijvi8tuELDcj-HF8N3-h0" />
+              ))}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section className="py-24 bg-surface-container-low">
-        <div className="max-w-7xl mx-auto px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
-            <div>
-              <h2 className="text-4xl font-bold text-on-surface mb-6 leading-tight">Quantifiable Excellence for High-Performing Teams</h2>
-              <p className="text-on-surface-variant text-lg mb-8 leading-relaxed">We don't just organize; we optimize. Lumina HR is engineered to recover lost time and eliminate compliance risk through architectural precision.</p>
-              <div className="flex items-center gap-6">
-                <div className="p-6 bg-white rounded-2xl shadow-sm border border-outline-variant/10">
-                  <div className="text-4xl font-extrabold text-primary mb-2">40%</div>
-                  <div className="text-sm font-bold text-on-surface-variant uppercase tracking-tighter">Reduction in Admin</div>
-                </div>
-                <div className="p-6 bg-white rounded-2xl shadow-sm border border-outline-variant/10">
-                  <div className="text-4xl font-extrabold text-primary mb-2">98%</div>
-                  <div className="text-sm font-bold text-on-surface-variant uppercase tracking-tighter">Compliance Accuracy</div>
-                </div>
-              </div>
-            </div>
-            <div className="relative">
-              <div className="aspect-video bg-primary-container rounded-[2rem] overflow-hidden shadow-2xl relative group">
-                <img alt="Data Analytics Visual" className="w-full h-full object-cover mix-blend-overlay opacity-60" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAaOGZLLDkTs76NKmFxtFjFwVXRHajoCdLo56jhqsAGKTGqyc4hmTsFjl6ulN-Jd-5RFKuRWFyYCnR4QOCoDZiz4ayq06du7p51YCJwRJLmKeQvSxKJmsZZ9ZQsN-RY2_Y-NXVeRHHEGtc249Iu24Z8ZAYNcVU7cQutm9DjyaM5fb6WgaQn536uO6JmsGV40PNcmyBdXaH8Y7hC3YkkZPcVlYwPX1nVd5ja4EH3MdceX_JSHaHXqR-Uo9yCMGRUjOOa25w_p2oqHPI" />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-20 h-20 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30 cursor-pointer hover:scale-110 transition-transform">
-                    <span className="material-symbols-outlined text-white text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>
+        {/* Impact Metrics Section */}
+        <section id="impact" className="py-32 bg-slate-50 dark:bg-slate-900/30">
+          <div className="max-w-[1400px] mx-auto px-6 md:px-12">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+              <div>
+                <h2 className="text-5xl md:text-7xl font-black text-slate-900 dark:text-white mb-8 tracking-tightest leading-tight">Quantifiable <br /> Excellence</h2>
+                <p className="text-xl text-slate-500 dark:text-slate-400 mb-12 font-medium leading-relaxed">
+                  Lumina HR is engineered to recover lost time and eliminate compliance risk through architectural precision and high-end automation.
+                </p>
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="p-8 bg-white dark:bg-slate-950 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                    <div className="text-5xl font-black text-blue-600 mb-3 tracking-tighter">40%</div>
+                    <div className="text-xs font-black text-slate-400 uppercase tracking-widest">Admin Reduction</div>
+                  </div>
+                  <div className="p-8 bg-white dark:bg-slate-950 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                    <div className="text-5xl font-black text-emerald-500 mb-3 tracking-tighter">99.9%</div>
+                    <div className="text-xs font-black text-slate-400 uppercase tracking-widest">Accuracy Rate</div>
                   </div>
                 </div>
               </div>
-              <div className="absolute -bottom-6 -left-6 bg-white p-6 rounded-2xl shadow-xl border border-outline-variant/10 hidden md:block">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-green-100 text-green-700 rounded-full flex items-center justify-center">
-                    <span className="material-symbols-outlined text-xl">verified</span>
+              <div className="relative group">
+                <div className="aspect-square bg-gradient-to-br from-blue-600 to-emerald-500 rounded-[3rem] overflow-hidden shadow-3xl transform group-hover:rotate-2 transition-all duration-700">
+                   <div className="absolute inset-0 bg-black/10 mix-blend-overlay" />
+                   <div className="absolute inset-0 flex items-center justify-center p-12">
+                      <div className="w-full aspect-square bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] shadow-2xl flex flex-col items-center justify-center gap-6">
+                        <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-2xl animate-bounce">
+                          <PlayCircle className="w-12 h-12 text-blue-600 fill-blue-600/10" />
+                        </div>
+                        <span className="text-white font-black text-lg uppercase tracking-[0.3em]">Watch Demo</span>
+                      </div>
+                   </div>
+                </div>
+                <div className="absolute -bottom-8 -right-8 bg-white dark:bg-slate-950 p-6 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 flex items-center gap-4">
+                  <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-2xl flex items-center justify-center text-emerald-600">
+                    <ShieldCheck className="w-7 h-7" />
                   </div>
                   <div>
-                    <div className="font-bold text-on-surface">ISO 27001 Certified</div>
-                    <div className="text-xs text-on-surface-variant font-medium">Enterprise-grade security</div>
+                    <div className="font-black text-slate-900 dark:text-white uppercase tracking-tighter">Enterprise Secure</div>
+                    <div className="text-[10px] font-bold text-slate-400 uppercase">ISO 27001 Certified</div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section className="py-24 bg-surface">
-        <div className="max-w-7xl mx-auto px-8">
-          <div className="gradient-primary rounded-[3rem] p-12 md:p-20 text-center relative overflow-hidden">
-            <div className="absolute inset-0 opacity-10 pointer-events-none">
-              <svg height="100%" preserveAspectRatio="none" viewBox="0 0 100 100" width="100%">
-                <defs>
-                  <pattern height="10" id="grid" patternUnits="userSpaceOnUse" width="10">
-                    <path d="M 10 0 L 0 0 0 10" fill="none" stroke="white" stroke-width="0.5"></path>
-                  </pattern>
-                </defs>
-                <rect fill="url(#grid)" height="100%" width="100%"></rect>
-              </svg>
-            </div>
-            <div className="relative z-10 max-w-3xl mx-auto">
-              <h2 className="text-4xl md:text-5xl font-extrabold text-white mb-8 tracking-tight">Ready to Elevate Your Workspace?</h2>
-              <p className="text-on-primary-container text-lg md:text-xl mb-12 font-medium opacity-90">Join the vanguard of modern organizations using Lumina HR to create an exceptional work culture.</p>
-              <div className="flex flex-col sm:flex-row justify-center gap-4">
-                <Link to="/login" className="px-10 py-5 bg-white text-primary rounded-xl font-extrabold text-lg shadow-xl shadow-black/10 hover:bg-surface-container transition-all active:scale-95">
-                  Sign Up Today
-                </Link>
-                <Link to="/login" className="px-10 py-5 border border-white/30 text-white rounded-xl font-extrabold text-lg hover:bg-white/10 transition-all">
-                  Talk to Sales
-                </Link>
+        {/* CTA Banner */}
+        <section className="py-40 bg-white dark:bg-slate-950 overflow-hidden">
+          <div className="max-w-[1400px] mx-auto px-6 md:px-12">
+            <div className="relative bg-slate-900 dark:bg-blue-600 rounded-[3.5rem] p-12 md:p-32 text-center overflow-hidden">
+              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10" />
+              <div className="relative z-10">
+                <h2 className="text-5xl md:text-8xl font-black text-white mb-10 tracking-tightest leading-[0.9]">Elevate your <br /> Workspace.</h2>
+                <p className="text-xl md:text-2xl text-blue-100/70 mb-16 max-w-2xl mx-auto font-medium">Join the vanguard of organizations using Lumina HR to create an exceptional work culture.</p>
+                <div className="flex flex-col sm:flex-row justify-center gap-6">
+                  <Link to="/login" className="px-12 py-5 bg-white text-slate-900 rounded-2xl font-black text-xl shadow-2xl shadow-black/20 hover:scale-105 transition-all active:scale-95">
+                    Sign Up Free
+                  </Link>
+                  <Button variant="outline" className="h-auto px-12 py-5 border-2 border-white/20 text-white rounded-2xl font-black text-xl hover:bg-white/10 transition-all">
+                    Talk to Sales
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </main>
 
-      <footer className="w-full border-t border-slate-200 bg-slate-50">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 px-8 py-12 max-w-7xl mx-auto">
-          <div className="space-y-6">
-            <div className="text-lg font-bold text-blue-900">Lumina HR</div>
-            <p className="text-slate-500 dark:text-slate-400 max-w-sm font-medium text-sm">
-              Designing the future of people management through the lens of architectural precision and human-centric empathy.
-            </p>
-            <div className="flex gap-4">
-              <a className="text-slate-400 hover:text-primary transition-colors" href="#"><span className="material-symbols-outlined">public</span></a>
-              <a className="text-slate-400 hover:text-primary transition-colors" href="#"><span className="material-symbols-outlined">terminal</span></a>
-              <a className="text-slate-400 hover:text-primary transition-colors" href="#"><span className="material-symbols-outlined">share</span></a>
+      <footer className="w-full bg-[#fafafa] dark:bg-slate-950 border-t border-slate-200 dark:border-slate-900 py-20">
+        <div className="max-w-[1400px] mx-auto px-6 md:px-12">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 mb-20">
+            <div className="max-w-md">
+              <div className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter mb-8">Lumina HR</div>
+              <p className="text-slate-500 dark:text-slate-400 font-medium leading-relaxed mb-8">
+                Architecting the future of HR through precision, empathy, and high-velocity automation. 
+              </p>
+              <div className="flex gap-4">
+                {[Globe, Terminal, Share2].map((Icon, i) => (
+                  <div key={i} className="w-10 h-10 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-400 hover:text-blue-600 hover:border-blue-600 transition-all cursor-pointer">
+                    <Icon className="w-5 h-5" />
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-10">
+              {['Platform', 'Company', 'Resources'].map((category, i) => (
+                <div key={i} className="space-y-6">
+                  <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest">{category}</h4>
+                  <ul className="space-y-4">
+                    {[1, 2, 3].map(j => (
+                      <li key={j}>
+                        <a className="text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-blue-600 transition-colors" href="#">Link Option {j}</a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-8">
-            <div className="space-y-4">
-              <h4 className="text-on-surface font-bold text-sm uppercase tracking-widest">Platform</h4>
-              <ul className="space-y-2">
-                <li><a className="text-slate-500 dark:text-slate-400 text-sm font-medium hover:text-blue-700 dark:hover:text-blue-400 underline" href="#features">Features</a></li>
-                <li><a className="text-slate-500 dark:text-slate-400 text-sm font-medium hover:text-blue-700 dark:hover:text-blue-400 underline" href="#solutions">Solutions</a></li>
-                <li><a className="text-slate-500 dark:text-slate-400 text-sm font-medium hover:text-blue-700 dark:hover:text-blue-400 underline" href="#pricing">Pricing</a></li>
-              </ul>
+          
+          <div className="pt-10 border-t border-slate-200 dark:border-slate-900 flex flex-col md:flex-row justify-between items-center gap-6">
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">© 2024 Lumina HR. All rights reserved.</p>
+            <div className="flex items-center gap-2 text-blue-600 font-black text-xs uppercase tracking-widest cursor-pointer group">
+              Back to top 
+              <ChevronRight className="w-4 h-4 -rotate-90 group-hover:-translate-y-1 transition-transform" />
             </div>
-            <div className="space-y-4">
-              <h4 className="text-on-surface font-bold text-sm uppercase tracking-widest">Company</h4>
-              <ul className="space-y-2">
-                <li><a className="text-slate-500 dark:text-slate-400 text-sm font-medium hover:text-blue-700 dark:hover:text-blue-400 underline" href="#">Privacy Policy</a></li>
-                <li><a className="text-slate-500 dark:text-slate-400 text-sm font-medium hover:text-blue-700 dark:hover:text-blue-400 underline" href="#">Terms of Service</a></li>
-                <li><a className="text-slate-500 dark:text-slate-400 text-sm font-medium hover:text-blue-700 dark:hover:text-blue-400 underline" href="#">Contact Us</a></li>
-                <li><a className="text-slate-500 dark:text-slate-400 text-sm font-medium hover:text-blue-700 dark:hover:text-blue-400 underline" href="#">Resources</a></li>
-              </ul>
-            </div>
-          </div>
-        </div>
-        <div className="max-w-7xl mx-auto px-8 py-6 border-t border-slate-200 flex justify-between items-center">
-          <p className="text-slate-500 dark:text-slate-400 text-xs font-medium">© 2024 Lumina HRMS. All rights reserved.</p>
-          <div className="flex items-center gap-2 text-primary font-semibold text-xs cursor-pointer">
-            Back to top <span className="material-symbols-outlined text-sm">arrow_upward</span>
           </div>
         </div>
       </footer>

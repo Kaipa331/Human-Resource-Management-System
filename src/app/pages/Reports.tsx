@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { Download, FileText, TrendingUp, Users, DollarSign, Calendar, Upload, FileUp } from 'lucide-react';
+import { Download, FileText, TrendingUp, Users, DollarSign, Calendar, Upload, FileUp, Loader2, Activity, PieChart as PieChartIcon, ShieldCheck } from 'lucide-react';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { supabase } from '../../lib/supabase';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import { domToPng } from 'modern-screenshot';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { ReportsService } from '../../lib/reportsService';
@@ -17,98 +17,104 @@ export function Reports() {
   const [leaveData, setLeaveData] = useState([]);
   const [payrollTrend, setPayrollTrend] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [uploadedReports, setUploadedReports] = useState<any[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatingType, setGeneratingType] = useState<string | null>(null);
+  const [allReportData, setAllReportData] = useState<any>(null);
 
-  useEffect(() => {
-    fetchReportsData();
-  }, []);
-
-  const fetchReportsData = async () => {
+  const handleDownloadReport = async (title: string) => {
+    const toastId = toast.loading(`Generating ${title}...`);
     try {
-      setLoading(true);
+      setIsGenerating(true);
+      setGeneratingType(title);
       
-      // Fetch headcount trends
-      const headcountReport = await ReportsService.generateHRReport('headcount');
-      if (headcountReport && headcountReport.data) {
-        setHeadcountData(headcountReport.data);
-      }
+      // Allow time for the hidden template to render with data
+      await new Promise(resolve => setTimeout(resolve, 800));
       
-      // Fetch turnover data
-      const turnoverReport = await ReportsService.generateHRReport('turnover');
-      if (turnoverReport && turnoverReport.data) {
-        setTurnoverData(turnoverReport.data);
-      }
+      const elementId = title === 'Full Workspace Analytics' ? 'report-content' : 'special-report-view';
+      const element = document.getElementById(elementId);
       
-      // Fetch leave data
-      const leaveReport = await ReportsService.generateHRReport('leave');
-      if (leaveReport && leaveReport.data) {
-        setLeaveData(leaveReport.data);
+      if (!element) {
+        throw new Error('Report container not found');
       }
+
+      const dataUrl = await domToPng(element, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        quality: 1,
+        features: {
+          webfont: true,
+          image: true,
+        }
+      });
       
-      // Fetch payroll trends
-      const payrollReport = await ReportsService.generateHRReport('payroll');
-      if (payrollReport && payrollReport.data) {
-        setPayrollTrend(payrollReport.data);
+      if (!dataUrl) {
+        throw new Error('Failed to capture report content');
       }
-    } catch (error) {
-      console.error('Error fetching reports data:', error);
-      toast.error('Failed to load reports data');
+
+      const img = new Image();
+      img.src = dataUrl;
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+      });
+
+      const pdf = new jsPDF({
+        orientation: img.width > img.height ? 'landscape' : 'portrait',
+        unit: 'px',
+        format: [img.width / 2, img.height / 2]
+      });
+      
+      pdf.addImage(dataUrl, 'PNG', 0, 0, img.width / 2, img.height / 2);
+      pdf.save(`${title.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`);
+      
+      toast.success(`${title} generated successfully`, { id: toastId });
+    } catch (error: any) {
+      console.error('Error generating PDF:', error);
+      toast.error(`Report generation failed: ${error.message || 'Unknown error'}`, { id: toastId });
     } finally {
-      setLoading(false);
+      setIsGenerating(false);
+      setGeneratingType(null);
     }
   };
 
-  const [uploadedReports, setUploadedReports] = useState<any[]>([]);
-  const [uploading, setUploading] = useState(false);
+  const loadUploadedReports = async () => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('reports')
+        .list('', {
+          limit: 100,
+          offset: 0,
+          sortBy: { column: 'created_at', order: 'desc' }
+        });
 
-  const reports = [
-    {
-      id: 1,
-      title: 'Monthly Headcount Report',
-      description: 'Detailed employee count by department and location',
-      icon: Users,
-      color: 'text-blue-600',
-      bg: 'bg-blue-50'
-    },
-    {
-      id: 2,
-      title: 'Payroll Summary Report',
-      description: 'Complete payroll breakdown with statutory deductions',
-      icon: DollarSign,
-      color: 'text-green-600',
-      bg: 'bg-green-50'
-    },
-    {
-      id: 3,
-      title: 'Attendance Report',
-      description: 'Employee attendance and punctuality metrics',
-      icon: Calendar,
-      color: 'text-orange-600',
-      bg: 'bg-orange-50'
-    },
-    {
-      id: 4,
-      title: 'Leave Analysis Report',
-      description: 'Leave utilization and balance by type',
-      icon: FileText,
-      color: 'text-purple-600',
-      bg: 'bg-purple-50'
-    },
-    {
-      id: 5,
-      title: 'Performance Review Report',
-      description: 'Performance ratings and goal achievement summary',
-      icon: TrendingUp,
-      color: 'text-pink-600',
-      bg: 'bg-pink-50'
-    },
-    {
-      id: 6,
-      title: 'Training Completion Report',
-      description: 'Training enrollment and completion statistics',
-      icon: FileText,
-      color: 'text-indigo-600',
-      bg: 'bg-indigo-50'
-    },
+      if (error) {
+        if (error.message.includes('bucket')) return;
+        throw error;
+      }
+
+      const reports = data?.map(file => ({
+        name: file.name,
+        url: supabase.storage.from('reports').getPublicUrl(file.name).data.publicUrl,
+        uploadedAt: file.created_at || new Date().toISOString(),
+        size: file.metadata?.size || 0
+      })) || [];
+
+      setUploadedReports(reports);
+    } catch (error) {
+      console.error('Error loading uploaded reports:', error);
+    }
+  };
+
+  const reportsList = [
+    { id: 1, title: 'Monthly Headcount Report', description: 'Detailed employee count by department', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { id: 2, title: 'Payroll Summary Report', description: 'Complete payroll breakdown and tax breakdown', icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { id: 3, title: 'Attendance Report', description: 'Employee attendance and punctuality records', icon: Calendar, color: 'text-amber-600', bg: 'bg-amber-50' },
+    { id: 4, title: 'Leave Analysis Report', description: 'Comprehensive leave utilization tracking', icon: FileText, color: 'text-purple-600', bg: 'bg-purple-50' },
+    { id: 5, title: 'Performance Review Report', description: 'Rating distribution and goal achievements', icon: TrendingUp, color: 'text-rose-600', bg: 'bg-rose-50' },
+    { id: 6, title: 'Compliance Audit Report', description: 'Statutory compliance and audit summary', icon: ShieldCheck, color: 'text-cyan-600', bg: 'bg-cyan-50' },
   ];
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -155,36 +161,12 @@ export function Reports() {
     }
   };
 
-  const loadUploadedReports = async () => {
-    try {
-      const { data, error } = await supabase.storage
-        .from('reports')
-        .list('', {
-          limit: 100,
-          offset: 0,
-          sortBy: { column: 'created_at', order: 'desc' }
-        });
-
-      if (error) throw error;
-
-      const reports = data?.map(file => ({
-        name: file.name,
-        url: supabase.storage.from('reports').getPublicUrl(file.name).data.publicUrl,
-        uploadedAt: file.created_at || new Date().toISOString(),
-        size: file.metadata?.size || 0
-      })) || [];
-
-      setUploadedReports(reports);
-    } catch (error) {
-      console.error('Error loading uploaded reports:', error);
-    }
-  };
 
   useEffect(() => {
-    const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-    const loadReportsData = async () => {
+    const loadAllData = async () => {
+      setLoading(true);
       try {
+        const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         const [{ data: employees }, { data: leaves }, { data: payroll }] = await Promise.all([
           supabase.from('employees').select('id, department, join_date, status'),
           supabase.from('leave_requests').select('type'),
@@ -209,7 +191,6 @@ export function Reports() {
             const entry = monthly.get(i)!;
             entry.employees = cumulative;
             entry.hired = hiredByMonth[i];
-            // No termination date exists in schema; use inactive statuses as directional estimate.
             entry.left = (employees as any[]).filter((e) => String(e.status || '').toLowerCase() !== 'active').length;
           }
 
@@ -220,7 +201,7 @@ export function Reports() {
             const m = monthly.get(monthIndex)!;
             lastSix.push({ month: monthLabels[monthIndex], employees: m.employees, hired: m.hired, left: m.left });
           }
-          setHeadcountData(lastSix);
+          setHeadcountData(lastSix as any);
 
           const byDepartment = new Map<string, { total: number; inactive: number }>();
           for (const emp of employees as any[]) {
@@ -234,7 +215,7 @@ export function Reports() {
             department,
             rate: v.total ? Number(((v.inactive / v.total) * 100).toFixed(1)) : 0,
             color: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'][index % 6],
-          })));
+          })) as any);
         }
 
         if (leaves && leaves.length > 0) {
@@ -248,7 +229,7 @@ export function Reports() {
             type,
             count,
             color: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'][index % 6],
-          })));
+          })) as any);
         }
 
         if (payroll && payroll.length > 0) {
@@ -263,100 +244,221 @@ export function Reports() {
           const payrollRows = Array.from(byPeriod.entries())
             .map(([period, v]) => ({ month: period.slice(0, 3), gross: v.gross, net: v.net }))
             .slice(-6);
-          if (payrollRows.length > 0) setPayrollTrend(payrollRows);
+          if (payrollRows.length > 0) setPayrollTrend(payrollRows as any);
         }
+
+        // Fetch comprehensive data for targeted reports
+        const fullReport = await ReportsService.generateHRReport();
+        setAllReportData(fullReport);
+
+        await loadUploadedReports();
       } catch (err) {
-        console.error('Error loading report analytics', err);
+        console.error('Error loading reports data', err);
+        toast.error('Failed to load analytical data');
+      } finally {
+        setLoading(false);
       }
     };
 
-    loadReportsData();
-    loadUploadedReports();
+    loadAllData();
   }, []);
 
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+        <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
+        <p className="text-slate-500 font-medium animate-pulse">Analyzing organizational data...</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Reports & Analytics</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">Generate comprehensive HR reports and insights</p>
+    <div id="report-content" className="space-y-10 pb-12 overflow-hidden">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">Reports & Insights</h1>
+          <p className="text-slate-500 dark:text-slate-400 font-medium mt-2">Generate boardroom-ready analytics and compliance data.</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Button variant="outline" className="rounded-xl border-slate-200 dark:border-slate-800 h-11" onClick={() => handleDownloadReport('Full Workspace Analytics')}>
+            <Download className="w-4 h-4 mr-2" />
+            Full Bundle
+          </Button>
+          <div className="relative group">
+            <input
+              type="file"
+              id="report-upload-main"
+              className="hidden"
+              onChange={handleFileUpload}
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.csv"
+            />
+            <Button 
+              className="rounded-xl bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/20 h-11"
+              onClick={() => document.getElementById('report-upload-main')?.click()}
+              disabled={uploading}
+            >
+              {uploading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <FileUp className="w-4 h-4 mr-2" />}
+              Upload Custom
+            </Button>
+          </div>
+        </div>
       </div>
 
-      {/* Quick Reports */}
+      {/* Modern Report Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {reports.map((report) => (
-          <Card key={report.id} className="hover:shadow-lg transition-shadow">
-            <CardContent className="p-6">
-              <div className={`p-3 ${report.bg} rounded-lg w-fit mb-4`}>
-                <report.icon className={`w-6 h-6 ${report.color}`} />
+        {reportsList.map((report) => (
+          <div key={report.id} className="group relative bg-white dark:bg-slate-950 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 p-8 shadow-sm hover:shadow-2xl hover:scale-[1.02] transition-all duration-500 overflow-hidden">
+            <div className={`absolute top-0 right-0 w-32 h-32 ${report.bg} opacity-10 rounded-bl-[5rem] group-hover:scale-125 transition-transform duration-700`} />
+            
+            <div className="relative z-10">
+              <div className={`w-14 h-14 ${report.bg} ${report.color} rounded-2xl flex items-center justify-center mb-6 shadow-sm`}>
+                <report.icon className="w-7 h-7" />
               </div>
-              <h3 className="font-semibold text-lg mb-2">{report.title}</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{report.description}</p>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 leading-tight">{report.title}</h3>
+              <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-8">{report.description}</p>
+              
               <Button 
-                size="sm" 
                 variant="outline" 
-                className="w-full"
+                className="w-full rounded-2xl border-slate-100 dark:border-slate-900 bg-slate-50/50 dark:bg-slate-900/50 hover:bg-white dark:hover:bg-slate-950 hover:border-slate-300 dark:hover:border-slate-700 group-hover:shadow-md transition-all font-bold"
                 onClick={() => handleDownloadReport(report.title)}
               >
-                <Download className="w-4 h-4 mr-2" />
-                Generate Report
+                <Download className="w-4 h-4 mr-2 text-blue-600" />
+                Generate Now
               </Button>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         ))}
       </div>
 
-      {/* Upload Reports */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Upload Custom Reports</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="file-upload">Select a report file to upload</Label>
-              <Input
-                id="file-upload"
-                type="file"
-                accept=".pdf,.doc,.docx,.xls,.xlsx,.csv"
-                onChange={handleFileUpload}
-                disabled={uploading}
-                className="mt-2"
-              />
-            </div>
-            {uploading && (
-              <div className="flex items-center space-x-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
-                <span>Uploading...</span>
+      {/* High-Impact Analytics Section */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        {/* Headcount Performance */}
+        <Card className="rounded-[2.5rem] border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+          <CardHeader className="px-8 pt-8 pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-2xl font-black tracking-tight">Headcount Velocity</CardTitle>
+                <p className="text-sm text-slate-500 font-medium tracking-tight">Active workforce vs recruitment pipeline</p>
               </div>
-            )}
+              <Activity className="w-6 h-6 text-blue-600" />
+            </div>
+          </CardHeader>
+          <CardContent className="px-8 pb-8">
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={headcountData}>
+                  <defs>
+                    <linearGradient id="lineGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1}/>
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 12, fontWeight: 700, fill: '#64748B'}} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fontWeight: 700, fill: '#64748B'}} />
+                  <Tooltip contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)'}} />
+                  <Legend verticalAlign="top" height={36}/>
+                  <Line type="smooth" dataKey="employees" stroke="#3b82f6" strokeWidth={4} dot={{r: 6, fill: '#3b82f6', strokeWidth: 2, stroke: '#fff'}} name="Capacity" />
+                  <Line type="smooth" dataKey="hired" stroke="#10b981" strokeWidth={3} dot={false} name="Velocity" />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Leave Archetypes */}
+        <Card className="rounded-[2.5rem] border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+          <CardHeader className="px-8 pt-8 pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-2xl font-black tracking-tight">Leave Ecosystem</CardTitle>
+                <p className="text-sm text-slate-500 font-medium tracking-tight">Distribution by leave archetypes</p>
+              </div>
+              <PieChartIcon className="w-6 h-6 text-emerald-600" />
+            </div>
+          </CardHeader>
+          <CardContent className="px-8 pb-8">
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={leaveData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={80}
+                    outerRadius={110}
+                    paddingAngle={8}
+                    dataKey="count"
+                  >
+                    {leaveData.map((entry: any, index: number) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={{borderRadius: '16px', border: 'none'}} />
+                  <Legend verticalAlign="bottom" height={36} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Financial Momentum */}
+      <Card className="rounded-[2.5rem] border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+        <CardHeader className="px-8 pt-8 pb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-2xl font-black tracking-tight">Payroll Momentum</CardTitle>
+              <p className="text-sm text-slate-500 font-medium tracking-tight">Gross vs Net expenditure trend</p>
+            </div>
+            <TrendingUp className="w-6 h-6 text-amber-600" />
+          </div>
+        </CardHeader>
+        <CardContent className="px-8 pb-8">
+          <div className="h-[350px] w-full">
+            <ResponsiveContainer width="100%" height={350}>
+              <BarChart data={payrollTrend}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 12, fontWeight: 700, fill: '#64748B'}} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fontWeight: 700, fill: '#64748B'}} />
+                <Tooltip 
+                  cursor={{fill: '#f8fafc'}}
+                  formatter={(value: number) => `MK ${(value / 1000000).toFixed(2)}M`}
+                  contentStyle={{borderRadius: '16px', border: 'none'}} 
+                />
+                <Legend verticalAlign="top" align="right" height={36}/>
+                <Bar dataKey="gross" fill="#3b82f6" radius={[6, 6, 0, 0]} name="Gross Commitment" barSize={32} />
+                <Bar dataKey="net" fill="#10b981" radius={[6, 6, 0, 0]} name="Net Disbursement" barSize={32} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </CardContent>
       </Card>
 
-      {/* Uploaded Reports */}
+      {/* Custom Reports Vault */}
       {uploadedReports.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Uploaded Reports</CardTitle>
+        <Card className="rounded-[2.5rem] border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+          <CardHeader className="p-8">
+            <CardTitle className="text-2xl font-black tracking-tight">Strategic Document Vault</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
+          <CardContent className="px-8 pb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {uploadedReports.map((report, index) => (
-                <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <FileText className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-                    <div>
-                      <h4 className="font-medium">{report.name}</h4>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Uploaded: {new Date(report.uploadedAt).toLocaleDateString()} • 
-                        Size: {(report.size / 1024).toFixed(1)} KB
+                <div key={index} className="flex items-center justify-between p-5 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-blue-500/30 transition-all group">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-white dark:bg-slate-950 rounded-xl flex items-center justify-center shadow-sm">
+                      <FileText className="w-6 h-6 text-slate-400 group-hover:text-blue-600 transition-colors" />
+                    </div>
+                    <div className="min-w-0">
+                      <h4 className="font-bold text-slate-900 dark:text-white truncate max-w-[200px]">{report.name}</h4>
+                      <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">
+                        {new Date(report.uploadedAt).toLocaleDateString()} • {(report.size / 1024).toFixed(1)} KB
                       </p>
                     </div>
                   </div>
-                  <Button size="sm" variant="outline" asChild>
+                  <Button size="sm" variant="ghost" className="rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-none" asChild>
                     <a href={report.url} target="_blank" rel="noopener noreferrer">
-                      <Download className="w-4 h-4 mr-2" />
-                      View
+                      <Download className="w-4 h-4" />
                     </a>
                   </Button>
                 </div>
@@ -366,162 +468,153 @@ export function Reports() {
         </Card>
       )}
 
-      {/* Headcount Trend */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Headcount Trend (6 Months)</CardTitle>
-            <Button variant="outline" size="sm" onClick={() => handleDownloadReport('Headcount Trend Export')}>
-              <Download className="w-4 h-4 mr-2" />
-              Export
-            </Button>
+      {/* Hidden Professional Report Template for PDF Export */}
+      <div 
+        id="special-report-view" 
+        className="fixed left-[-9999px] top-[-9999px] w-[1000px] bg-white p-16 text-slate-900 font-sans"
+        style={{ visibility: isGenerating ? 'visible' : 'hidden' }}
+      >
+        <div className="flex justify-between items-start mb-16 border-b-2 border-slate-900 pb-10">
+          <div>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
+                <ShieldCheck className="w-6 h-6 text-white" />
+              </div>
+              <span className="text-3xl font-black tracking-tighter uppercase">Lumina <span className="text-blue-600">HR</span></span>
+            </div>
+            <p className="text-slate-400 font-black uppercase tracking-[0.2em] text-xs">Strategic Human Capital Analytics</p>
           </div>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={headcountData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Line type="monotone" dataKey="employees" stroke="#3b82f6" strokeWidth={2} name="Total Employees" />
-              <Line type="monotone" dataKey="hired" stroke="#10b981" strokeWidth={2} name="Hired" />
-              <Line type="monotone" dataKey="left" stroke="#ef4444" strokeWidth={2} name="Left" />
-            </LineChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+          <div className="text-right">
+            <h1 className="text-4xl font-black tracking-tightest uppercase mb-2">{generatingType || 'Report Detail'}</h1>
+            <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Generated: {new Date().toLocaleDateString('en-GB')}</p>
+            <p className="text-slate-400 font-medium text-[9px] mt-1 tracking-tighter">REF: LHR-{Math.random().toString(36).substr(2, 9).toUpperCase()}</p>
+          </div>
+        </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Turnover Rate by Department */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Turnover Rate by Department</CardTitle>
-              <Button variant="outline" size="sm" onClick={() => handleDownloadReport('Turnover Rate Export')}>
-                <Download className="w-4 h-4 mr-2" />
-                Export
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={turnoverData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="department" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="rate" fill="#3b82f6" name="Turnover Rate (%)" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+        {generatingType === 'Monthly Headcount Report' && allReportData && (
+          <div className="space-y-10">
+             <div className="grid grid-cols-3 gap-6 mb-10">
+                <div className="p-6 bg-blue-50 rounded-2xl">
+                   <p className="text-[10px] font-black uppercase tracking-widest text-blue-600 mb-1">Total Talent</p>
+                   <p className="text-3xl font-black">{allReportData.employees.total}</p>
+                </div>
+                <div className="p-6 bg-emerald-50 rounded-2xl">
+                   <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600 mb-1">Active Pulse</p>
+                   <p className="text-3xl font-black">{allReportData.employees.active}</p>
+                </div>
+                <div className="p-6 bg-slate-50 rounded-2xl">
+                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-1">Ecosystem Units</p>
+                   <p className="text-3xl font-black">{Object.keys(allReportData.employees.byDepartment).length}</p>
+                </div>
+             </div>
+             
+             <table className="w-full border-collapse">
+                <thead>
+                   <tr className="border-b-2 border-slate-900">
+                      <th className="py-4 text-left font-black uppercase tracking-widest text-xs">Department Unit</th>
+                      <th className="py-4 text-right font-black uppercase tracking-widest text-xs">Headcount</th>
+                      <th className="py-4 text-right font-black uppercase tracking-widest text-xs">% of Org</th>
+                   </tr>
+                </thead>
+                <tbody>
+                   {Object.entries(allReportData.employees.byDepartment).map(([dept, count]: any, i) => (
+                      <tr key={i} className="border-b border-slate-100">
+                         <td className="py-4 font-bold text-slate-800">{dept}</td>
+                         <td className="py-4 text-right font-black">{count}</td>
+                         <td className="py-4 text-right font-medium text-slate-500">
+                            {((count / allReportData.employees.total) * 100).toFixed(1)}%
+                         </td>
+                      </tr>
+                   ))}
+                </tbody>
+             </table>
+          </div>
+        )}
 
-        {/* Leave Distribution */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Leave Distribution (Current Year)</CardTitle>
-              <Button variant="outline" size="sm" onClick={() => handleDownloadReport('Leave Distribution Export')}>
-                <Download className="w-4 h-4 mr-2" />
-                Export
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={leaveData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ type, percent }) => `${type} ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={100}
-                  fill="#8884d8"
-                  dataKey="count"
-                >
-                  {leaveData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+        {generatingType === 'Payroll Summary Report' && allReportData && (
+          <div className="space-y-10">
+             <div className="grid grid-cols-3 gap-6 mb-10">
+                <div className="p-6 bg-blue-50 rounded-2xl">
+                   <p className="text-[10px] font-black uppercase tracking-widest text-blue-600 mb-1">Gross Commitment</p>
+                   <p className="text-3xl font-black">MK {(allReportData.payroll.totalGross / 1000000).toFixed(2)}M</p>
+                </div>
+                <div className="p-6 bg-emerald-50 rounded-2xl">
+                   <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600 mb-1">Net Disbursement</p>
+                   <p className="text-3xl font-black">MK {(allReportData.payroll.totalNet / 1000000).toFixed(2)}M</p>
+                </div>
+                <div className="p-6 bg-slate-50 rounded-2xl">
+                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-1">Total Statutory Tax</p>
+                   <p className="text-3xl font-black">MK {(allReportData.payroll.totalTax / 1000000).toFixed(2)}M</p>
+                </div>
+             </div>
+             
+             <table className="w-full border-collapse">
+                <thead>
+                   <tr className="border-b-2 border-slate-900">
+                      <th className="py-4 text-left font-black uppercase tracking-widest text-xs">Department</th>
+                      <th className="py-4 text-right font-black uppercase tracking-widest text-xs">Total Net (MK)</th>
+                      <th className="py-4 text-right font-black uppercase tracking-widest text-xs">Staffing</th>
+                      <th className="py-4 text-right font-black uppercase tracking-widest text-xs">Avg Salary (MK)</th>
+                   </tr>
+                </thead>
+                <tbody>
+                   {Object.entries(allReportData.payroll.byDepartment).map(([dept, data]: any, i) => (
+                      <tr key={i} className="border-b border-slate-100">
+                         <td className="py-4 font-bold text-slate-800">{dept}</td>
+                         <td className="py-4 text-right font-black">{(data.net / 1000).toFixed(1)}K</td>
+                         <td className="py-4 text-right font-medium">{data.employees}</td>
+                         <td className="py-4 text-right font-medium text-slate-500">
+                            {(data.net / data.employees / 1000).toFixed(1)}K
+                         </td>
+                      </tr>
+                   ))}
+                </tbody>
+             </table>
+          </div>
+        )}
+
+        {generatingType === 'Leave Analysis Report' && allReportData && (
+          <div className="space-y-10">
+             <div className="grid grid-cols-2 gap-6 mb-10">
+                <div className="p-6 bg-blue-50 rounded-2xl">
+                   <p className="text-[10px] font-black uppercase tracking-widest text-blue-600 mb-1">Avg Attendance Rate</p>
+                   <p className="text-3xl font-black">{allReportData.attendance.averageAttendance}%</p>
+                </div>
+                <div className="p-6 bg-rose-50 rounded-2xl">
+                   <p className="text-[10px] font-black uppercase tracking-widest text-rose-600 mb-1">Total Absenteeism</p>
+                   <p className="text-3xl font-black">{allReportData.attendance.absentDays} Days</p>
+                </div>
+             </div>
+             
+             <table className="w-full border-collapse">
+                <thead>
+                   <tr className="border-b-2 border-slate-900">
+                      <th className="py-4 text-left font-black uppercase tracking-widest text-xs">Department Unit</th>
+                      <th className="py-4 text-right font-black uppercase tracking-widest text-xs">Attendance %</th>
+                      <th className="py-4 text-right font-black uppercase tracking-widest text-xs">Status</th>
+                   </tr>
+                </thead>
+                <tbody>
+                   {Object.entries(allReportData.attendance.byDepartment).map(([dept, rate]: any, i) => (
+                      <tr key={i} className="border-b border-slate-100">
+                         <td className="py-4 font-bold text-slate-800">{dept}</td>
+                         <td className="py-4 text-right font-black">{rate}%</td>
+                         <td className="py-4 text-right">
+                            <span className={`text-[10px] font-black uppercase px-3 py-1 rounded-full ${rate > 95 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                               {rate > 95 ? 'Excellent' : 'Stable'}
+                            </span>
+                         </td>
+                      </tr>
+                   ))}
+                </tbody>
+             </table>
+          </div>
+        )}
+
+        <div className="mt-auto pt-20 border-t border-slate-100 text-center">
+           <p className="text-[10px] font-black uppercase tracking-[0.5em] text-slate-300">Confidential Property of Lumina HR Systems • Internal Distribution Only</p>
+        </div>
       </div>
-
-      {/* Payroll Trend */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Payroll Trend (MWK)</CardTitle>
-            <Button variant="outline" size="sm" onClick={() => handleDownloadReport('Payroll Trend Export')}>
-              <Download className="w-4 h-4 mr-2" />
-              Export
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={payrollTrend}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip 
-                formatter={(value: number) => `MWK ${(value / 1000000).toFixed(1)}M`}
-              />
-              <Legend />
-              <Bar dataKey="gross" fill="#3b82f6" name="Gross Payroll" />
-              <Bar dataKey="net" fill="#10b981" name="Net Payroll" />
-            </BarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
-
-      {/* Statutory Compliance */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Statutory Compliance Reports</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div>
-                <h4 className="font-medium">PAYE Tax Report - March 2026</h4>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Malawi Revenue Authority (MRA) submission</p>
-              </div>
-              <Button size="sm" variant="outline" onClick={() => handleDownloadReport('PAYE Tax Report')}>
-                <Download className="w-4 h-4 mr-2" />
-                Download
-              </Button>
-            </div>
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div>
-                <h4 className="font-medium">Pension Contributions Report - March 2026</h4>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Employee and employer contributions summary</p>
-              </div>
-              <Button size="sm" variant="outline" onClick={() => handleDownloadReport('Pension Contributions Report')}>
-                <Download className="w-4 h-4 mr-2" />
-                Download
-              </Button>
-            </div>
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div>
-                <h4 className="font-medium">Employment Act Compliance Report</h4>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Leave balances, working hours, and overtime</p>
-              </div>
-              <Button size="sm" variant="outline" onClick={() => handleDownloadReport('Employment Act Compliance Report')}>
-                <Download className="w-4 h-4 mr-2" />
-                Download
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
