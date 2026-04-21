@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
-import { Mail, Phone, Building, Calendar, Download, Edit, Clock, FileText, PlusCircle, Loader2, AlertCircle, BookOpen, Award, GraduationCap, Target } from 'lucide-react';
+import { Mail, Phone, Building, Calendar, Download, Edit, Clock, Clock3, FileText, PlusCircle, Loader2, AlertCircle, BookOpen, Award, GraduationCap, Target } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { Label } from '../components/ui/label';
@@ -187,19 +187,12 @@ export function EmployeeSelfService() {
     }
   };
 
-  const recentPayslips = [
-    { month: 'March 2026', gross: 'MWK 1,000,000', net: 'MWK 800,000', date: '2026-03-31' },
-    { month: 'February 2026', gross: 'MWK 1,000,000', net: 'MWK 800,000', date: '2026-02-28' },
-    { month: 'January 2026', gross: 'MWK 1,000,000', net: 'MWK 800,000', date: '2026-01-31' },
-  ];
-
-  const attendanceHistory = [
-    { date: '2026-03-14', clockIn: '08:00 AM', clockOut: '05:00 PM', hours: 9, status: 'Present' },
-    { date: '2026-03-13', clockIn: '08:15 AM', clockOut: '05:10 PM', hours: 8.9, status: 'Present' },
-    { date: '2026-03-12', clockIn: '08:30 AM', clockOut: '05:00 PM', hours: 8.5, status: 'Late' },
-    { date: '2026-03-11', clockIn: '08:00 AM', clockOut: '05:05 PM', hours: 9, status: 'Present' },
-    { date: '2026-03-10', clockIn: '-', clockOut: '-', hours: 0, status: 'Leave' },
-  ];
+  // ─── Real Data States ──────────────────────────────────────────────────────
+  const [employeeDbId, setEmployeeDbId] = useState<string | null>(null);
+  const [payslips, setPayslips] = useState<any[]>([]);
+  const [payslipsLoading, setPayslipsLoading] = useState(false);
+  const [attendanceHistory, setAttendanceHistory] = useState<any[]>([]);
+  const [attendanceLoading, setAttendanceLoading] = useState(false);
 
   const myDocuments = [
     { name: 'Employment Contract', type: 'PDF', uploadDate: '2024-01-15', size: '245 KB' },
@@ -209,7 +202,6 @@ export function EmployeeSelfService() {
   ];
 
   // ─── Leave state ────────────────────────────────────────────────────────────
-  const [employeeDbId, setEmployeeDbId] = useState<string | null>(null);
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const [leaveBalance, setLeaveBalance] = useState<LeaveBalance>({
     annual: { total: 21, used: 0, remaining: 21 },
@@ -241,16 +233,110 @@ export function EmployeeSelfService() {
       setEmployeeDbId(resolvedId);
 
       if (resolvedId) {
-        await Promise.all([fetchLeaveRequests(resolvedId), fetchLeaveBalance(resolvedId)]);
+        await Promise.all([
+          fetchLeaveRequests(resolvedId), 
+          fetchLeaveBalance(resolvedId),
+          fetchPayslips(resolvedId),
+          fetchAttendanceHistory(resolvedId)
+        ]);
       } else {
         setLeaveRequests([]);
+        setPayslips([]);
+        setAttendanceHistory([]);
       }
     } catch (err) {
-      console.error('Error loading leave data', err);
+      console.error('Error loading employee data', err);
     } finally {
       setLeaveLoading(false);
     }
   };
+
+  const fetchPayslips = async (empId: string) => {
+    try {
+      setPayslipsLoading(true);
+      // Actual columns found in DB: id, employee_id, cycle_id, pay_period, gross_salary, net_salary, updated_at, etc.
+      const { data, error } = await supabase
+        .from('payroll')
+        .select(`
+          id,
+          pay_period,
+          gross_salary,
+          net_salary,
+          updated_at
+        `)
+        .eq('employee_id', empId)
+        .order('pay_period', { ascending: false });
+
+      if (error) throw error;
+
+      const formatted = (data || []).map(p => ({
+        id: p.id,
+        month: p.pay_period,
+        gross: new Intl.NumberFormat('en-MW', { style: 'currency', currency: 'MWK' }).format(Number(p.gross_salary || 0)),
+        net: new Intl.NumberFormat('en-MW', { style: 'currency', currency: 'MWK' }).format(Number(p.net_salary || 0)),
+        date: p.updated_at 
+          ? new Date(p.updated_at).toLocaleDateString() 
+          : 'Processed'
+      }));
+
+      setPayslips(formatted);
+    } catch (err) {
+      console.error('Error fetching payslips', err);
+    } finally {
+      setPayslipsLoading(false);
+    }
+  };
+
+
+  const fetchAttendanceHistory = async (empId: string) => {
+    try {
+      setAttendanceLoading(true);
+      const { data, error } = await supabase
+        .from('attendance')
+        .select('*')
+        .eq('employee_id', empId)
+        .order('date', { ascending: false })
+        .limit(15);
+
+      if (error) throw error;
+
+      const formatted = (data || []).map(a => {
+        let hours = 0;
+        let clockInTime = '-';
+        let clockOutTime = '-';
+
+        if (a.clock_in) {
+          const d = new Date(a.clock_in);
+          clockInTime = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+        if (a.clock_out) {
+          const d = new Date(a.clock_out);
+          clockOutTime = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        if (a.clock_in && a.clock_out) {
+          const start = new Date(a.clock_in);
+          const end = new Date(a.clock_out);
+          hours = Number(((end.getTime() - start.getTime()) / (1000 * 60 * 60)).toFixed(1));
+        }
+
+        return {
+          date: a.date,
+          clockIn: clockInTime,
+          clockOut: clockOutTime,
+          hours,
+          status: a.status
+        };
+      });
+
+      setAttendanceHistory(formatted);
+    } catch (err) {
+      console.error('Error fetching attendance history', err);
+    } finally {
+      setAttendanceLoading(false);
+    }
+  };
+
 
   const fetchLeaveRequests = async (empId: string) => {
     const { data, error } = await supabase
@@ -272,14 +358,14 @@ export function EmployeeSelfService() {
   };
 
   const fetchLeaveBalance = async (empId: string) => {
-    const { data: approved } = await supabase
+    const { data: requests } = await supabase
       .from('leave_requests')
-      .select('type, start_date, end_date')
+      .select('type, start_date, end_date, status')
       .eq('employee_id', empId)
-      .eq('status', 'Approved');
+      .in('status', ['Approved', 'Pending']);
 
     let annualUsed = 0, sickUsed = 0, emergencyUsed = 0;
-    (approved || []).forEach((lv) => {
+    (requests || []).forEach((lv) => {
       const days = Math.ceil((new Date(lv.end_date).getTime() - new Date(lv.start_date).getTime()) / (1000 * 60 * 60 * 24)) + 1;
       if (lv.type === 'Annual Leave') annualUsed += days;
       else if (lv.type === 'Sick Leave') sickUsed += days;
@@ -292,6 +378,7 @@ export function EmployeeSelfService() {
       emergency: { total: 3, used: emergencyUsed, remaining: 3 - emergencyUsed },
     });
   };
+
 
   const loadTrainingData = async () => {
     setTrainingLoading(true);
@@ -842,31 +929,39 @@ export function EmployeeSelfService() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {recentPayslips.map((payslip, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-4">
-                      <FileText className="w-8 h-8 text-gray-400" />
-                      <div>
-                        <h4 className="font-medium">{payslip.month}</h4>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Paid on {payslip.date}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-6">
-                      <div className="text-right">
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Gross</p>
-                        <p className="font-medium">{payslip.gross}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Net</p>
-                        <p className="font-bold text-green-600">{payslip.net}</p>
-                      </div>
-                      <Button size="sm" variant="outline">
-                        <Download className="w-4 h-4 mr-2" />
-                        Download
-                      </Button>
-                    </div>
+                {payslipsLoading ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
                   </div>
-                ))}
+                ) : payslips.length === 0 ? (
+                  <p className="text-center py-8 text-gray-500">No payslips found.</p>
+                ) : (
+                  payslips.map((payslip, index) => (
+                    <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex items-center gap-4">
+                        <FileText className="w-8 h-8 text-gray-400" />
+                        <div>
+                          <h4 className="font-medium">{payslip.month}</h4>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Paid on {payslip.date}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-6">
+                        <div className="text-right">
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Gross</p>
+                          <p className="font-medium text-xs sm:text-base">{payslip.gross}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Net</p>
+                          <p className="font-bold text-green-600 text-xs sm:text-base">{payslip.net}</p>
+                        </div>
+                        <Button size="sm" variant="outline" onClick={() => toast.info('PDF download coming soon!')}>
+                          <Download className="w-4 h-4 mr-2" />
+                          <span className="hidden sm:inline">Download</span>
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>
@@ -879,27 +974,37 @@ export function EmployeeSelfService() {
               <CardTitle>Recent Attendance</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {attendanceHistory.map((record, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-4">
-                      <Clock className="w-5 h-5 text-gray-400" />
-                      <div>
-                        <p className="font-medium">{record.date}</p>
-                        <p className="text-sm text-gray-500">
-                          {record.clockIn} - {record.clockOut}
-                        </p>
+                {attendanceLoading ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+                  </div>
+                ) : attendanceHistory.length === 0 ? (
+                  <p className="text-center py-8 text-gray-500">No attendance records found.</p>
+                ) : (
+                  attendanceHistory.map((record, index) => (
+                    <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex items-center gap-4">
+                        <Clock3 className="w-5 h-5 text-gray-400" />
+                        <div>
+                          <p className="font-medium">{record.date}</p>
+                          <p className="text-sm text-gray-500">
+                            {record.clockIn} - {record.clockOut}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <p className="font-medium text-sm sm:text-base">{record.hours > 0 ? `${record.hours} hrs` : '-'}</p>
+                        <Badge variant={
+                          record.status === 'Present' ? 'default' : 
+                          record.status === 'Leave' ? 'outline' : 'secondary'
+                        }>
+                          {record.status}
+                        </Badge>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <p className="font-medium">{record.hours > 0 ? `${record.hours} hrs` : '-'}</p>
-                      <Badge className={getAttendanceStatusColor(record.status)}>
-                        {record.status}
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))
+                )}
+
             </CardContent>
           </Card>
         </TabsContent>

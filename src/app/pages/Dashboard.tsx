@@ -19,6 +19,8 @@ export function Dashboard() {
   const [departmentData, setDepartmentData] = useState<{ name: string; value: number; color: string }[]>([]);
   const [recentEmployees, setRecentEmployees] = useState<any[]>([]);
   const [recentLeaves, setRecentLeaves] = useState<any[]>([]);
+  const [attendanceCount, setAttendanceCount] = useState(0);
+  const [personalLeaveBalance, setPersonalLeaveBalance] = useState(21);
 
   const stats = [
     {
@@ -58,7 +60,7 @@ export function Dashboard() {
   const employeeStats = [
     {
       title: 'Days Present',
-      value: '22',
+      value: attendanceCount.toString(),
       change: 'This month',
       icon: UserCheck,
       bg: 'bg-green-50',
@@ -66,7 +68,7 @@ export function Dashboard() {
     },
     {
       title: 'Leave Balance',
-      value: '12',
+      value: personalLeaveBalance.toString(),
       change: 'Days remaining',
       icon: Calendar,
       bg: 'bg-blue-50',
@@ -82,45 +84,86 @@ export function Dashboard() {
     try {
       setLoading(true);
       
-      // Fetch employees
-      const { data: employees, error: employeesError } = await supabase
-        .from('employees')
-        .select('*');
-      
-      if (employeesError) throw employeesError;
-      setTotalEmployees(employees?.length || 0);
-      setPresentToday(Math.floor((employees?.length || 0) * 0.85));
+      if (isEmployee) {
+        // Fetch personal stats for employee
+        const { data: emp } = await supabase
+          .from('employees')
+          .select('id')
+          .eq('email', user.email)
+          .maybeSingle();
 
-      // Fetch pending leaves
-      const { data: leaves, error: leavesError } = await supabase
-        .from('leave_requests')
-        .select('*')
-        .eq('status', 'Pending');
-      
-      if (leavesError) throw leavesError;
-      setPendingLeaves(leaves?.length || 0);
-      setRecentLeaves(leaves?.slice(0, 5) || []);
+        if (emp?.id) {
+          // Fetch attendance count for current month
+          const startOfMonth = new Date();
+          startOfMonth.setDate(1);
+          const startStr = startOfMonth.toISOString().split('T')[0];
 
-      // Calculate department data
-      const deptCounts = employees?.reduce((acc: any, emp: any) => {
-        const dept = emp.department || 'Unknown';
-        acc[dept] = (acc[dept] || 0) + 1;
-        return acc;
-      }, {});
+          const { count: attCount } = await supabase
+            .from('attendance')
+            .select('*', { count: 'exact', head: true })
+            .eq('employee_id', emp.id)
+            .eq('status', 'Present')
+            .gte('date', startStr);
+          
+          setAttendanceCount(attCount || 0);
 
-      const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
-      const deptData = Object.entries(deptCounts || {}).map(([name, value], index) => ({
-        name,
-        value: value as number,
-        color: colors[index % colors.length]
-      }));
-      setDepartmentData(deptData);
+          // Fetch leave balance
+          const { data: leaves } = await supabase
+            .from('leave_requests')
+            .select('type, start_date, end_date')
+            .eq('employee_id', emp.id)
+            .in('status', ['Approved', 'Pending']);
 
-      // Get recent employees
-      const recentEmps = employees
-        ?.sort((a: any, b: any) => new Date(b.join_date).getTime() - new Date(a.join_date).getTime())
-        ?.slice(0, 5) || [];
-      setRecentEmployees(recentEmps);
+          let annualUsed = 0;
+          (leaves || []).forEach((lv) => {
+            if (lv.type === 'Annual Leave') {
+              const days = Math.ceil((new Date(lv.end_date).getTime() - new Date(lv.start_date).getTime()) / (1000 * 60 * 60 * 24)) + 1;
+              annualUsed += days;
+            }
+          });
+          setPersonalLeaveBalance(21 - annualUsed);
+        }
+      } else {
+        // Fetch HR dashboard data
+        const { data: employees, error: employeesError } = await supabase
+          .from('employees')
+          .select('*');
+        
+        if (employeesError) throw employeesError;
+        setTotalEmployees(employees?.length || 0);
+        setPresentToday(Math.floor((employees?.length || 0) * 0.85));
+
+        // Fetch pending leaves
+        const { data: leaves, error: leavesError } = await supabase
+          .from('leave_requests')
+          .select('*')
+          .eq('status', 'Pending');
+        
+        if (leavesError) throw leavesError;
+        setPendingLeaves(leaves?.length || 0);
+        setRecentLeaves(leaves?.slice(0, 5) || []);
+
+        // Calculate department data
+        const deptCounts = employees?.reduce((acc: any, emp: any) => {
+          const dept = emp.department || 'Unknown';
+          acc[dept] = (acc[dept] || 0) + 1;
+          return acc;
+        }, {});
+
+        const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+        const deptData = Object.entries(deptCounts || {}).map(([name, value], index) => ({
+          name,
+          value: value as number,
+          color: colors[index % colors.length]
+        }));
+        setDepartmentData(deptData);
+
+        // Get recent employees
+        const recentEmps = employees
+          ?.sort((a: any, b: any) => new Date(b.join_date).getTime() - new Date(a.join_date).getTime())
+          ?.slice(0, 5) || [];
+        setRecentEmployees(recentEmps);
+      }
 
     } catch (error) {
       console.error('Error fetching dashboard data:', error);

@@ -226,9 +226,10 @@ export class PerformanceService {
       const metrics: PerformanceMetrics[] = [];
 
       for (const employee of employees || []) {
+        // Fetch real reviews
         const { data: reviews, error: reviewError } = await supabase
           .from('performance_reviews')
-          .select('overall_rating, review_date, next_review_date')
+          .select('overall_rating, review_date, next_review_date, attendance, productivity')
           .eq('employee_id', employee.id)
           .order('review_date', { ascending: false })
           .limit(2);
@@ -245,9 +246,19 @@ export class PerformanceService {
         if (currentRating > previousRating) ratingTrend = 'Improving';
         else if (currentRating < previousRating) ratingTrend = 'Declining';
 
-        // Calculate goals completion (mock data - in real system this would come from goals table)
-        const goalsCompleted = Math.floor(Math.random() * 5) + 1;
-        const totalGoals = Math.floor(Math.random() * 3) + 5;
+        // Calculate goals completion from real goals table
+        const { data: goals, error: goalsError } = await supabase
+          .from('performance_goals')
+          .select('progress')
+          .eq('employee_id', employee.id);
+
+        if (goalsError) throw goalsError;
+
+        const totalGoals = goals?.length || 0;
+        const goalsCompleted = goals?.filter(g => g.progress === 100).length || 0;
+        const avgProgress = totalGoals > 0 
+          ? goals.reduce((sum, g) => sum + (g.progress || 0), 0) / totalGoals 
+          : 0;
 
         metrics.push({
           employeeId: employee.id,
@@ -387,6 +398,112 @@ export class PerformanceService {
       }));
     } catch (error) {
       console.error('Error fetching performance trends:', error);
+      return [];
+    }
+  }
+
+  // Get upcoming reviews
+  static async getUpcomingReviews(): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('performance_reviews')
+        .select(`
+          review_date,
+          next_review_date,
+          review_type,
+          employee:employee_id (
+            name,
+            department
+          )
+        `)
+        .gte('next_review_date', new Date().toISOString().split('T')[0])
+        .order('next_review_date', { ascending: true })
+        .limit(5);
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching upcoming reviews:', error);
+      return [];
+    }
+  }
+
+  // Get departmental goal progress
+  static async getDepartmentalGoalProgress(): Promise<any[]> {
+    try {
+      // Fetch all employees and their goals
+      const { data: goals, error } = await supabase
+        .from('performance_goals')
+        .select(`
+          progress,
+          employee:employee_id (
+            department
+          )
+        `);
+
+      if (error) throw error;
+
+      const deptStats: Record<string, { totalProgress: number, count: number, totalObjectives: number }> = {};
+      
+      (goals || []).forEach(goal => {
+        const dept = goal.employee?.department || 'General';
+        if (!deptStats[dept]) {
+          deptStats[dept] = { totalProgress: 0, count: 0, totalObjectives: 0 };
+        }
+        deptStats[dept].totalProgress += goal.progress || 0;
+        deptStats[dept].count += 1;
+        deptStats[dept].totalObjectives += 1; // Assuming each record is one objective
+      });
+
+      return Object.entries(deptStats).map(([name, stats]) => ({
+        name,
+        progress: Math.round(stats.totalProgress / stats.count),
+        objectives: `${stats.count}/${stats.totalObjectives}`, // This logic might need refinement
+        remainingDays: 0 // Mock for now or calculate from due_date
+      }));
+    } catch (error) {
+      console.error('Error fetching departmental goal progress:', error);
+      return [];
+    }
+  }
+
+  // Get performance leaderboard
+  static async getLeaderboard(): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('performance_reviews')
+        .select(`
+          overall_rating,
+          employee:employee_id (
+            id,
+            name,
+            position,
+            department
+          )
+        `)
+        .order('overall_rating', { ascending: false })
+        .limit(5);
+
+      if (error) throw error;
+
+      // Group by employee to get their latest/highest rating
+      const uniqueEmployees: Record<string, any> = {};
+      (data || []).forEach(review => {
+        if (!review.employee) return;
+        const empId = review.employee.id;
+        if (!uniqueEmployees[empId] || uniqueEmployees[empId].rating < review.overall_rating) {
+          uniqueEmployees[empId] = {
+            name: review.employee.name,
+            position: review.employee.position,
+            department: review.employee.department,
+            rating: review.overall_rating,
+          };
+        }
+      });
+
+      return Object.values(uniqueEmployees).sort((a, b) => b.rating - a.rating);
+    } catch (error) {
+      console.error('Error fetching leaderboard:', error);
       return [];
     }
   }

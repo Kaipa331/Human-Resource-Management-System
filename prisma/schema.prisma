@@ -52,17 +52,17 @@ model VerificationToken {
 
 // HRMS Tables
 model Employee {
-  id                String    @id @default(cuid())
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   employeeId        String    @unique @map("employee_id")
   name              String
   email             String    @unique
   phone             String?
   department        String
   position          String
-  joinDate          DateTime  @map("join_date")
+  joinDate          DateTime  @map("join_date") @db.Date
   status            String    @default("Active")
   salary            Float
-  dateOfBirth        DateTime? @map("date_of_birth")
+  dateOfBirth        DateTime? @map("date_of_birth") @db.Date
   gender            String?
   address           String?
   employmentType    String?   @map("employment_type")
@@ -74,8 +74,10 @@ model Employee {
   bankName             String?   @map("bank_name")
   bankAccountNumber      String?   @map("bank_account_number")
   taxIdPin             String?   @map("tax_id_pin")
-  createdAt           DateTime   @default(now())
-  updatedAt           DateTime   @updatedAt
+  createdAt           DateTime   @default(now()) @map("created_at")
+  updatedAt           DateTime   @updatedAt @map("updated_at")
+
+  @@map("employees")
 }
 
 model Profile {
@@ -133,25 +135,85 @@ model Payroll {
 }
 
 model PerformanceReview {
-  id                   String    @id @default(cuid())
-  employeeId            String    @map("employee_id")
-  reviewerId            String?   @map("reviewer_id")
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  employeeId            String    @map("employee_id") @db.Uuid
+  reviewerId            String?   @map("reviewer_id") @db.Uuid
   reviewPeriod          String    @map("review_period")
   reviewType           String    @default("Quarterly") @map("review_type")
-  qualityOfWork         Float     @map("quality_of_work")
-  productivity          Float     @map("productivity")
-  teamwork             Float     @map("teamwork")
-  communication        Float     @map("communication")
-  initiative           Float     @map("initiative")
-  attendance           Float     @map("attendance")
-  overallRating        Float     @map("overall_rating")
+  qualityOfWork         Float?     @default(3.0) @map("quality_of_work")
+  productivity          Float?     @default(3.0) @map("productivity")
+  teamwork             Float?     @default(3.0) @map("teamwork")
+  communication        Float?     @default(3.0) @map("communication")
+  initiative           Float?     @default(3.0) @map("initiative")
+  attendance           Float?     @default(3.0) @map("attendance")
+  overallRating        Float?     @default(3.0) @map("overall_rating")
   strengths            String?
   areasForImprovement String? @map("areas_for_improvement")
   goals                String?
   employeeComments      String? @map("employee_comments")
   reviewerComments      String? @map("reviewer_comments")
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  status               String    @default("Draft")
+  reviewDate           DateTime? @default(now()) @map("review_date") @db.Date
+  nextReviewDate       DateTime? @map("next_review_date") @db.Date
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("performance_reviews")
+}
+
+model PerformanceGoal {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  employeeId  String   @map("employee_id") @db.Uuid
+  title       String
+  description String?
+  category    String?
+  dueDate     DateTime? @map("due_date") @db.Date
+  progress    Int      @default(0)
+  status      String   @default("Not Started")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("performance_goals")
+}
+
+model SuccessionPlan {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  role                String
+  department          String
+  currentHolder       String   @map("current_holder")
+  successorCandidates String[] @default([]) @map("successor_candidates")
+  incumbentGrade      String?  @map("incumbent_grade")
+  riskOfLosing        String?  @default("Low") @map("risk_of_losing")
+  readinessLevel      String   @default("Emerging") @map("readiness_level")
+  status              String   @default("Open")
+  notes               String?
+  createdAt           DateTime @default(now()) @map("created_at")
+  successors          SuccessorDetail[]
+
+  @@map("succession_plans")
+}
+
+model SuccessorDetail {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  planId              String   @map("plan_id") @db.Uuid
+  level               String   // '1st', '2nd', '3rd'
+  availability        String?  @default("No")
+  planType            String?  @default("Internal") @map("plan_type")
+  successorPosition   String?  @map("successor_position")
+  successorName       String   @map("successor_name")
+  grade               String?
+  matrixPlacement     String?  @map("matrix_placement")
+  personality         String?
+  yearsInService      Int?     @default(0) @map("years_in_service")
+  yearsInCurrentRole  Int?     @default(0) @map("years_in_current_role")
+  readiness           String?
+  developmentPlan     String?  @map("development_plan")
+  developmentTracker  String?  @map("development_tracker")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @default(now()) @updatedAt @map("updated_at")
+  plan                SuccessionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@map("successor_details")
 }
 
 model TrainingCourse {
