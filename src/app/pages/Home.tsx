@@ -49,7 +49,7 @@ export function Home() {
               Login
             </Link>
             <Link to="/login" className="hidden sm:flex px-5 md:px-7 py-2.5 md:py-3 bg-gradient-to-r from-slate-900 to-blue-600 dark:from-blue-600 dark:to-indigo-600 text-white rounded-full font-black text-xs md:text-sm shadow-xl shadow-slate-900/10 dark:shadow-blue-600/20 hover:scale-105 active:scale-95 transition-all uppercase tracking-widest">
-              Sign In
+              Login
             </Link>
             <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="lg:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
               {mobileMenuOpen ? <X className="w-6 h-6 text-slate-900 dark:text-white" /> : <Menu className="w-6 h-6 text-slate-900 dark:text-white" />}
@@ -68,7 +68,7 @@ export function Home() {
                 Login
               </Link>
               <Link to="/login" className="block w-full text-center px-6 py-3 bg-gradient-to-r from-slate-900 to-blue-600 dark:from-blue-600 dark:to-indigo-600 text-white rounded-full font-black text-sm shadow-xl uppercase tracking-widest" onClick={() => setMobileMenuOpen(false)}>
-                Sign In
+                Login
               </Link>
             </div>
           </div>
@@ -101,7 +101,7 @@ export function Home() {
               
               <div className="flex flex-col sm:flex-row gap-4 md:gap-5">
                 <Link to="/login" className="group px-8 py-4 md:px-10 md:py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-black text-base md:text-lg shadow-2xl shadow-blue-600/25 hover:from-blue-700 hover:to-indigo-700 transition-all flex items-center justify-center gap-3 active:scale-95">
-                  Get Started 
+                  Login
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Link>
                 <Button variant="outline" className="h-auto px-8 py-4 md:px-10 md:py-5 bg-white/90 dark:bg-slate-900/90 text-slate-900 dark:text-white rounded-2xl font-black text-base md:text-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all flex items-center justify-center gap-3">
@@ -232,7 +232,7 @@ export function Home() {
                 <p className="text-base md:text-xl lg:text-2xl text-blue-100/70 mb-8 md:mb-16 max-w-2xl mx-auto font-medium">Join the vanguard of organizations using Lumina HR to create an exceptional work culture.</p>
                 <div className="flex flex-col sm:flex-row justify-center gap-4 md:gap-6">
                   <Link to="/login" className="px-8 py-4 md:px-12 md:py-5 bg-white text-slate-900 rounded-2xl font-black text-base md:text-xl shadow-2xl shadow-black/20 hover:scale-105 transition-all active:scale-95">
-                    Sign In
+                  Login
                   </Link>
                   <Button variant="outline" className="h-auto px-8 py-4 md:px-12 md:py-5 border-2 border-white/20 text-white rounded-2xl font-black text-base md:text-xl hover:bg-white/10 transition-all">
                     Talk to Sales
