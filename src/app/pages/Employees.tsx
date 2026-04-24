@@ -476,17 +476,17 @@ export function Employees() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Employee Management</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Manage employee records and information</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Employee Management</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm md:text-base">Manage employee records and information</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <Button onClick={openAddDialog}>
             <Plus className="w-4 h-4 mr-2" />
             Add Employee
           </Button>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 border-none shadow-2xl">
+          <DialogContent className="max-w-4xl w-[95vw] md:w-full max-h-[90vh] overflow-y-auto p-0 border-none shadow-2xl">
             <div className="sticky top-0 z-10 bg-white dark:bg-slate-950 px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
@@ -738,7 +738,7 @@ export function Employees() {
 
         {/* View Details Dialog */}
         <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-md w-[95vw]">
             <DialogHeader>
               <DialogTitle>Employee Details</DialogTitle>
               <DialogDescription>Full profile information</DialogDescription>
@@ -829,18 +829,18 @@ export function Employees() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>All Employees ({employees.length})</CardTitle>
-            <div className="flex gap-2">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <CardTitle className="text-lg md:text-xl">All Employees ({employees.length})</CardTitle>
+            <div className="flex flex-col sm:flex-row gap-2">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input placeholder="Search employees..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-9 w-64" />
+                <Input placeholder="Search employees..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-9 w-full sm:w-64" />
               </div>
-              <Button variant="outline" onClick={() => setRefreshKey(prev => prev + 1)}>
+              <Button variant="outline" onClick={() => setRefreshKey(prev => prev + 1)} className="w-full sm:w-auto">
                 <Loader2 className="w-4 h-4 mr-2" />
                 Refresh
               </Button>
-              <Button variant="outline" onClick={handleExport}>
+              <Button variant="outline" onClick={handleExport} className="w-full sm:w-auto">
                 <Download className="w-4 h-4 mr-2" />
                 Export
               </Button>

@@ -404,10 +404,10 @@ export function Training() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Training & Development</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Manage employee training and skill development</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Training & Development</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm md:text-base">Manage employee training and skill development</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
@@ -416,7 +416,7 @@ export function Training() {
               Create Training Program
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 border-none shadow-2xl">
+          <DialogContent className="max-w-2xl w-[95vw] md:w-full max-h-[90vh] overflow-y-auto p-0 border-none shadow-2xl">
             <div className="sticky top-0 z-10 bg-white dark:bg-slate-950 px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
@@ -522,7 +522,7 @@ export function Training() {
       </div>
 
       <Dialog open={isCourseDialogOpen} onOpenChange={setIsCourseDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md w-[95vw]">
           <DialogHeader>
             <DialogTitle>{activeCourse?.title}</DialogTitle>
             <DialogDescription>{activeCourse?.provider} • {activeCourse?.category}</DialogDescription>
@@ -546,7 +546,7 @@ export function Training() {
       </Dialog>
 
       <Dialog open={isCertificateDialogOpen} onOpenChange={setIsCertificateDialogOpen}>
-        <DialogContent className="max-w-xl text-center p-8 bg-gradient-to-r from-gray-50 to-white">
+        <DialogContent className="max-w-xl w-[95vw] text-center p-8 bg-gradient-to-r from-gray-50 to-white">
           <div className="border-4 border-double border-gray-300 p-8">
             <div className="mx-auto bg-yellow-100 p-4 rounded-full w-20 h-20 flex items-center justify-center mb-6">
               <Award className="w-10 h-10 text-yellow-600" />

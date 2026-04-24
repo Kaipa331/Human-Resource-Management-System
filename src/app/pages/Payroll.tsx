@@ -256,21 +256,21 @@ export function Payroll() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Malawi Payroll Management</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">MRA & Pension Act Compliant Payroll System</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Malawi Payroll Management</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm md:text-base">MRA & Pension Act Compliant Payroll System</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => downloadMRAReport()} disabled={!selectedCycle}>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => downloadMRAReport()} disabled={!selectedCycle} className="w-full sm:w-auto">
             <Download className="w-4 h-4 mr-2" />
             MRA Report
           </Button>
-          <Button onClick={() => setShowNewCycleDialog(true)}>
+          <Button onClick={() => setShowNewCycleDialog(true)} className="w-full sm:w-auto">
             <Plus className="w-4 h-4 mr-2" />
             New Cycle
           </Button>
-          <Button onClick={handleOpenAdjustments} disabled={isProcessing || !selectedCycle}>
+          <Button onClick={handleOpenAdjustments} disabled={isProcessing || !selectedCycle} className="w-full sm:w-auto">
             <Play className="w-4 h-4 mr-2" />
             {isProcessing ? 'Processing...' : 'Process Payroll'}
           </Button>
@@ -278,7 +278,7 @@ export function Payroll() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 md:gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Employees</CardTitle>
@@ -413,8 +413,8 @@ export function Payroll() {
                   </div>
                 ) : (
                   payrollCycles.map((cycle) => (
-                    <div key={cycle.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center space-x-4">
+                    <div key={cycle.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg gap-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
                         <div>
                           <h3 className="font-medium">{cycle.cycleName}</h3>
                           <p className="text-sm text-gray-500">
@@ -425,8 +425,8 @@ export function Payroll() {
                           {cycle.status}
                         </Badge>
                       </div>
-                      <div className="flex items-center space-x-4">
-                        <div className="text-right">
+                      <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
+                        <div className="text-left sm:text-right">
                           <p className="font-medium">{cycle.totalEmployees} employees</p>
                           <p className="text-sm text-gray-500">{formatCurrency(cycle.totalNet)}</p>
                         </div>
@@ -438,7 +438,7 @@ export function Payroll() {
                             setSelectedCycle(cycle.id);
                             setActiveTab('records');
                           }}
-                          className="cursor-pointer"
+                          className="cursor-pointer w-full sm:w-auto"
                         >
                           View Details
                         </Button>
@@ -454,10 +454,10 @@ export function Payroll() {
         <TabsContent value="records" className="space-y-4">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <CardTitle>Payroll Records</CardTitle>
                 <Select value={selectedCycle} onValueChange={setSelectedCycle}>
-                  <SelectTrigger className="w-48">
+                  <SelectTrigger className="w-full sm:w-48">
                     <SelectValue placeholder="Select cycle" />
                   </SelectTrigger>
                   <SelectContent>
@@ -480,23 +480,23 @@ export function Payroll() {
                 ) : (
                   getFilteredRecords().map((record) => (
                     <div key={record.id} className="border rounded-lg">
-                      <div className="flex items-center justify-between p-4 border-b">
-                        <div className="flex items-center space-x-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b gap-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
                           <div>
                             <h3 className="font-medium">{record.employees?.name}</h3>
                             <p className="text-sm text-gray-500">{record.employees?.department} - {record.employees?.position}</p>
                           </div>
                         </div>
-                        <div className="flex items-center space-x-6">
-                          <div className="text-right">
+                        <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+                          <div className="text-left sm:text-right">
                             <p className="text-sm text-gray-500">Base</p>
                             <p className="font-medium">{formatCurrency(record.baseSalary)}</p>
                           </div>
-                          <div className="text-right">
+                          <div className="text-left sm:text-right">
                             <p className="text-sm text-gray-500">Gross</p>
                             <p className="font-medium">{formatCurrency(record.grossSalary)}</p>
                           </div>
-                          <div className="text-right">
+                          <div className="text-left sm:text-right">
                             <p className="text-sm text-gray-500">Net</p>
                             <p className="font-medium">{formatCurrency(record.netSalary)}</p>
                           </div>
@@ -510,13 +510,14 @@ export function Payroll() {
                               setSelectedPayslipRecord(record);
                               setShowPayslipModal(true);
                             }}
+                            className="flex-shrink-0"
                           >
                             <Download className="w-4 h-4 mr-1" />
                             Payslip
                           </Button>
                         </div>
                       </div>
-                      <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                      <div className="p-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
                         <div>
                           <p className="text-gray-500">Allowances</p>
                           <p className="font-medium">{formatCurrency(record.housingAllowance + record.transportAllowance + record.mealAllowance + record.otherAllowances)}</p>
@@ -545,7 +546,7 @@ export function Payroll() {
 
       {/* New Cycle Dialog */}
       <Dialog open={showNewCycleDialog} onOpenChange={setShowNewCycleDialog}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 border-none shadow-2xl">
+          <DialogContent className="max-w-2xl w-[95vw] md:w-full max-h-[90vh] overflow-y-auto p-0 border-none shadow-2xl">
             <div className="sticky top-0 z-10 bg-white dark:bg-slate-950 px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">

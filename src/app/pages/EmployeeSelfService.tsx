@@ -1110,7 +1110,7 @@ export function EmployeeSelfService() {
         <TabsContent value="documents">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <CardTitle>My Documents</CardTitle>
                 <div>
                    <input
@@ -1122,6 +1122,7 @@ export function EmployeeSelfService() {
                   <Button 
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isUploading}
+                    className="w-full sm:w-auto"
                   >
                     {isUploading ? (
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -1147,19 +1148,19 @@ export function EmployeeSelfService() {
                   </div>
                 ) : (
                   realDocuments.map((doc) => (
-                    <div key={doc.id} className="flex items-center justify-between p-4 border rounded-lg hover:shadow-sm transition-shadow">
+                    <div key={doc.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg hover:shadow-sm transition-shadow gap-4">
                       <div className="flex items-center gap-4">
-                        <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                        <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex-shrink-0">
                           <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                         </div>
-                        <div>
-                          <h4 className="font-medium">{doc.name}</h4>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium truncate">{doc.name}</h4>
                           <p className="text-sm text-gray-500">
                             {doc.type} • {doc.size} • Uploaded {doc.uploadDate}
                           </p>
                         </div>
                       </div>
-                      <Button size="sm" variant="outline" onClick={() => handleDownload(doc)}>
+                      <Button size="sm" variant="outline" onClick={() => handleDownload(doc)} className="w-full sm:w-auto">
                         <Download className="w-4 h-4 mr-2" />
                         Download
                       </Button>

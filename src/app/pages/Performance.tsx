@@ -162,13 +162,13 @@ export function Performance() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Performance Management</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Track organizational growth and individual excellence</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Performance Management</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm md:text-base">Track organizational growth and individual excellence</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => toast.info('Exporting performance data...')}>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => toast.info('Exporting performance data...')} className="w-full sm:w-auto">
             <Download className="w-4 h-4 mr-2" />
             Export Data
           </Button>
@@ -179,7 +179,7 @@ export function Performance() {
                 New Goal
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 border-none shadow-2xl">
+            <DialogContent className="max-w-2xl w-[95vw] md:w-full max-h-[90vh] overflow-y-auto p-0 border-none shadow-2xl">
               <div className="sticky top-0 z-10 bg-white dark:bg-slate-950 px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
