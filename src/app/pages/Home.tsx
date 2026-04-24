@@ -7,7 +7,6 @@ import {
   Users, 
   BarChart3, 
   Zap, 
-  Clock, 
   ChevronRight, 
   ArrowRight,
   PlayCircle,
@@ -20,6 +19,24 @@ import {
 
 export function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const heroPhotos = [
+    {
+      src: 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=900&q=80',
+      alt: 'HR team collaborating around a conference table',
+    },
+    {
+      src: 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=900&q=80',
+      alt: 'People discussing strategy in a bright office space',
+    },
+    {
+      src: 'https://images.unsplash.com/photo-1543269664-28c5408b857c?auto=format&fit=crop&w=900&q=80',
+      alt: 'Recruiter interviewing a candidate in a professional setting',
+    },
+    {
+      src: 'https://images.unsplash.com/photo-1553877522-43269d4ea984?auto=format&fit=crop&w=900&q=80',
+      alt: 'Employee reviewing paperwork and payroll documents',
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 selection:bg-blue-100 selection:text-blue-900 transition-colors duration-500">
@@ -68,37 +85,69 @@ export function Home() {
 
       <main>
         {/* Dynamic Hero Section */}
-        <header className="relative pt-32 pb-16 md:pt-64 md:pb-48 overflow-hidden">
+        <header className="relative pt-32 pb-16 md:pt-56 md:pb-36 overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
             <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-100/50 dark:bg-blue-900/10 rounded-full blur-[120px]" />
             <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-emerald-100/50 dark:bg-emerald-900/10 rounded-full blur-[100px]" />
           </div>
 
           <div className="max-w-[1400px] mx-auto px-4 md:px-12 relative z-10">
-            <div className="max-w-4xl">
-              <div className="inline-flex items-center gap-2 py-2 px-3 md:px-4 mb-6 md:mb-8 rounded-full bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-100 dark:border-blue-800/50">
-                <Sparkles className="w-4 h-4 text-blue-600 animate-pulse" />
-                <span className="text-[9px] md:text-[10px] font-black text-blue-700 dark:text-blue-300 uppercase tracking-[0.2em]">Next-Gen People Operations</span>
+            <div className="grid gap-10 lg:grid-cols-[1.05fr_.95fr] lg:items-center">
+              <div className="max-w-4xl">
+                <div className="inline-flex items-center gap-2 py-2 px-3 md:px-4 mb-6 md:mb-8 rounded-full bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-100 dark:border-blue-800/50">
+                  <Sparkles className="w-4 h-4 text-blue-600 animate-pulse" />
+                  <span className="text-[9px] md:text-[10px] font-black text-blue-700 dark:text-blue-300 uppercase tracking-[0.2em]">Next-Gen People Operations</span>
+                </div>
+
+                <h1 className="text-4xl md:text-5xl lg:text-8xl font-black text-slate-900 dark:text-white leading-[0.95] md:leading-[0.9] mb-6 md:mb-10 tracking-tightest">
+                  Designing the <br />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-500 underline decoration-emerald-200 dark:decoration-emerald-900/30">Future of Work</span>
+                </h1>
+
+                <p className="text-base md:text-xl lg:text-2xl text-slate-500 dark:text-slate-400 leading-relaxed mb-8 md:mb-12 max-w-2xl font-medium tracking-tight">
+                  Experience a curated ecosystem where architectural precision meets human empathy. Lumina HR transforms complex admin into a seamless, high-velocity flow.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4 md:gap-5">
+                  <Link to="/login" className="group px-8 py-4 md:px-10 md:py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-black text-base md:text-lg shadow-2xl shadow-blue-600/25 hover:from-blue-700 hover:to-indigo-700 transition-all flex items-center justify-center gap-3 active:scale-95">
+                    Login
+                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </Link>
+                  <Button variant="outline" className="h-auto px-8 py-4 md:px-10 md:py-5 bg-white/90 dark:bg-slate-900/90 text-slate-900 dark:text-white rounded-2xl font-black text-base md:text-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all flex items-center justify-center gap-3">
+                    <PlayCircle className="w-6 h-6 text-blue-600" />
+                    Watch Demo
+                  </Button>
+                </div>
               </div>
-              
-              <h1 className="text-4xl md:text-5xl lg:text-8xl font-black text-slate-900 dark:text-white leading-[0.95] md:leading-[0.9] mb-6 md:mb-10 tracking-tightest">
-                Designing the <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-500 underline decoration-emerald-200 dark:decoration-emerald-900/30">Future of Work</span>
-              </h1>
-              
-              <p className="text-base md:text-xl lg:text-2xl text-slate-500 dark:text-slate-400 leading-relaxed mb-8 md:mb-12 max-w-2xl font-medium tracking-tight">
-                Experience a curated ecosystem where architectural precision meets human empathy. Lumina HR transforms complex admin into a seamless, high-velocity flow.
-              </p>
-              
-              <div className="flex flex-col sm:flex-row gap-4 md:gap-5">
-                <Link to="/login" className="group px-8 py-4 md:px-10 md:py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-black text-base md:text-lg shadow-2xl shadow-blue-600/25 hover:from-blue-700 hover:to-indigo-700 transition-all flex items-center justify-center gap-3 active:scale-95">
-                  Login
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </Link>
-                <Button variant="outline" className="h-auto px-8 py-4 md:px-10 md:py-5 bg-white/90 dark:bg-slate-900/90 text-slate-900 dark:text-white rounded-2xl font-black text-base md:text-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all flex items-center justify-center gap-3">
-                  <PlayCircle className="w-6 h-6 text-blue-600" />
-                  Watch Demo
-                </Button>
+
+              <div className="relative">
+                <div className="absolute -inset-6 rounded-[2.5rem] bg-gradient-to-br from-blue-500/10 via-transparent to-emerald-500/10 blur-2xl" />
+                <div className="relative grid grid-cols-2 gap-4 md:gap-5">
+                  {heroPhotos.map((photo, index) => (
+                    <div
+                      key={photo.src}
+                      className={`group relative overflow-hidden rounded-[2rem] border border-white/50 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 shadow-2xl shadow-slate-900/10 backdrop-blur-xl ${
+                        index === 0 || index === 3 ? 'min-h-[200px] md:min-h-[280px]' : 'min-h-[160px] md:min-h-[220px] mt-6 md:mt-10'
+                      }`}
+                    >
+                      <img
+                        src={photo.src}
+                        alt={photo.alt}
+                        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        loading={index === 0 ? 'eager' : 'lazy'}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/45 via-transparent to-transparent" />
+                      <div className="absolute left-4 right-4 bottom-4 flex items-end justify-between gap-3">
+                        <div className="max-w-[70%]">
+                          <p className="text-[10px] font-black uppercase tracking-[0.24em] text-white/70">HR Focus</p>
+                          <p className="mt-1 text-sm font-semibold text-white">{index % 2 === 0 ? 'People first' : 'Clear process'}</p>
+                        </div>
+                        <div className="h-10 w-10 rounded-full border border-white/25 bg-white/15 backdrop-blur-md flex items-center justify-center text-white">
+                          <Sparkles className="h-4 w-4" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
