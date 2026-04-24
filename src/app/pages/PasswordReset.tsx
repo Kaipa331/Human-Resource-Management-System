@@ -4,9 +4,10 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Loader } from '../components/ui/Loader';
 import { toast } from 'sonner';
 import { supabase } from '../../lib/supabase';
-import { Loader2 } from 'lucide-react';
+import { ArrowLeft, Lock, Sparkles } from 'lucide-react';
 
 export function PasswordReset() {
   const navigate = useNavigate();
@@ -73,30 +74,55 @@ export function PasswordReset() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <div className="flex items-center justify-center mb-4">
-            <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center">
-              <span className="text-3xl font-bold text-white">e</span>
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4 relative overflow-hidden transition-colors duration-500">
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-24 -right-24 h-80 w-80 rounded-full bg-blue-500/10 blur-3xl" />
+        <div className="absolute bottom-[-8rem] left-[-8rem] h-80 w-80 rounded-full bg-indigo-500/10 blur-3xl" />
+      </div>
+
+      {loading && <Loader fullScreen text="Resetting your password..." />}
+
+      <Card className="w-full max-w-lg overflow-hidden border border-slate-200/80 bg-white/90 shadow-2xl shadow-slate-900/10 backdrop-blur-2xl dark:border-slate-800 dark:bg-slate-950/85">
+        <div className="h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-emerald-500" />
+        <CardHeader className="space-y-4 text-center pb-8">
+          <div className="flex items-center justify-center">
+            <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 shadow-lg shadow-blue-500/30">
+              <Lock className="h-7 w-7 text-white" />
             </div>
           </div>
-          <CardTitle className="text-2xl text-center">Reset Password</CardTitle>
-          <CardDescription className="text-center">
-            Enter your new password below
+          <div className="inline-flex items-center justify-center gap-2 self-center rounded-full border border-blue-200/80 dark:border-blue-800/60 bg-blue-50/80 dark:bg-blue-950/40 px-3 py-1 text-[10px] font-black uppercase tracking-[0.24em] text-blue-700 dark:text-blue-300">
+            <Sparkles className="h-3.5 w-3.5" />
+            Secure recovery
+          </div>
+          <CardTitle className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">
+            Reset Password
+          </CardTitle>
+          <CardDescription className="text-base text-slate-500 dark:text-slate-400">
+            Enter a new password to restore access to your account.
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          {error && (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-900 mb-4 text-sm">
+        <CardContent className="space-y-5">
+          {error ? (
+            <div className="rounded-2xl border border-red-200 bg-red-50/90 p-4 text-sm text-red-900 shadow-sm dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-100">
               {error}
+              <div className="mt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => navigate('/login')}
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Back to Login
+                </Button>
+              </div>
             </div>
-          )}
-
-          {!error && (
+          ) : (
             <form onSubmit={handleResetPassword} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="password">New Password</Label>
+                <Label htmlFor="password" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  New Password
+                </Label>
                 <Input
                   id="password"
                   type="password"
@@ -105,10 +131,13 @@ export function PasswordReset() {
                   onChange={(e) => setNewPassword(e.target.value)}
                   required
                   disabled={loading}
+                  className="h-12 rounded-xl border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-white"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Label htmlFor="confirmPassword" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  Confirm Password
+                </Label>
                 <Input
                   id="confirmPassword"
                   type="password"
@@ -117,31 +146,17 @@ export function PasswordReset() {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                   disabled={loading}
+                  className="h-12 rounded-xl border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-950 dark:text-white"
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Resetting...
-                  </span>
-                ) : (
-                  'Reset Password'
-                )}
+              <Button
+                type="submit"
+                className="h-12 w-full rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-600 text-base font-bold shadow-lg shadow-blue-500/20 hover:from-blue-700 hover:via-indigo-700 hover:to-emerald-700"
+                disabled={loading}
+              >
+                Reset Password
               </Button>
             </form>
-          )}
-
-          {error && (
-            <div className="space-y-3">
-              <Button
-                type="button"
-                className="w-full"
-                onClick={() => navigate('/login')}
-              >
-                Back to Login
-              </Button>
-            </div>
           )}
         </CardContent>
       </Card>

@@ -22,9 +22,14 @@ export function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#fafafa] dark:bg-slate-950 selection:bg-blue-100 selection:text-blue-900 transition-colors duration-500">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 selection:bg-blue-100 selection:text-blue-900 transition-colors duration-500">
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-24 right-[-8rem] h-80 w-80 rounded-full bg-blue-500/10 blur-3xl" />
+        <div className="absolute top-1/3 left-[-8rem] h-72 w-72 rounded-full bg-emerald-500/10 blur-3xl" />
+      </div>
+
       {/* Premium Glass Nav */}
-      <nav className="fixed top-0 w-full z-50 bg-white/80 dark:bg-slate-950/80 backdrop-blur-2xl border-b border-slate-200/50 dark:border-slate-800/50">
+      <nav className="fixed top-0 w-full z-50 bg-white/85 dark:bg-slate-950/90 backdrop-blur-2xl border-b border-slate-200/60 dark:border-slate-800/60 shadow-[0_8px_30px_rgba(15,23,42,0.06)]">
         <div className="flex justify-between items-center px-4 md:px-12 py-4 md:py-5 max-w-[1400px] mx-auto">
           <div className="flex items-center gap-2 group cursor-pointer">
             <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/20 group-hover:rotate-12 transition-transform duration-500">
@@ -72,7 +77,7 @@ export function Home() {
 
       <main>
         {/* Dynamic Hero Section */}
-        <header className="relative pt-32 pb-16 md:pt-64 md:pb-48 overflow-hidden bg-[#fafafa] dark:bg-slate-950">
+        <header className="relative pt-32 pb-16 md:pt-64 md:pb-48 overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
             <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-100/50 dark:bg-blue-900/10 rounded-full blur-[120px]" />
             <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-emerald-100/50 dark:bg-emerald-900/10 rounded-full blur-[100px]" />
@@ -95,11 +100,11 @@ export function Home() {
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 md:gap-5">
-                <Link to="/login" className="group px-8 py-4 md:px-10 md:py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-black text-base md:text-lg shadow-2xl shadow-blue-600/30 hover:from-blue-700 hover:to-indigo-700 transition-all flex items-center justify-center gap-3 active:scale-95">
+                <Link to="/login" className="group px-8 py-4 md:px-10 md:py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-black text-base md:text-lg shadow-2xl shadow-blue-600/25 hover:from-blue-700 hover:to-indigo-700 transition-all flex items-center justify-center gap-3 active:scale-95">
                   Get Started 
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Link>
-                <Button variant="ghost" className="h-auto px-8 py-4 md:px-10 md:py-5 bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-2xl font-black text-base md:text-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all flex items-center justify-center gap-3">
+                <Button variant="outline" className="h-auto px-8 py-4 md:px-10 md:py-5 bg-white/90 dark:bg-slate-900/90 text-slate-900 dark:text-white rounded-2xl font-black text-base md:text-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all flex items-center justify-center gap-3">
                   <PlayCircle className="w-6 h-6 text-blue-600" />
                   Watch Demo
                 </Button>
@@ -109,7 +114,7 @@ export function Home() {
         </header>
 
         {/* Feature Intelligence Grid */}
-        <section id="features" className="py-20 md:py-32 bg-white dark:bg-slate-950">
+        <section id="features" className="py-20 md:py-32 bg-white/90 dark:bg-slate-950/90">
           <div className="max-w-[1400px] mx-auto px-4 md:px-12">
             <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 md:mb-24 gap-6 md:gap-8">
               <div className="max-w-2xl">
@@ -218,7 +223,7 @@ export function Home() {
         </section>
 
         {/* CTA Banner */}
-        <section className="py-20 md:py-40 bg-white dark:bg-slate-950 overflow-hidden">
+        <section className="py-20 md:py-40 bg-white/90 dark:bg-slate-950/90 overflow-hidden">
           <div className="max-w-[1400px] mx-auto px-4 md:px-12">
             <div className="relative bg-gradient-to-br from-slate-900 to-blue-600 dark:from-blue-600 dark:to-indigo-600 rounded-[2rem] md:rounded-[3.5rem] p-8 md:p-16 lg:p-32 text-center overflow-hidden">
               <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10" />
@@ -239,7 +244,7 @@ export function Home() {
         </section>
       </main>
 
-      <footer className="w-full bg-[#fafafa] dark:bg-slate-950 border-t border-slate-200 dark:border-slate-900 py-12 md:py-20">
+      <footer className="w-full bg-slate-50 dark:bg-slate-950 border-t border-slate-200/70 dark:border-slate-900 py-12 md:py-20">
         <div className="max-w-[1400px] mx-auto px-4 md:px-12">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 md:gap-20 mb-12 md:mb-20">
             <div className="max-w-md">

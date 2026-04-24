@@ -4,6 +4,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Loader } from '../components/ui/Loader';
 import { toast } from 'sonner';
 import { isSupabaseConfigured, supabase } from '../../lib/supabase';
 import { resetEmployeePassword } from '../../lib/authService';
@@ -14,6 +15,7 @@ export function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('Signing you in...');
   const [showPassword, setShowPassword] = useState(false);
   const [resetCooldown, setResetCooldown] = useState(0);
   const searchParams = new URLSearchParams(window.location.search);
@@ -50,6 +52,7 @@ export function Login() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoadingMessage('Signing you in...');
     setLoading(true);
 
     const normalizedEmail = email.trim().toLowerCase();
@@ -95,6 +98,7 @@ export function Login() {
       return;
     }
 
+    setLoadingMessage('Sending reset link...');
     setLoading(true);
     
     try {
@@ -141,7 +145,17 @@ export function Login() {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 p-4 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4 relative overflow-hidden transition-colors duration-500">
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-28 -right-24 h-80 w-80 rounded-full bg-blue-500/10 blur-3xl" />
+        <div className="absolute top-1/3 -left-28 h-72 w-72 rounded-full bg-emerald-500/10 blur-3xl" />
+        <div className="absolute bottom-[-8rem] right-1/3 h-80 w-80 rounded-full bg-indigo-500/10 blur-3xl" />
+      </div>
+
+      {loading && (
+        <Loader fullScreen text={loadingMessage} />
+      )}
+
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl animate-pulse" />
@@ -149,9 +163,17 @@ export function Login() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
       </div>
 
-      <div className="w-full max-w-md space-y-6 relative z-10">
+      <div className="w-full max-w-lg space-y-6 relative z-10">
+        <div className="flex justify-center">
+          <div className="inline-flex items-center gap-2 rounded-full border border-blue-200/80 dark:border-blue-800/60 bg-white/85 dark:bg-slate-950/80 px-4 py-2 text-[10px] font-black uppercase tracking-[0.24em] text-blue-700 dark:text-blue-300 shadow-lg shadow-blue-500/10 backdrop-blur-xl">
+            <span className="h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
+            Secure access
+          </div>
+        </div>
+
         {/* Main Login Card */}
-        <Card className="shadow-2xl border-0 bg-white/95 backdrop-blur-xl">
+        <Card className="overflow-hidden border border-slate-200/80 bg-white/90 shadow-2xl shadow-slate-900/10 backdrop-blur-2xl dark:border-slate-800 dark:bg-slate-950/85">
+          <div className="h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-emerald-500" />
           <CardHeader className="space-y-6 pb-8">
             <div className="flex items-center justify-center">
               <div className="relative">
@@ -276,15 +298,14 @@ export function Login() {
               </Button>
             </form>
 
-            
-            </CardContent>
+          </CardContent>
         </Card>
 
         {/* Footer */}
         <div className="text-center space-y-3 px-4">
-          <p className="text-sm text-slate-300 font-medium">
+          <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">
             Don't have an account?{' '}
-            <Link to="/" className="text-blue-400 hover:text-blue-300 font-bold transition-colors duration-300">
+            <Link to="/" className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-bold transition-colors duration-300">
               Contact your administrator
             </Link>
           </p>
