@@ -418,6 +418,23 @@ export function EmployeeSelfService() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
   };
 
+  const forceDownload = async (url: string, filename: string) => {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch file (${response.status})`);
+    }
+
+    const blob = await response.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = objectUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+  };
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !employeeDbId) return;
@@ -473,7 +490,9 @@ export function EmployeeSelfService() {
       
       if (data?.signedUrl) {
         console.log('Successfully generated signed URL');
-        window.open(data.signedUrl, '_blank');
+        const filename = doc.name || `document.${(doc.type || 'pdf').toLowerCase()}`;
+        await forceDownload(data.signedUrl, filename.toLowerCase().endsWith('.pdf') ? filename : `${filename}.pdf`);
+        toast.success('Document downloaded successfully');
       } else {
         console.warn('No signed URL returned in data');
         toast.error('Download link could not be generated');
@@ -1115,6 +1134,7 @@ export function EmployeeSelfService() {
                 <div>
                    <input
                     type="file"
+                    accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.xls,.xlsx"
                     className="hidden"
                     ref={fileInputRef}
                     onChange={handleFileUpload}

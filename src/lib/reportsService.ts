@@ -2,6 +2,7 @@ import { supabase } from './supabase';
 import { PayrollService } from './payrollService';
 import { PerformanceService } from './performanceService';
 import { TrainingService } from './trainingService';
+import jsPDF from 'jspdf';
 
 export interface ReportData {
   employees: {
@@ -305,8 +306,7 @@ export class ReportsService {
           return this.convertToCSV(reportData);
         
         case 'pdf':
-          // In a real implementation, this would use a PDF library like jsPDF
-          return 'PDF export not implemented yet';
+          return this.convertToPDF(reportData);
         
         default:
           throw new Error('Unsupported format');
@@ -353,6 +353,65 @@ export class ReportsService {
     });
 
     return csvData.join('\n');
+  }
+
+  private static convertToPDF(reportData: ReportData): string {
+    const pdf = new jsPDF({ unit: 'mm', format: 'a4' });
+    let y = 18;
+
+    const addLine = (
+      text: string,
+      size = 10,
+      color: [number, number, number] = [15, 23, 42],
+      bold = false,
+    ) => {
+      pdf.setFont('helvetica', bold ? 'bold' : 'normal');
+      pdf.setFontSize(size);
+      pdf.setTextColor(color[0], color[1], color[2]);
+      pdf.text(text, 14, y);
+      y += size >= 12 ? 8 : size >= 10 ? 6 : 5;
+    };
+
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(18);
+    pdf.setTextColor(30, 64, 175);
+    pdf.text('HR Analytics Report', 14, y);
+    y += 10;
+
+    addLine(`Generated: ${new Date().toLocaleDateString()}`, 9, [100, 116, 139]);
+    y += 2;
+
+    addLine('Employees', 12, [30, 41, 59], true);
+    addLine(`Total: ${reportData.employees.total}`);
+    addLine(`Active: ${reportData.employees.active}`);
+    Object.entries(reportData.employees.byDepartment).forEach(([dept, count]) => {
+      addLine(`${dept}: ${count}`, 9);
+    });
+
+    y += 4;
+    addLine('Payroll', 12, [30, 41, 59], true);
+    addLine(`Gross: MK ${reportData.payroll.totalGross.toLocaleString()}`);
+    addLine(`Net: MK ${reportData.payroll.totalNet.toLocaleString()}`);
+    addLine(`Tax: MK ${reportData.payroll.totalTax.toLocaleString()}`);
+
+    y += 4;
+    addLine('Performance', 12, [30, 41, 59], true);
+    addLine(`Reviews: ${reportData.performance.totalReviews}`);
+    addLine(`Average rating: ${reportData.performance.averageRating.toFixed(1)}/5.0`);
+
+    y += 4;
+    addLine('Training', 12, [30, 41, 59], true);
+    addLine(`Courses: ${reportData.training.totalCourses}`);
+    addLine(`Enrollments: ${reportData.training.totalEnrollments}`);
+    addLine(`Completion rate: ${reportData.training.completionRate.toFixed(1)}%`);
+
+    y += 4;
+    addLine('Attendance', 12, [30, 41, 59], true);
+    addLine(`Average attendance: ${reportData.attendance.averageAttendance}%`);
+    addLine(`Late arrivals: ${reportData.attendance.lateArrivals}`);
+    addLine(`Absent days: ${reportData.attendance.absentDays}`);
+
+    return pdf.output('datauristring');
   }
 
   // Schedule automated report generation

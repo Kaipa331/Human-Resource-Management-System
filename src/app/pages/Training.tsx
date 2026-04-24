@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { toast } from 'sonner';
 import { supabase } from '../../lib/supabase';
 import { TrainingService } from '../../lib/trainingService';
+import jsPDF from 'jspdf';
 
 type Course = {
   id: string;
@@ -371,6 +372,53 @@ export function Training() {
         return { bg: 'bg-purple-50', text: 'text-purple-600' };
       default:
         return { bg: 'bg-gray-50 dark:bg-slate-900', text: 'text-gray-600 dark:text-gray-300' };
+    }
+  };
+
+  const handleDownloadCertificate = (cert: Certificate) => {
+    try {
+      const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+      const title = cert.title || 'Training Certificate';
+
+      pdf.setFillColor(245, 247, 255);
+      pdf.rect(0, 0, 297, 210, 'F');
+      pdf.setDrawColor(59, 130, 246);
+      pdf.setLineWidth(1.5);
+      pdf.rect(12, 12, 273, 186);
+
+      pdf.setTextColor(30, 41, 59);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(28);
+      pdf.text('Certificate of Completion', 148.5, 42, { align: 'center' });
+
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(13);
+      pdf.text('This certifies that the learner has successfully completed', 148.5, 60, { align: 'center' });
+
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(24);
+      pdf.setTextColor(37, 99, 235);
+      pdf.text(title, 148.5, 82, { align: 'center', maxWidth: 240 });
+
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(12);
+      pdf.setTextColor(71, 85, 105);
+      pdf.text(`Issued on: ${cert.issuedOn || new Date().toLocaleDateString()}`, 148.5, 110, { align: 'center' });
+      pdf.text('Lumina HR Training & Development', 148.5, 122, { align: 'center' });
+
+      pdf.setFontSize(10);
+      pdf.setTextColor(100, 116, 139);
+      pdf.text('This document is generated electronically and can be verified internally.', 148.5, 160, { align: 'center' });
+
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(15, 23, 42);
+      pdf.text('Authorized by Human Resources', 148.5, 180, { align: 'center' });
+
+      pdf.save(`${title.replace(/[^a-z0-9]+/gi, '_').toLowerCase()}_${(cert.issuedOn || new Date().toISOString().split('T')[0])}.pdf`);
+      toast.success('Certificate downloaded');
+    } catch (error) {
+      console.error('Error generating certificate PDF:', error);
+      toast.error('Failed to download certificate');
     }
   };
 
@@ -793,7 +841,7 @@ export function Training() {
                         <h3 className="text-lg font-semibold">{cert.title}</h3>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Issued on {cert.issuedOn}</p>
                         <div className="flex flex-col sm:flex-row gap-2 mt-4">
-                          <Button size="sm" variant="outline" className="w-full sm:w-auto" onClick={() => toast.success('Certificate downloaded')}>Download Certificate</Button>
+                          <Button size="sm" variant="outline" className="w-full sm:w-auto" onClick={() => handleDownloadCertificate(cert)}>Download Certificate</Button>
                           <Button size="sm" variant="outline" className="w-full sm:w-auto" onClick={() => toast.success('Certificate link copied to clipboard')}>Share</Button>
                         </div>
                       </div>

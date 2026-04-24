@@ -80,11 +80,28 @@ export function Reports() {
     }
   };
 
+  const forceDownload = async (url: string, filename: string) => {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch file (${response.status})`);
+    }
+
+    const blob = await response.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = objectUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+  };
+
   const loadUploadedReports = async () => {
     try {
       const { data, error } = await supabase.storage
         .from('reports')
-        .list('', {
+        .list('reports', {
           limit: 100,
           offset: 0,
           sortBy: { column: 'created_at', order: 'desc' }
@@ -97,7 +114,8 @@ export function Reports() {
 
       const reports = data?.map(file => ({
         name: file.name,
-        url: supabase.storage.from('reports').getPublicUrl(file.name).data.publicUrl,
+        path: `reports/${file.name}`,
+        url: supabase.storage.from('reports').getPublicUrl(`reports/${file.name}`).data.publicUrl,
         uploadedAt: file.created_at || new Date().toISOString(),
         size: file.metadata?.size || 0
       })) || [];
@@ -147,6 +165,7 @@ export function Reports() {
       // Save to a reports table if exists, or just store locally
       setUploadedReports(prev => [...prev, {
         name: file.name,
+        path: filePath,
         url: publicUrl,
         uploadedAt: new Date().toISOString(),
         size: file.size
@@ -466,10 +485,21 @@ export function Reports() {
                       </p>
                     </div>
                   </div>
-                  <Button size="sm" variant="ghost" className="w-full sm:w-auto rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-none" asChild>
-                    <a href={report.url} target="_blank" rel="noopener noreferrer">
-                      <Download className="w-4 h-4" />
-                    </a>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="w-full sm:w-auto rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-none"
+                    onClick={async () => {
+                      try {
+                        await forceDownload(report.url, report.name);
+                        toast.success('Report downloaded successfully');
+                      } catch (error: any) {
+                        console.error('Report download failed', error);
+                        toast.error(`Failed to download report: ${error.message || 'Unknown error'}`);
+                      }
+                    }}
+                  >
+                    <Download className="w-4 h-4" />
                   </Button>
                 </div>
               ))}
