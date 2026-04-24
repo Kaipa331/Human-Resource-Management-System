@@ -141,95 +141,117 @@ export function Login() {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-4">
-      <div className="w-full max-w-md space-y-6">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 p-4 relative overflow-hidden">
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+      </div>
+
+      <div className="w-full max-w-md space-y-6 relative z-10">
         {/* Main Login Card */}
-        <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm">
-          <CardHeader className="space-y-4 pb-6">
+        <Card className="shadow-2xl border-0 bg-white/95 backdrop-blur-xl">
+          <CardHeader className="space-y-6 pb-8">
             <div className="flex items-center justify-center">
-              <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
-                <span className="text-4xl font-bold text-white">HR</span>
+              <div className="relative">
+                <div className="w-24 h-24 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 rounded-3xl flex items-center justify-center shadow-2xl shadow-blue-500/30 transform hover:scale-105 transition-transform duration-300">
+                  <span className="text-5xl font-bold text-white tracking-tight">HR</span>
+                </div>
+                <div className="absolute -top-2 -right-2 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center shadow-lg">
+                  <div className="w-3 h-3 bg-white rounded-full" />
+                </div>
               </div>
             </div>
-            <div className="text-center space-y-2">
-              <CardTitle className="text-3xl font-bold text-slate-900">HRMS</CardTitle>
-              <CardDescription className="text-slate-600 font-medium">
+            <div className="text-center space-y-3">
+              <CardTitle className="text-4xl font-black text-slate-900 tracking-tight">HRMS</CardTitle>
+              <CardDescription className="text-slate-600 font-medium text-base">
                 Human Resource Management System
               </CardDescription>
+              <div className="flex items-center justify-center gap-2 text-xs text-slate-500">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                <span>Secure & Reliable</span>
+              </div>
             </div>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-6 px-8">
             {/* Success Messages */}
             {confirmed && (
-              <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-green-900">
-                <div className="flex items-start gap-2">
-                  <AlertCircle className="w-4 h-4 mt-0.5" />
+              <div className="rounded-xl border-2 border-green-200 bg-gradient-to-r from-green-50 to-emerald-50 p-4 text-green-900 animate-in slide-in-from-top-2 duration-300">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <AlertCircle className="w-4 h-4 text-white" />
+                  </div>
                   <div>
-                    <p className="font-medium">Email Confirmed</p>
-                    <p className="text-sm">Your email has been confirmed. Please sign in with your credentials.</p>
+                    <p className="font-bold text-sm">Email Confirmed</p>
+                    <p className="text-xs mt-1">Your email has been confirmed. Please sign in with your credentials.</p>
                   </div>
                 </div>
               </div>
             )}
             {passwordReset && (
-              <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-green-900">
-                <div className="flex items-start gap-2">
-                  <AlertCircle className="w-4 h-4 mt-0.5" />
+              <div className="rounded-xl border-2 border-green-200 bg-gradient-to-r from-green-50 to-emerald-50 p-4 text-green-900 animate-in slide-in-from-top-2 duration-300">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <AlertCircle className="w-4 h-4 text-white" />
+                  </div>
                   <div>
-                    <p className="font-medium">Password Reset</p>
-                    <p className="text-sm">Your password has been reset successfully. You can now sign in with your new password.</p>
+                    <p className="font-bold text-sm">Password Reset</p>
+                    <p className="text-xs mt-1">Your password has been reset successfully. You can now sign in with your new password.</p>
                   </div>
                 </div>
               </div>
             )}
 
             {/* Login Form */}
-            <form onSubmit={handleLogin} className="space-y-4">
+            <form onSubmit={handleLogin} className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium">Email Address</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Label htmlFor="email" className="text-sm font-bold text-slate-700">Email Address</Label>
+                <div className="relative group">
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl opacity-0 group-hover:opacity-10 transition-opacity duration-300 pointer-events-none" />
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-hover:text-blue-500 transition-colors duration-300" />
                   <Input
                     id="email"
                     type="email"
                     placeholder="your@email.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10 text-slate-900 placeholder:text-slate-500"
+                    className="pl-12 h-12 text-slate-900 placeholder:text-slate-400 border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-300 rounded-xl bg-white"
                     required
                   />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium">Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Label htmlFor="password" className="text-sm font-bold text-slate-700">Password</Label>
+                <div className="relative group">
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl opacity-0 group-hover:opacity-10 transition-opacity duration-300 pointer-events-none" />
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-hover:text-blue-500 transition-colors duration-300" />
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="â¢â¢â¢â¢â¢â¢â¢â¢"
+                    placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 pr-10 text-slate-900 placeholder:text-slate-500"
+                    className="pl-12 pr-12 h-12 text-slate-900 placeholder:text-slate-400 border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-300 rounded-xl bg-white"
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-500 transition-colors duration-300"
                   >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
               </div>
               
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-end">
                 <Button
                   type="button"
                   variant="ghost"
                   onClick={handleForgotPassword}
                   disabled={loading || resetCooldown > 0}
-                  className="text-sm text-blue-600 hover:text-blue-700 disabled:text-gray-400 disabled:cursor-not-allowed"
+                  className="text-sm font-semibold text-blue-600 hover:text-blue-700 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors duration-300"
                 >
                   {resetCooldown > 0 
                     ? `Wait ${resetCooldown}s` 
@@ -238,10 +260,14 @@ export function Login() {
                 </Button>
               </div>
 
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button 
+                type="submit" 
+                className="w-full h-12 text-base font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 shadow-lg shadow-blue-500/30 transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 rounded-xl" 
+                disabled={loading}
+              >
                 {loading ? (
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <div className="flex items-center gap-3">
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     Signing in...
                   </div>
                 ) : (
@@ -255,16 +281,17 @@ export function Login() {
         </Card>
 
         {/* Footer */}
-        <div className="text-center space-y-2">
-          <p className="text-sm text-slate-600 font-medium">
+        <div className="text-center space-y-3 px-4">
+          <p className="text-sm text-slate-300 font-medium">
             Don't have an account?{' '}
-            <Link to="/register" className="text-blue-600 hover:text-blue-700 font-semibold">
+            <Link to="/" className="text-blue-400 hover:text-blue-300 font-bold transition-colors duration-300">
               Contact your administrator
             </Link>
           </p>
-          <p className="text-xs text-slate-500">
-            Secure login powered by Supabase Auth
-          </p>
+          <div className="flex items-center justify-center gap-2 text-xs text-slate-400">
+            <Lock className="w-3 h-3" />
+            <span>Secure login powered by Supabase Auth</span>
+          </div>
         </div>
       </div>
     </div>

@@ -1,5 +1,5 @@
-import { NavLink } from 'react-router';
-import { X, Home, User, Users, Building, UserPlus, Calendar, Clock, DollarSign, TrendingUp, Award, BookOpen, BarChart, Settings } from 'lucide-react';
+import { NavLink, useLocation } from 'react-router';
+import { X, Home, User, Users, Building, UserPlus, Calendar, Clock, DollarSign, TrendingUp, Award, GraduationCap, BarChart, Settings, FileText } from 'lucide-react';
 import { Button } from './ui/button';
 
 interface SidebarProps {
@@ -15,16 +15,21 @@ export function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
 
   const menuItems = [
     { to: '/app', icon: Home, label: 'Dashboard', show: true },
-    { to: '/app/self-service', icon: User, label: 'My Portal', show: true },
+    { to: '/app/self-service', icon: User, label: 'Personal Info', show: isEmployee },
+    { to: '/app/self-service?tab=my-leave', icon: Calendar, label: 'My Leave', show: isEmployee },
+    { to: '/app/self-service?tab=my-training', icon: GraduationCap, label: 'My Training', show: isEmployee },
+    { to: '/app/self-service?tab=payslips', icon: DollarSign, label: 'Payslips', show: isEmployee },
+    { to: '/app/attendance', icon: Clock, label: 'Attendance', show: isEmployee },
+    { to: '/app/self-service?tab=documents', icon: FileText, label: 'Documents', show: isEmployee },
+    { to: '/app/self-service?tab=settings', icon: Settings, label: 'Settings', show: isEmployee },
     { to: '/app/employees', icon: Users, label: 'Employees', show: isHRorAdmin },
     { to: '/app/department', icon: Building, label: 'Departments', show: isHRorAdmin },
     { to: '/app/recruitment', icon: UserPlus, label: 'Recruitment', show: isHRorAdmin },
     { to: '/app/leave', icon: Calendar, label: 'Leave', show: isHRorAdmin || isManager },
-    { to: '/app/attendance', icon: Clock, label: 'Attendance', show: true },
     { to: '/app/payroll', icon: DollarSign, label: 'Payroll', show: isHRorAdmin },
     { to: '/app/performance', icon: TrendingUp, label: 'Performance', show: isHRorAdmin || isManager },
     { to: '/app/succession', icon: Award, label: 'Succession', show: isHRorAdmin || isManager },
-    { to: '/app/training', icon: BookOpen, label: 'Training', show: isHRorAdmin },
+    { to: '/app/training', icon: GraduationCap, label: 'Training', show: isHRorAdmin },
     { to: '/app/reports', icon: BarChart, label: 'Reports', show: isHRorAdmin || isManager },
   ];
 
@@ -46,19 +51,28 @@ export function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
           </button>
         </div>
         
-        {/* Mobile Navigation */}
         <nav className="flex flex-col gap-1 flex-1 overflow-y-auto">
           <ul className="space-y-1">
             {menuItems.filter(item => item.show).map((item) => {
               const Icon = item.icon;
+              const location = useLocation();
+              
+              // Custom isActive logic to handle search parameters
+              const isItemActive = (() => {
+                const itemPath = item.to.split('?')[0];
+                const itemSearch = item.to.includes('?') ? item.to.split('?')[1] : '';
+                
+                if (location.pathname !== itemPath) return false;
+                if (!itemSearch) return !location.search;
+                return location.search.substring(1) === itemSearch;
+              })();
+
               return (
                 <li key={item.to}>
                   <NavLink
                     to={item.to}
-                    end={item.to === '/app'}
-                    className={({ isActive }) =>
-                      `flex items-center gap-3 px-3 py-2.5 font-medium text-sm rounded-lg transition-all ${
-                        isActive
+                    className={`flex items-center gap-3 px-3 py-2.5 font-medium text-sm rounded-lg transition-all ${
+                        isItemActive
                           ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
                           : 'hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300'
                       }`
@@ -98,20 +112,30 @@ export function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
           <span className="text-lg font-black text-blue-900 dark:text-blue-400">HRMS Atelier</span>
         </div>
         
-        <nav className="flex flex-col gap-1 flex-1 overflow-y-auto">
+        <nav className="flex flex-col gap-1 flex-1 overflow-y-auto pr-2 custom-scrollbar">
           <ul className="space-y-1">
             {menuItems.filter(item => item.show).map((item) => {
               const Icon = item.icon;
+              const location = useLocation();
+
+              // Custom isActive logic to handle search parameters
+              const isItemActive = (() => {
+                const itemPath = item.to.split('?')[0];
+                const itemSearch = item.to.includes('?') ? item.to.split('?')[1] : '';
+                
+                if (location.pathname !== itemPath) return false;
+                if (!itemSearch) return !location.search;
+                return location.search.substring(1) === itemSearch;
+              })();
+
               return (
                 <li key={item.to}>
                   <NavLink
                     to={item.to}
-                    end={item.to === '/app'}
-                    className={({ isActive }) =>
-                      `flex items-center gap-3 px-4 py-3 font-semibold text-sm rounded-xl transition-all ${
-                        isActive
-                          ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
-                          : 'hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300'
+                    className={`flex items-center gap-3 px-4 py-3 font-semibold text-sm rounded-xl transition-all ${
+                        isItemActive
+                          ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 shadow-sm border border-blue-100 dark:border-blue-900/50'
+                          : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-slate-100'
                       }`
                     }
                   >

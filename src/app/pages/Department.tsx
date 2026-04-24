@@ -65,7 +65,7 @@ export function Department() {
 
   const handleCreateDept = async () => {
     if (!formData.name || !formData.head_of_department) {
-      alert('Please fill in all fields');
+      toast.error('Please fill in all fields');
       return;
     }
 
@@ -86,7 +86,7 @@ export function Department() {
       fetchDepartments();
     } catch (error) {
       console.error('Error:', error);
-      alert('Error creating department');
+      toast.error('Error creating department');
     }
   };
 
@@ -108,7 +108,7 @@ export function Department() {
       fetchDepartments();
     } catch (error) {
       console.error('Error:', error);
-      alert('Error updating department');
+      toast.error('Error updating department');
     }
   };
 
@@ -120,7 +120,7 @@ export function Department() {
       fetchDepartments();
     } catch (error) {
       console.error('Error:', error);
-      alert('Error deleting department');
+      toast.error('Error deleting department');
     }
   };
 

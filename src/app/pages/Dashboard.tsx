@@ -7,7 +7,6 @@ import {
   Calendar, 
   TrendingUp, 
   UserCheck, 
-  Loader2, 
   BriefcaseBusiness, 
   Clock3, 
   FileText,
@@ -18,6 +17,7 @@ import {
   ArrowUpRight,
   LucideIcon
 } from 'lucide-react';
+import Loader from '../components/ui/Loader';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
@@ -33,23 +33,71 @@ interface StatCardProps {
 }
 
 function StatCard({ title, value, change, icon: Icon, color, trend }: StatCardProps) {
+  const colorSchemes: Record<string, { bg: string; gradient: string; iconBg: string; iconColor: string; accent: string }> = {
+    blue: { 
+      bg: 'bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30',
+      gradient: 'from-blue-500/20 to-indigo-500/20',
+      iconBg: 'bg-gradient-to-br from-blue-500 to-indigo-600',
+      iconColor: 'text-white',
+      accent: 'border-blue-200 dark:border-blue-800'
+    },
+    emerald: { 
+      bg: 'bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/30 dark:to-green-950/30',
+      gradient: 'from-emerald-500/20 to-green-500/20',
+      iconBg: 'bg-gradient-to-br from-emerald-500 to-green-600',
+      iconColor: 'text-white',
+      accent: 'border-emerald-200 dark:border-emerald-800'
+    },
+    amber: { 
+      bg: 'bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30',
+      gradient: 'from-amber-500/20 to-orange-500/20',
+      iconBg: 'bg-gradient-to-br from-amber-500 to-orange-600',
+      iconColor: 'text-white',
+      accent: 'border-amber-200 dark:border-amber-800'
+    },
+    purple: { 
+      bg: 'bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/30 dark:to-violet-950/30',
+      gradient: 'from-purple-500/20 to-violet-500/20',
+      iconBg: 'bg-gradient-to-br from-purple-500 to-violet-600',
+      iconColor: 'text-white',
+      accent: 'border-purple-200 dark:border-purple-800'
+    },
+    rose: { 
+      bg: 'bg-gradient-to-br from-rose-50 to-pink-50 dark:from-rose-950/30 dark:to-pink-950/30',
+      gradient: 'from-rose-500/20 to-pink-500/20',
+      iconBg: 'bg-gradient-to-br from-rose-500 to-pink-600',
+      iconColor: 'text-white',
+      accent: 'border-rose-200 dark:border-rose-800'
+    },
+    cyan: { 
+      bg: 'bg-gradient-to-br from-cyan-50 to-sky-50 dark:from-cyan-950/30 dark:to-sky-950/30',
+      gradient: 'from-cyan-500/20 to-sky-500/20',
+      iconBg: 'bg-gradient-to-br from-cyan-500 to-sky-600',
+      iconColor: 'text-white',
+      accent: 'border-cyan-200 dark:border-cyan-800'
+    }
+  };
+
+  const scheme = colorSchemes[color] || colorSchemes.blue;
+
   return (
-    <Card className="relative overflow-hidden border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-sm hover:shadow-xl hover:scale-[1.02] transition-all duration-500 rounded-[2rem] p-6 group">
-      <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-${color}-500/10 to-transparent rounded-bl-full group-hover:scale-110 transition-transform duration-700`} />
+    <Card className={`relative overflow-hidden ${scheme.bg} ${scheme.accent} border-2 bg-white dark:bg-slate-950 shadow-lg hover:shadow-2xl hover:scale-[1.02] transition-all duration-500 rounded-[2rem] p-6 group`}>
+      <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${scheme.gradient} rounded-bl-full group-hover:scale-110 transition-transform duration-700 opacity-50`} />
+      <div className="absolute bottom-0 left-0 w-20 h-20 bg-gradient-to-tr from-white/50 to-transparent rounded-tr-full" />
       <div className="relative z-10 flex flex-col h-full justify-between">
         <div className="flex items-center justify-between mb-4">
-          <div className={`p-3 bg-${color}-500/10 rounded-2xl`}>
-            <Icon className={`w-6 h-6 text-${color}-600 dark:text-${color}-400`} />
+          <div className={`p-4 ${scheme.iconBg} rounded-2xl shadow-lg shadow-${color}-500/30 transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}>
+            <Icon className={`w-6 h-6 ${scheme.iconColor}`} />
           </div>
           {change && (
-            <div className={`flex items-center gap-1 text-[10px] font-black uppercase tracking-widest ${trend === 'up' ? 'text-emerald-500' : 'text-rose-500'}`}>
+            <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${trend === 'up' ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' : 'bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400'}`}>
               {trend === 'up' ? <ArrowUpRight className="w-3 h-3" /> : null}
               {change}
             </div>
           )}
         </div>
         <div>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{title}</p>
+          <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">{title}</p>
           <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">{value}</h3>
         </div>
       </div>
@@ -164,12 +212,7 @@ export function Dashboard() {
   };
 
   if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
-        <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
-        <p className="text-slate-500 font-medium animate-pulse tracking-tightest lowercase">Synchronizing pulse...</p>
-      </div>
-    );
+    return <Loader text="Loading dashboard..." size="lg" />;
   }
 
   if (isEmployee) {
@@ -205,7 +248,7 @@ export function Dashboard() {
              value={personalLeaveBalance} 
              change="Days Remaining" 
              icon={Calendar} 
-             color="blue" 
+             color="purple" 
              trend="neutral" 
            />
         </div>
@@ -276,8 +319,8 @@ export function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-12">
         <StatCard title="Active Capacity" value={totalEmployees} change="+12% VS LW" icon={Users} color="blue" trend="up" />
         <StatCard title="Pulse Today" value={presentToday} change="+5% VS AVG" icon={UserCheck} color="emerald" trend="up" />
-        <StatCard title="Pending Hiatus" value={pendingLeaves} change="-2 VS LW" icon={Calendar} color="amber" trend="down" />
-        <StatCard title="Org Units" value={departmentData.length} change="Operational" icon={BriefcaseBusiness} color="purple" trend="neutral" />
+        <StatCard title="Pending Hiatus" value={pendingLeaves} change="-2 VS LW" icon={Calendar} color="rose" trend="down" />
+        <StatCard title="Org Units" value={departmentData.length} change="Operational" icon={BriefcaseBusiness} color="cyan" trend="neutral" />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">

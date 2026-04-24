@@ -33,7 +33,7 @@ export function Reports() {
       // Allow time for the hidden template to render with data
       await new Promise(resolve => setTimeout(resolve, 800));
       
-      const elementId = title === 'Full Workspace Analytics' ? 'report-content' : 'special-report-view';
+      const elementId = 'special-report-view';
       const element = document.getElementById(elementId);
       
       if (!element) {
@@ -279,29 +279,36 @@ export function Reports() {
           <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">Reports & Insights</h1>
           <p className="text-slate-500 dark:text-slate-400 font-medium mt-2">Generate boardroom-ready analytics and compliance data.</p>
         </div>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" className="rounded-xl border-slate-200 dark:border-slate-800 h-11" onClick={() => handleDownloadReport('Full Workspace Analytics')}>
-            <Download className="w-4 h-4 mr-2" />
-            Full Bundle
-          </Button>
-          <div className="relative group">
-            <input
-              type="file"
-              id="report-upload-main"
-              className="hidden"
-              onChange={handleFileUpload}
-              accept=".pdf,.doc,.docx,.xls,.xlsx,.csv"
-            />
+        {!isGenerating && (
+          <div className="flex items-center gap-3">
             <Button 
-              className="rounded-xl bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/20 h-11"
-              onClick={() => document.getElementById('report-upload-main')?.click()}
-              disabled={uploading}
+              variant="outline" 
+              className="rounded-xl border-slate-200 dark:border-slate-800 h-11" 
+              onClick={() => handleDownloadReport('Full Workspace Analytics')}
+              disabled={isGenerating}
             >
-              {uploading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <FileUp className="w-4 h-4 mr-2" />}
-              Upload Custom
+              <Download className="w-4 h-4 mr-2" />
+              Full Bundle
             </Button>
+            <div className="relative group">
+              <input
+                type="file"
+                id="report-upload-main"
+                className="hidden"
+                onChange={handleFileUpload}
+                accept=".pdf,.doc,.docx,.xls,.xlsx,.csv"
+              />
+              <Button 
+                className="rounded-xl bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/20 h-11"
+                onClick={() => document.getElementById('report-upload-main')?.click()}
+                disabled={uploading || isGenerating}
+              >
+                {uploading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <FileUp className="w-4 h-4 mr-2" />}
+                Upload Custom
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Modern Report Grid */}
@@ -317,14 +324,17 @@ export function Reports() {
               <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 leading-tight">{report.title}</h3>
               <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-8">{report.description}</p>
               
-              <Button 
-                variant="outline" 
-                className="w-full rounded-2xl border-slate-100 dark:border-slate-900 bg-slate-50/50 dark:bg-slate-900/50 hover:bg-white dark:hover:bg-slate-950 hover:border-slate-300 dark:hover:border-slate-700 group-hover:shadow-md transition-all font-bold"
-                onClick={() => handleDownloadReport(report.title)}
-              >
-                <Download className="w-4 h-4 mr-2 text-blue-600" />
-                Generate Now
-              </Button>
+              {!isGenerating && (
+                <Button 
+                  variant="outline" 
+                  className="w-full rounded-2xl border-slate-100 dark:border-slate-900 bg-slate-50/50 dark:bg-slate-900/50 hover:bg-white dark:hover:bg-slate-950 hover:border-slate-300 dark:hover:border-slate-700 group-hover:shadow-md transition-all font-bold"
+                  onClick={() => handleDownloadReport(report.title)}
+                  disabled={isGenerating}
+                >
+                  <Download className="w-4 h-4 mr-2 text-blue-600" />
+                  Generate Now
+                </Button>
+              )}
             </div>
           </div>
         ))}
@@ -491,8 +501,10 @@ export function Reports() {
           </div>
         </div>
 
-        {generatingType === 'Monthly Headcount Report' && allReportData && (
-          <div className="space-y-10">
+        {/* Multi-section conditional rendering for Full Workspace or targeted reports */}
+        {(generatingType === 'Monthly Headcount Report' || generatingType === 'Full Workspace Analytics') && allReportData && (
+          <div className="space-y-10 mb-16">
+             <h2 className="text-xl font-black uppercase tracking-widest text-slate-400 border-b pb-2">I. Headcount & Talent Capacity</h2>
              <div className="grid grid-cols-3 gap-6 mb-10">
                 <div className="p-6 bg-blue-50 rounded-2xl">
                    <p className="text-[10px] font-black uppercase tracking-widest text-blue-600 mb-1">Total Talent</p>
@@ -531,8 +543,9 @@ export function Reports() {
           </div>
         )}
 
-        {generatingType === 'Payroll Summary Report' && allReportData && (
-          <div className="space-y-10">
+        {(generatingType === 'Payroll Summary Report' || generatingType === 'Full Workspace Analytics') && allReportData && (
+          <div className="space-y-10 mb-16">
+             <h2 className="text-xl font-black uppercase tracking-widest text-slate-400 border-b pb-2">II. Financial Commitment & Momentum</h2>
              <div className="grid grid-cols-3 gap-6 mb-10">
                 <div className="p-6 bg-blue-50 rounded-2xl">
                    <p className="text-[10px] font-black uppercase tracking-widest text-blue-600 mb-1">Gross Commitment</p>
@@ -573,8 +586,9 @@ export function Reports() {
           </div>
         )}
 
-        {generatingType === 'Leave Analysis Report' && allReportData && (
+        {(generatingType === 'Leave Analysis Report' || generatingType === 'Full Workspace Analytics') && allReportData && (
           <div className="space-y-10">
+             <h2 className="text-xl font-black uppercase tracking-widest text-slate-400 border-b pb-2">III. Attendance Ecosystem & Utilization</h2>
              <div className="grid grid-cols-2 gap-6 mb-10">
                 <div className="p-6 bg-blue-50 rounded-2xl">
                    <p className="text-[10px] font-black uppercase tracking-widest text-blue-600 mb-1">Avg Attendance Rate</p>

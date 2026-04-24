@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router';
+import { useEffect, useState, useRef } from 'react';
+import { useSearchParams, useNavigate } from 'react-router';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { Switch } from '../components/ui/switch';
 import { Progress } from '../components/ui/progress';
 import { supabase } from '../../lib/supabase';
+import jsPDF from 'jspdf';
 
 interface LeaveRequest {
   id: string;
@@ -43,6 +44,7 @@ interface MyTraining {
 }
 
 export function EmployeeSelfService() {
+  const navigate = useNavigate();
   const getStoredUser = () => {
     const raw = localStorage.getItem('hrms_user');
     if (!raw) return {};
@@ -56,7 +58,7 @@ export function EmployeeSelfService() {
   const user = getStoredUser();
   const canManageLeave = ['HR', 'Admin', 'Manager'].includes(user?.role);
   const [searchParams, setSearchParams] = useSearchParams();
-  const allowedTabs = ['personal', 'my-leave', 'my-training', 'payslips', 'attendance', 'documents', 'settings'];
+  const allowedTabs = ['personal', 'my-leave', 'my-training', 'payslips', 'documents', 'settings'];
   const currentTabParam = searchParams.get('tab') || 'personal';
   const [activeTab, setActiveTab] = useState(
     allowedTabs.includes(currentTabParam) ? currentTabParam : 'personal'
@@ -191,15 +193,11 @@ export function EmployeeSelfService() {
   const [employeeDbId, setEmployeeDbId] = useState<string | null>(null);
   const [payslips, setPayslips] = useState<any[]>([]);
   const [payslipsLoading, setPayslipsLoading] = useState(false);
-  const [attendanceHistory, setAttendanceHistory] = useState<any[]>([]);
-  const [attendanceLoading, setAttendanceLoading] = useState(false);
+  const [realDocuments, setRealDocuments] = useState<any[]>([]);
+  const [docsLoading, setDocsLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const myDocuments = [
-    { name: 'Employment Contract', type: 'PDF', uploadDate: '2024-01-15', size: '245 KB' },
-    { name: 'Tax Certificate 2025', type: 'PDF', uploadDate: '2026-01-05', size: '128 KB' },
-    { name: 'Performance Review Q4 2025', type: 'PDF', uploadDate: '2026-01-20', size: '312 KB' },
-    { name: 'ID Copy', type: 'PDF', uploadDate: '2024-01-15', size: '156 KB' },
-  ];
 
   // ─── Leave state ────────────────────────────────────────────────────────────
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
@@ -223,6 +221,8 @@ export function EmployeeSelfService() {
     setLeaveLoading(true);
     try {
       const emailToQuery = String(user.email || profileData.email || '').toLowerCase();
+      console.log('Querying employee with email:', emailToQuery);
+      
       const { data: emp } = await supabase
         .from('employees')
         .select('id')
@@ -230,19 +230,18 @@ export function EmployeeSelfService() {
         .maybeSingle();
 
       const resolvedId = emp?.id || null;
+      console.log('Resolved employee ID:', resolvedId);
       setEmployeeDbId(resolvedId);
 
       if (resolvedId) {
-        await Promise.all([
           fetchLeaveRequests(resolvedId), 
           fetchLeaveBalance(resolvedId),
           fetchPayslips(resolvedId),
-          fetchAttendanceHistory(resolvedId)
-        ]);
+          fetchDocuments(resolvedId)
       } else {
         setLeaveRequests([]);
         setPayslips([]);
-        setAttendanceHistory([]);
+        setRealDocuments([]);
       }
     } catch (err) {
       console.error('Error loading employee data', err);
@@ -254,31 +253,55 @@ export function EmployeeSelfService() {
   const fetchPayslips = async (empId: string) => {
     try {
       setPayslipsLoading(true);
+      console.log('Fetching payslips for employee ID:', empId);
+      
       // Actual columns found in DB: id, employee_id, cycle_id, pay_period, gross_salary, net_salary, updated_at, etc.
       const { data, error } = await supabase
         .from('payroll')
         .select(`
           id,
+          employee_id,
+          cycle_id,
           pay_period,
           gross_salary,
           net_salary,
+          base_salary,
+          housing_allowance,
+          transport_allowance,
+          meal_allowance,
+          other_allowances,
+          paye_tax,
+          pension_contrib,
+          health_insurance,
+          other_deductions,
+          overtime_hours,
+          overtime_rate,
+          overtime_pay,
+          performance_bonus,
+          other_bonus,
+          pay_date,
+          payment_status,
           updated_at
         `)
         .eq('employee_id', empId)
-        .order('pay_period', { ascending: false });
+        .order('pay_date', { ascending: false });
+
+      console.log('Payslip query result:', { data, error });
 
       if (error) throw error;
 
       const formatted = (data || []).map(p => ({
         id: p.id,
         month: p.pay_period,
-        gross: new Intl.NumberFormat('en-MW', { style: 'currency', currency: 'MWK' }).format(Number(p.gross_salary || 0)),
-        net: new Intl.NumberFormat('en-MW', { style: 'currency', currency: 'MWK' }).format(Number(p.net_salary || 0)),
+        gross: formatCurrency(p.gross_salary),
+        net: formatCurrency(p.net_salary),
         date: p.updated_at 
           ? new Date(p.updated_at).toLocaleDateString() 
-          : 'Processed'
+          : 'Processed',
+        fullData: p
       }));
 
+      console.log('Formatted payslips:', formatted);
       setPayslips(formatted);
     } catch (err) {
       console.error('Error fetching payslips', err);
@@ -287,56 +310,180 @@ export function EmployeeSelfService() {
     }
   };
 
-
-  const fetchAttendanceHistory = async (empId: string) => {
+  const downloadPayslip = (payslip: any) => {
     try {
-      setAttendanceLoading(true);
-      const { data, error } = await supabase
-        .from('attendance')
-        .select('*')
-        .eq('employee_id', empId)
-        .order('date', { ascending: false })
-        .limit(15);
+      const pdf = new jsPDF();
+      const p = payslip.fullData;
+      const user = getStoredUser();
 
-      if (error) throw error;
+      // Header
+      pdf.setFontSize(20);
+      pdf.setTextColor(0, 51, 102);
+      pdf.text('Payslip', 105, 20, { align: 'center' });
+      
+      pdf.setFontSize(12);
+      pdf.setTextColor(0, 0, 0);
+      pdf.text(`Pay Period: ${p.pay_period}`, 20, 35);
+      pdf.text(`Employee: ${user?.name || 'Employee'}`, 20, 45);
+      pdf.text(`Payment Date: ${p.pay_date || new Date().toLocaleDateString()}`, 20, 55);
+      pdf.text(`Status: ${p.payment_status}`, 20, 65);
 
-      const formatted = (data || []).map(a => {
-        let hours = 0;
-        let clockInTime = '-';
-        let clockOutTime = '-';
+      // Earnings Section
+      pdf.setFontSize(14);
+      pdf.setTextColor(0, 51, 102);
+      pdf.text('Earnings', 20, 85);
+      
+      pdf.setFontSize(10);
+      pdf.setTextColor(0, 0, 0);
+      let y = 95;
+      pdf.text(`Base Salary: ${formatCurrency(p.base_salary)}`, 20, y); y += 10;
+      pdf.text(`Housing Allowance: ${formatCurrency(p.housing_allowance || 0)}`, 20, y); y += 10;
+      pdf.text(`Transport Allowance: ${formatCurrency(p.transport_allowance || 0)}`, 20, y); y += 10;
+      pdf.text(`Meal Allowance: ${formatCurrency(p.meal_allowance || 0)}`, 20, y); y += 10;
+      pdf.text(`Other Allowances: ${formatCurrency(p.other_allowances || 0)}`, 20, y); y += 10;
+      pdf.text(`Overtime Pay: ${formatCurrency(p.overtime_pay || 0)}`, 20, y); y += 10;
+      pdf.text(`Performance Bonus: ${formatCurrency(p.performance_bonus || 0)}`, 20, y); y += 10;
+      pdf.text(`Other Bonus: ${formatCurrency(p.other_bonus || 0)}`, 20, y); y += 15;
 
-        if (a.clock_in) {
-          const d = new Date(a.clock_in);
-          clockInTime = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        }
-        if (a.clock_out) {
-          const d = new Date(a.clock_out);
-          clockOutTime = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        }
+      // Gross Salary
+      pdf.setFontSize(12);
+      pdf.setTextColor(0, 51, 102);
+      pdf.text(`Gross Salary: ${formatCurrency(p.gross_salary)}`, 20, y); y += 15;
 
-        if (a.clock_in && a.clock_out) {
-          const start = new Date(a.clock_in);
-          const end = new Date(a.clock_out);
-          hours = Number(((end.getTime() - start.getTime()) / (1000 * 60 * 60)).toFixed(1));
-        }
+      // Deductions Section
+      pdf.setFontSize(14);
+      pdf.setTextColor(0, 51, 102);
+      pdf.text('Deductions', 20, y); y += 10;
+      
+      pdf.setFontSize(10);
+      pdf.setTextColor(0, 0, 0);
+      pdf.text(`PAYE Tax: ${formatCurrency(p.paye_tax || 0)}`, 20, y); y += 10;
+      pdf.text(`Pension Contribution: ${formatCurrency(p.pension_contrib || 0)}`, 20, y); y += 10;
+      pdf.text(`Health Insurance: ${formatCurrency(p.health_insurance || 0)}`, 20, y); y += 10;
+      pdf.text(`Other Deductions: ${formatCurrency(p.other_deductions || 0)}`, 20, y); y += 15;
 
-        return {
-          date: a.date,
-          clockIn: clockInTime,
-          clockOut: clockOutTime,
-          hours,
-          status: a.status
-        };
-      });
+      // Net Salary
+      pdf.setFontSize(14);
+      pdf.setTextColor(0, 102, 0);
+      pdf.text(`Net Salary: ${formatCurrency(p.net_salary)}`, 20, y);
 
-      setAttendanceHistory(formatted);
-    } catch (err) {
-      console.error('Error fetching attendance history', err);
-    } finally {
-      setAttendanceLoading(false);
+      // Footer
+      pdf.setFontSize(8);
+      pdf.setTextColor(128, 128, 128);
+      pdf.text('This is a computer-generated payslip. For any queries, contact HR.', 105, 280, { align: 'center' });
+
+      // Download
+      pdf.save(`payslip_${p.pay_period}.pdf`);
+      toast.success('Payslip downloaded successfully');
+    } catch (error) {
+      console.error('Error generating payslip:', error);
+      toast.error('Failed to download payslip');
     }
   };
 
+  const fetchDocuments = async (empId: string) => {
+    try {
+      setDocsLoading(true);
+      const { data, error } = await supabase
+        .from('employee_documents')
+        .select('*')
+        .eq('employee_id', empId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const formatted = (data || []).map(d => ({
+        id: d.id,
+        name: d.name,
+        type: d.file_type.toUpperCase(),
+        size: formatBytes(d.file_size),
+        uploadDate: new Date(d.created_at).toISOString().split('T')[0],
+        path: d.file_path
+      }));
+
+      setRealDocuments(formatted);
+    } catch (err) {
+      console.error('Error fetching documents', err);
+    } finally {
+      setDocsLoading(false);
+    }
+  };
+
+  const formatBytes = (bytes: number, decimals = 2) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !employeeDbId) return;
+
+    try {
+      setIsUploading(true);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
+      const filePath = `${employeeDbId}/${fileName}`;
+
+      // 1. Upload to Storage
+      const { error: uploadError } = await supabase.storage
+        .from('employee-docs')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // 2. Insert into DB
+      const { error: dbError } = await supabase
+        .from('employee_documents')
+        .insert({
+          employee_id: employeeDbId,
+          name: file.name,
+          file_path: filePath,
+          file_type: fileExt || 'unknown',
+          file_size: file.size
+        });
+
+      if (dbError) throw dbError;
+
+      toast.success('Document uploaded successfully');
+      fetchDocuments(employeeDbId);
+    } catch (err: any) {
+      console.error('Upload failed', err);
+      toast.error(`Upload failed: ${err.message || 'Unknown error'}`);
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleDownload = async (doc: any) => {
+    try {
+      console.log('Generating signed URL for:', doc.path);
+      const { data, error } = await supabase.storage
+        .from('employee-docs')
+        .createSignedUrl(doc.path.trim(), 60);
+
+      if (error) {
+        console.error('Supabase Storage Error:', error);
+        throw error;
+      }
+      
+      if (data?.signedUrl) {
+        console.log('Successfully generated signed URL');
+        window.open(data.signedUrl, '_blank');
+      } else {
+        console.warn('No signed URL returned in data');
+        toast.error('Download link could not be generated');
+      }
+    } catch (err: any) {
+      console.error('Download failed with full context:', err);
+      const errorMessage = err?.message || 'Unknown error';
+      toast.error(`Download failed: ${errorMessage}`);
+    }
+  };
 
   const fetchLeaveRequests = async (empId: string) => {
     const { data, error } = await supabase
@@ -538,66 +685,57 @@ export function EmployeeSelfService() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Employee Self-Service Portal</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">Manage your personal information and requests</p>
-      </div>
-
-      {/* Profile Summary Card */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-start gap-6">
-            <div className="w-24 h-24 rounded-full bg-blue-600 flex items-center justify-center text-white text-3xl font-bold">
-              {profileData.name.charAt(0)}
-            </div>
-            <div className="flex-1">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold">{profileData.name}</h2>
-                  <p className="text-gray-500 dark:text-gray-400">{profileData.position}</p>
-                  <Badge className="mt-2">{profileData.employeeId}</Badge>
-                </div>
-                <Button variant="outline" onClick={() => handleTabChange('settings')}>
-                  <Edit className="w-4 h-4 mr-2" />
-                  Open Settings
-                </Button>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-                <div className="flex items-center gap-2 text-sm">
-                  <Mail className="w-4 h-4 text-gray-400" />
-                  <span>{profileData.email}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Phone className="w-4 h-4 text-gray-400" />
-                  <span>{profileData.phone}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Building className="w-4 h-4 text-gray-400" />
-                  <span>{profileData.department}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Calendar className="w-4 h-4 text-gray-400" />
-                  <span>Joined {profileData.joinDate}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="personal">Personal Info</TabsTrigger>
-          <TabsTrigger value="my-leave">My Leave</TabsTrigger>
-          <TabsTrigger value="my-training">My Training</TabsTrigger>
-          <TabsTrigger value="payslips">Payslips</TabsTrigger>
-          <TabsTrigger value="attendance">Attendance</TabsTrigger>
-          <TabsTrigger value="documents">Documents</TabsTrigger>
-          <TabsTrigger value="settings">Settings</TabsTrigger>
-        </TabsList>
 
         {/* ── Personal Info ─────────────────────────────────────────────────── */}
-        <TabsContent value="personal">
+        <TabsContent value="personal" className="space-y-6">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Employee Self-Service Portal</h1>
+            <p className="text-gray-500 dark:text-gray-400 mt-1">Manage your personal information and requests</p>
+          </div>
+
+          {/* Profile Summary Card */}
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-start gap-6">
+                <div className="w-24 h-24 rounded-full bg-blue-600 flex items-center justify-center text-white text-3xl font-bold">
+                  {profileData.name.charAt(0)}
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h2 className="text-2xl font-bold">{profileData.name}</h2>
+                      <p className="text-gray-500 dark:text-gray-400">{profileData.position}</p>
+                      <Badge className="mt-2">{profileData.employeeId}</Badge>
+                    </div>
+                    <Button variant="outline" onClick={() => handleTabChange('settings')}>
+                      <Edit className="w-4 h-4 mr-2" />
+                      Open Settings
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Mail className="w-4 h-4 text-gray-400" />
+                      <span>{profileData.email}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Phone className="w-4 h-4 text-gray-400" />
+                      <span>{profileData.phone}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Building className="w-4 h-4 text-gray-400" />
+                      <span>{profileData.department}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Calendar className="w-4 h-4 text-gray-400" />
+                      <span>Joined {profileData.joinDate}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle>Personal Information</CardTitle>
@@ -954,7 +1092,7 @@ export function EmployeeSelfService() {
                           <p className="text-sm text-gray-500 dark:text-gray-400">Net</p>
                           <p className="font-bold text-green-600 text-xs sm:text-base">{payslip.net}</p>
                         </div>
-                        <Button size="sm" variant="outline" onClick={() => toast.info('PDF download coming soon!')}>
+                        <Button size="sm" variant="outline" onClick={() => downloadPayslip(payslip)}>
                           <Download className="w-4 h-4 mr-2" />
                           <span className="hidden sm:inline">Download</span>
                         </Button>
@@ -967,47 +1105,6 @@ export function EmployeeSelfService() {
           </Card>
         </TabsContent>
 
-        {/* ── Attendance ────────────────────────────────────────────────────── */}
-        <TabsContent value="attendance">
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Attendance</CardTitle>
-            </CardHeader>
-            <CardContent>
-                {attendanceLoading ? (
-                  <div className="flex justify-center py-8">
-                    <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
-                  </div>
-                ) : attendanceHistory.length === 0 ? (
-                  <p className="text-center py-8 text-gray-500">No attendance records found.</p>
-                ) : (
-                  attendanceHistory.map((record, index) => (
-                    <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center gap-4">
-                        <Clock3 className="w-5 h-5 text-gray-400" />
-                        <div>
-                          <p className="font-medium">{record.date}</p>
-                          <p className="text-sm text-gray-500">
-                            {record.clockIn} - {record.clockOut}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <p className="font-medium text-sm sm:text-base">{record.hours > 0 ? `${record.hours} hrs` : '-'}</p>
-                        <Badge variant={
-                          record.status === 'Present' ? 'default' : 
-                          record.status === 'Leave' ? 'outline' : 'secondary'
-                        }>
-                          {record.status}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))
-                )}
-
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         {/* ── Documents ─────────────────────────────────────────────────────── */}
         <TabsContent value="documents">
@@ -1015,33 +1112,60 @@ export function EmployeeSelfService() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>My Documents</CardTitle>
-                <Button>
-                  <FileText className="w-4 h-4 mr-2" />
-                  Upload Document
-                </Button>
+                <div>
+                   <input
+                    type="file"
+                    className="hidden"
+                    ref={fileInputRef}
+                    onChange={handleFileUpload}
+                  />
+                  <Button 
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                  >
+                    {isUploading ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <FileText className="w-4 h-4 mr-2" />
+                    )}
+                    {isUploading ? 'Uploading...' : 'Upload Document'}
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {myDocuments.map((doc, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-gray-100 rounded-lg">
-                        <FileText className="w-6 h-6 text-gray-600 dark:text-gray-300" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium">{doc.name}</h4>
-                        <p className="text-sm text-gray-500">
-                          {doc.type} • {doc.size} • Uploaded {doc.uploadDate}
-                        </p>
-                      </div>
-                    </div>
-                    <Button size="sm" variant="outline">
-                      <Download className="w-4 h-4 mr-2" />
-                      Download
-                    </Button>
+                {docsLoading ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
                   </div>
-                ))}
+                ) : realDocuments.length === 0 ? (
+                  <div className="text-center py-12 border-2 border-dashed rounded-xl">
+                    <FileText className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-500 font-medium">No documents uploaded yet</p>
+                    <p className="text-sm text-gray-400 mt-1">Upload your contract, certificates, or ID copies.</p>
+                  </div>
+                ) : (
+                  realDocuments.map((doc) => (
+                    <div key={doc.id} className="flex items-center justify-between p-4 border rounded-lg hover:shadow-sm transition-shadow">
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                          <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <div>
+                          <h4 className="font-medium">{doc.name}</h4>
+                          <p className="text-sm text-gray-500">
+                            {doc.type} • {doc.size} • Uploaded {doc.uploadDate}
+                          </p>
+                        </div>
+                      </div>
+                      <Button size="sm" variant="outline" onClick={() => handleDownload(doc)}>
+                        <Download className="w-4 h-4 mr-2" />
+                        Download
+                      </Button>
+                    </div>
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>
@@ -1101,9 +1225,9 @@ export function EmployeeSelfService() {
                   <GraduationCap className="w-4 h-4 mr-2" />
                   View my training programs
                 </Button>
-                <Button variant="outline" className="w-full justify-start" onClick={() => handleTabChange('attendance')}>
+                <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/app/attendance')}>
                   <Clock className="w-4 h-4 mr-2" />
-                  Open attendance history
+                  Open attendance station
                 </Button>
                 <Button variant="outline" className="w-full justify-start" onClick={() => handleTabChange('documents')}>
                   <FileText className="w-4 h-4 mr-2" />

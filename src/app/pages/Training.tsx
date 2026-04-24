@@ -162,9 +162,7 @@ export function Training() {
           startDate: '',
           endDate: ''
         });
-        const loadTrainingData = async () => { // local refresh logic matches the useEffect one
-           window.location.reload(); // Simple refresh to ensure all metrics and lists sync
-        };
+        // Refresh data properly instead of page reload
         loadTrainingData();
       } else {
         toast.error('Failed to create training course');

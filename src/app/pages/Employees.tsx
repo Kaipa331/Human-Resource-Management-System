@@ -424,7 +424,7 @@ export function Employees() {
   };
 
   const handleDeleteEmployee = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this employee?')) return;
+    if (!window.confirm('Are you sure you want to delete this employee?')) return;
     try {
       const { error } = await supabase.from('employees').delete().eq('id', id);
       if (error) throw error;

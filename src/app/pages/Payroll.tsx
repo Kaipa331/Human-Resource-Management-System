@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { FormField, FormSection, FormActions } from '../components/ui/form-field';
+import Loader from '../components/ui/Loader';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { toast } from 'sonner';
 import { supabase } from '../../lib/supabase';
@@ -56,16 +57,15 @@ export function Payroll() {
   const loadPayrollData = async () => {
     setLoading(true);
     try {
-      // Load payroll cycles
-      const cycles = await PayrollService.getPayrollCycles();
+      // Load all data in parallel for better performance
+      const [cycles, summary, records] = await Promise.all([
+        PayrollService.getPayrollCycles(),
+        PayrollService.getPayrollSummary(),
+        PayrollService.getPayrollRecords()
+      ]);
+
       setPayrollCycles(cycles);
-
-      // Load payroll summary
-      const summary = await PayrollService.getPayrollSummary();
       setPayrollSummary(summary);
-
-      // Load payroll records
-      const records = await PayrollService.getPayrollRecords();
       setPayrollRecords(records);
 
       // Set default selected cycle
@@ -251,11 +251,7 @@ export function Payroll() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
+    return <Loader text="Loading payroll data..." size="lg" />;
   }
 
   return (

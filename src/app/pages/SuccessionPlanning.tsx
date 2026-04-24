@@ -236,7 +236,7 @@ export function SuccessionPlanning() {
   };
 
   const handleDeletePlan = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this succession plan? This will also remove all candidate details.')) return;
+    if (!window.confirm('Are you sure you want to delete this succession plan? This will also remove all candidate details.')) return;
     
     try {
       const { error } = await supabase.from('succession_plans').delete().eq('id', id);

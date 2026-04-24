@@ -363,7 +363,7 @@ export class PayrollService {
         );
         
         const payrollRecord = {
-          employee_id: employee.id,
+          employee_id: employee.employee_id || employee.id,
           cycle_id: cycleId,
           pay_period: `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`,
           base_salary: calculation.baseSalary,
