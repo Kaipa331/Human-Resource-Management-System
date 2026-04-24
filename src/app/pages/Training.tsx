@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { supabase } from '../../lib/supabase';
 import { TrainingService } from '../../lib/trainingService';
 import jsPDF from 'jspdf';
+import Loader from '../components/ui/Loader';
 
 type Course = {
   id: string;
@@ -449,6 +450,10 @@ export function Training() {
       toast.error('Error updating progress: ' + error.message);
     }
   };
+
+  if (loading) {
+    return <Loader fullScreen text="Loading training programs..." size="lg" />;
+  }
 
   return (
     <div className="space-y-6">

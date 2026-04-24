@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from '../components/ui/label';
 import { FormField, FormSection, FormActions } from '../components/ui/form-field';
 import { supabase } from '../../lib/supabase';
+import Loader from '../components/ui/Loader';
 
 interface Department {
   id: string;
@@ -254,7 +255,7 @@ export function Department() {
       </div>
 
       {loading ? (
-        <p className="text-center text-gray-500 dark:text-gray-400 py-12">Loading...</p>
+        <Loader fullScreen text="Loading departments..." size="lg" />
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredDepts.map((dept) => (

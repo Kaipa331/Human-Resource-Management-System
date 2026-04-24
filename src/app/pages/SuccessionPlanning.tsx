@@ -11,6 +11,7 @@ import { Plus, FileText, CircleDollarSign, Users, ArrowUpRight, X, Download, Tra
 import { FormField, FormSection, FormActions } from '../components/ui/form-field';
 import { toast } from 'sonner';
 import { supabase } from '../../lib/supabase';
+import Loader from '../components/ui/Loader';
 
 type SuccessorDetail = {
   id?: string;
@@ -166,6 +167,10 @@ export function SuccessionPlanning() {
 
     loadData();
   }, []);
+
+  if (loading) {
+    return <Loader fullScreen text="Loading succession planning..." size="lg" />;
+  }
 
   const handleDownloadCSV = () => {
     const headers = [

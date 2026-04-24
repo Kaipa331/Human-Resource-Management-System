@@ -10,6 +10,7 @@ import { FormField, FormSection, FormActions } from '../components/ui/form-field
 import { Textarea } from '../components/ui/textarea';
 import { toast } from 'sonner';
 import { supabase, supabaseUrl } from '../../lib/supabase';
+import Loader from '../components/ui/Loader';
 
 const OFFICE_GEOFENCE = {
   label: 'Lilongwe Office',
@@ -671,11 +672,7 @@ export function Attendance() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-10 h-10 animate-spin text-primary" />
-      </div>
-    );
+    return <Loader fullScreen text="Loading attendance..." size="lg" />;
   }
 
   return (

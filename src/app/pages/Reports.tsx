@@ -9,6 +9,7 @@ import jsPDF from 'jspdf';
 import { domToPng } from 'modern-screenshot';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
+import Loader from '../components/ui/Loader';
 import { ReportsService } from '../../lib/reportsService';
 
 export function Reports() {
@@ -283,12 +284,7 @@ export function Reports() {
   }, []);
 
   if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
-        <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
-        <p className="text-slate-500 font-medium animate-pulse">Analyzing organizational data...</p>
-      </div>
-    );
+    return <Loader fullScreen text="Analyzing organizational data..." size="lg" />;
   }
 
   return (

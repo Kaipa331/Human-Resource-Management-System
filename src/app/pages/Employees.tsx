@@ -27,6 +27,7 @@ import { FormField, FormSection, FormActions } from '../components/ui/form-field
 import { toast } from 'sonner';
 import { supabase } from '../../lib/supabase';
 import { createEmployeeAccountWithCredentials, resetEmployeePassword } from '../../lib/authService';
+import Loader from '../components/ui/Loader';
 
 interface Employee {
   id: string;
@@ -849,7 +850,7 @@ export function Employees() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="flex items-center justify-center py-8"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
+            <Loader fullScreen text="Loading employees..." size="lg" />
           ) : (
             <>
             <div className="space-y-3 md:hidden">

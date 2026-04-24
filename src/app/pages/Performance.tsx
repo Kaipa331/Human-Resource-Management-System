@@ -31,6 +31,7 @@ import { FormField, FormSection, FormActions } from '../components/ui/form-field
 import { toast } from 'sonner';
 import { supabase } from '../../lib/supabase';
 import { PerformanceService } from '../../lib/performanceService';
+import Loader from '../components/ui/Loader';
 
 export function Performance() {
   const [reviews, setReviews] = useState<any[]>([]);
@@ -159,6 +160,10 @@ export function Performance() {
       toast.error('Error: ' + err.message);
     }
   };
+
+  if (loading) {
+    return <Loader fullScreen text="Loading performance dashboard..." size="lg" />;
+  }
 
   return (
     <div className="space-y-6">

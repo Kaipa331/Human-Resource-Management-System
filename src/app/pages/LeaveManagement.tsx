@@ -11,6 +11,7 @@ import { Textarea } from '../components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { toast } from 'sonner';
 import { supabase } from '../../lib/supabase';
+import Loader from '../components/ui/Loader';
 
 interface LeaveRequest {
   id: string;
@@ -231,11 +232,7 @@ export function LeaveManagement() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-10 h-10 animate-spin text-primary" />
-      </div>
-    );
+    return <Loader fullScreen text="Loading leave management..." size="lg" />;
   }
 
   return (

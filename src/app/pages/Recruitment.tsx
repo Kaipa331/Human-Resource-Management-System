@@ -12,6 +12,7 @@ import { Textarea } from '../components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { toast } from 'sonner';
 import { supabase } from '../../lib/supabase';
+import Loader from '../components/ui/Loader';
 
 export function Recruitment() {
   const [jobPostings, setJobPostings] = useState<any[]>([]);
@@ -110,7 +111,7 @@ export function Recruitment() {
   };
 
   if (loading) {
-    return <div className="flex justify-center py-10"><Loader2 className="w-8 h-8 animate-spin" /></div>;
+    return <Loader fullScreen text="Loading recruitment pipeline..." size="lg" />;
   }
 
   return (

@@ -2,6 +2,7 @@ import { createBrowserRouter } from "react-router";
 import { lazy, Suspense } from "react";
 import { RootLayout } from "./components/layouts/RootLayout";
 import { ErrorPage } from "./pages/ErrorPage";
+import Loader from "./components/ui/Loader";
 
 // Lazy load components for better performance
 const Home = lazy(() => import("./pages/Home").then(module => ({ default: module.Home })));
@@ -23,9 +24,7 @@ const NotFound = lazy(() => import("./pages/NotFound").then(module => ({ default
 
 // Loading component for lazy loaded routes
 const LoadingFallback = () => (
-  <div className="flex items-center justify-center min-h-screen">
-    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-  </div>
+  <Loader fullScreen text="Loading workspace..." size="lg" />
 );
 
 export const router = createBrowserRouter([
