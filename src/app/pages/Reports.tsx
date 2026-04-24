@@ -273,17 +273,17 @@ export function Reports() {
   }
 
   return (
-    <div id="report-content" className="space-y-10 pb-12 overflow-hidden">
+    <div id="report-content" className="space-y-8 pb-12 overflow-hidden">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">Reports & Insights</h1>
-          <p className="text-slate-500 dark:text-slate-400 font-medium mt-2">Generate boardroom-ready analytics and compliance data.</p>
+          <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tight">Reports & Insights</h1>
+          <p className="text-slate-500 dark:text-slate-400 font-medium mt-2 max-w-2xl">Generate boardroom-ready analytics and compliance data.</p>
         </div>
         {!isGenerating && (
-          <div className="flex items-center gap-3">
+          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
             <Button 
               variant="outline" 
-              className="rounded-xl border-slate-200 dark:border-slate-800 h-11" 
+              className="rounded-xl border-slate-200 dark:border-slate-800 h-11 w-full sm:w-auto"
               onClick={() => handleDownloadReport('Full Workspace Analytics')}
               disabled={isGenerating}
             >
@@ -299,7 +299,7 @@ export function Reports() {
                 accept=".pdf,.doc,.docx,.xls,.xlsx,.csv"
               />
               <Button 
-                className="rounded-xl bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/20 h-11"
+                className="rounded-xl bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/20 h-11 w-full sm:w-auto"
                 onClick={() => document.getElementById('report-upload-main')?.click()}
                 disabled={uploading || isGenerating}
               >
@@ -312,17 +312,17 @@ export function Reports() {
       </div>
 
       {/* Modern Report Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
         {reportsList.map((report) => (
-          <div key={report.id} className="group relative bg-white dark:bg-slate-950 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 p-8 shadow-sm hover:shadow-2xl hover:scale-[1.02] transition-all duration-500 overflow-hidden">
+          <div key={report.id} className="group relative bg-white dark:bg-slate-950 rounded-[2rem] md:rounded-[2.5rem] border border-slate-200 dark:border-slate-800 p-5 md:p-8 shadow-sm hover:shadow-2xl hover:scale-[1.02] transition-all duration-500 overflow-hidden">
             <div className={`absolute top-0 right-0 w-32 h-32 ${report.bg} opacity-10 rounded-bl-[5rem] group-hover:scale-125 transition-transform duration-700`} />
             
             <div className="relative z-10">
-              <div className={`w-14 h-14 ${report.bg} ${report.color} rounded-2xl flex items-center justify-center mb-6 shadow-sm`}>
+              <div className={`w-12 h-12 md:w-14 md:h-14 ${report.bg} ${report.color} rounded-2xl flex items-center justify-center mb-4 md:mb-6 shadow-sm`}>
                 <report.icon className="w-7 h-7" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 leading-tight">{report.title}</h3>
-              <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-8">{report.description}</p>
+              <h3 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white mb-2 leading-tight">{report.title}</h3>
+              <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-6 md:mb-8">{report.description}</p>
               
               {!isGenerating && (
                 <Button 
@@ -341,20 +341,20 @@ export function Reports() {
       </div>
 
       {/* High-Impact Analytics Section */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 md:gap-8">
         {/* Headcount Performance */}
-        <Card className="rounded-[2.5rem] border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
-          <CardHeader className="px-8 pt-8 pb-4">
-            <div className="flex items-center justify-between">
+        <Card className="rounded-[2rem] md:rounded-[2.5rem] border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+          <CardHeader className="px-5 pt-5 pb-4 md:px-8 md:pt-8">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <CardTitle className="text-2xl font-black tracking-tight">Headcount Velocity</CardTitle>
+                <CardTitle className="text-xl md:text-2xl font-black tracking-tight">Headcount Velocity</CardTitle>
                 <p className="text-sm text-slate-500 font-medium tracking-tight">Active workforce vs recruitment pipeline</p>
               </div>
               <Activity className="w-6 h-6 text-blue-600" />
             </div>
           </CardHeader>
-          <CardContent className="px-8 pb-8">
-            <div className="h-[300px] w-full">
+          <CardContent className="px-5 pb-5 md:px-8 md:pb-8">
+            <div className="h-[240px] md:h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={headcountData}>
                   <defs>
@@ -377,18 +377,18 @@ export function Reports() {
         </Card>
 
         {/* Leave Archetypes */}
-        <Card className="rounded-[2.5rem] border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
-          <CardHeader className="px-8 pt-8 pb-4">
-            <div className="flex items-center justify-between">
+        <Card className="rounded-[2rem] md:rounded-[2.5rem] border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+          <CardHeader className="px-5 pt-5 pb-4 md:px-8 md:pt-8">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <CardTitle className="text-2xl font-black tracking-tight">Leave Ecosystem</CardTitle>
+                <CardTitle className="text-xl md:text-2xl font-black tracking-tight">Leave Ecosystem</CardTitle>
                 <p className="text-sm text-slate-500 font-medium tracking-tight">Distribution by leave archetypes</p>
               </div>
               <PieChartIcon className="w-6 h-6 text-emerald-600" />
             </div>
           </CardHeader>
-          <CardContent className="px-8 pb-8">
-            <div className="h-[300px] w-full">
+          <CardContent className="px-5 pb-5 md:px-8 md:pb-8">
+            <div className="h-[240px] md:h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -414,19 +414,19 @@ export function Reports() {
       </div>
 
       {/* Financial Momentum */}
-      <Card className="rounded-[2.5rem] border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
-        <CardHeader className="px-8 pt-8 pb-4">
-          <div className="flex items-center justify-between">
+      <Card className="rounded-[2rem] md:rounded-[2.5rem] border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+        <CardHeader className="px-5 pt-5 pb-4 md:px-8 md:pt-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <CardTitle className="text-2xl font-black tracking-tight">Payroll Momentum</CardTitle>
+              <CardTitle className="text-xl md:text-2xl font-black tracking-tight">Payroll Momentum</CardTitle>
               <p className="text-sm text-slate-500 font-medium tracking-tight">Gross vs Net expenditure trend</p>
             </div>
             <TrendingUp className="w-6 h-6 text-amber-600" />
           </div>
         </CardHeader>
-        <CardContent className="px-8 pb-8">
-          <div className="h-[350px] w-full">
-            <ResponsiveContainer width="100%" height={350}>
+        <CardContent className="px-5 pb-5 md:px-8 md:pb-8">
+          <div className="h-[260px] md:h-[350px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
               <BarChart data={payrollTrend}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 12, fontWeight: 700, fill: '#64748B'}} dy={10} />
@@ -447,15 +447,15 @@ export function Reports() {
 
       {/* Custom Reports Vault */}
       {uploadedReports.length > 0 && (
-        <Card className="rounded-[2.5rem] border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
-          <CardHeader className="p-8">
-            <CardTitle className="text-2xl font-black tracking-tight">Strategic Document Vault</CardTitle>
+        <Card className="rounded-[2rem] md:rounded-[2.5rem] border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+          <CardHeader className="p-5 md:p-8">
+            <CardTitle className="text-xl md:text-2xl font-black tracking-tight">Strategic Document Vault</CardTitle>
           </CardHeader>
-          <CardContent className="px-8 pb-8">
+          <CardContent className="px-5 pb-5 md:px-8 md:pb-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {uploadedReports.map((report, index) => (
-                <div key={index} className="flex items-center justify-between p-5 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-blue-500/30 transition-all group">
-                  <div className="flex items-center gap-4">
+                <div key={index} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 md:p-5 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-blue-500/30 transition-all group">
+                  <div className="flex items-center gap-4 min-w-0">
                     <div className="w-12 h-12 bg-white dark:bg-slate-950 rounded-xl flex items-center justify-center shadow-sm">
                       <FileText className="w-6 h-6 text-slate-400 group-hover:text-blue-600 transition-colors" />
                     </div>
@@ -466,7 +466,7 @@ export function Reports() {
                       </p>
                     </div>
                   </div>
-                  <Button size="sm" variant="ghost" className="rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-none" asChild>
+                  <Button size="sm" variant="ghost" className="w-full sm:w-auto rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-none" asChild>
                     <a href={report.url} target="_blank" rel="noopener noreferrer">
                       <Download className="w-4 h-4" />
                     </a>

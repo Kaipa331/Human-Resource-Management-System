@@ -404,21 +404,21 @@ export function Training() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Training & Development</h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm md:text-base">Manage employee training and skill development</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button className="w-full sm:w-auto">
               <Plus className="w-4 h-4 mr-2" />
               Create Training Program
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl w-[95vw] md:w-full max-h-[90vh] overflow-y-auto p-0 border-none shadow-2xl">
-            <div className="sticky top-0 z-10 bg-white dark:bg-slate-950 px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-              <div className="flex items-center gap-3">
+          <DialogContent className="max-w-2xl w-[96vw] md:w-full max-h-[90vh] overflow-y-auto p-0 border-none shadow-2xl">
+            <div className="sticky top-0 z-10 bg-white dark:bg-slate-950 px-4 py-4 md:px-6 border-b border-slate-100 dark:border-slate-800 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div className="flex items-start gap-3">
                 <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
                   <GraduationCap className="w-6 h-6 text-white" />
                 </div>
@@ -429,7 +429,7 @@ export function Training() {
               </div>
             </div>
 
-            <div className="p-6 space-y-6 bg-slate-50/50 dark:bg-slate-900/20">
+            <div className="p-4 md:p-6 space-y-6 bg-slate-50/50 dark:bg-slate-900/20">
               <FormSection
                 title="Course Definition"
                 description="Core academic details"
@@ -510,7 +510,7 @@ export function Training() {
               </FormSection>
             </div>
 
-            <div className="p-6 bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800">
+            <div className="p-4 md:p-6 bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800">
               <FormActions
                 onCancel={() => setIsDialogOpen(false)}
                 onSubmit={handleCreateCourse}
@@ -522,7 +522,7 @@ export function Training() {
       </div>
 
       <Dialog open={isCourseDialogOpen} onOpenChange={setIsCourseDialogOpen}>
-        <DialogContent className="max-w-md w-[95vw]">
+        <DialogContent className="max-w-md w-[96vw] md:w-full">
           <DialogHeader>
             <DialogTitle>{activeCourse?.title}</DialogTitle>
             <DialogDescription>{activeCourse?.provider} • {activeCourse?.category}</DialogDescription>
@@ -546,7 +546,7 @@ export function Training() {
       </Dialog>
 
       <Dialog open={isCertificateDialogOpen} onOpenChange={setIsCertificateDialogOpen}>
-        <DialogContent className="max-w-xl w-[95vw] text-center p-8 bg-gradient-to-r from-gray-50 to-white">
+        <DialogContent className="max-w-xl w-[96vw] md:w-full text-center p-6 md:p-8 bg-gradient-to-r from-gray-50 to-white">
           <div className="border-4 border-double border-gray-300 p-8">
             <div className="mx-auto bg-yellow-100 p-4 rounded-full w-20 h-20 flex items-center justify-center mb-6">
               <Award className="w-10 h-10 text-yellow-600" />
@@ -560,9 +560,9 @@ export function Training() {
       </Dialog>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-5 md:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Total Courses</p>
@@ -574,7 +574,7 @@ export function Training() {
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-5 md:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Active Courses</p>
@@ -586,7 +586,7 @@ export function Training() {
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-5 md:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Enrollments</p>
@@ -598,7 +598,7 @@ export function Training() {
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-5 md:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Completion Rate</p>
@@ -610,7 +610,7 @@ export function Training() {
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-5 md:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Avg Rating</p>
@@ -637,8 +637,8 @@ export function Training() {
             <CardContent>
               <div className="space-y-4">
                 {courses.map((course) => (
-                  <div key={course.id} className="border rounded-lg p-6">
-                    <div className="flex items-start justify-between mb-4">
+                    <div key={course.id} className="border rounded-lg p-4 md:p-6">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-4 gap-3">
                       <div className="flex-1">
                         <div className="flex items-center gap-3">
                           <GraduationCap className="w-6 h-6 text-blue-600" />
@@ -651,7 +651,7 @@ export function Training() {
                       <Badge>{course.status}</Badge>
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                    <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4 mb-4">
                       <div>
                         <p className="text-sm text-gray-500">Category</p>
                         <p className="font-medium">{course.category}</p>
@@ -684,13 +684,13 @@ export function Training() {
                       />
                     </div>
 
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                       <p className="text-sm text-gray-500">
                         {course.startDate} - {course.endDate}
                       </p>
-                      <div className="flex gap-2">
-                        <Button size="sm" variant="outline" onClick={() => { setActiveCourse(course); setIsCourseDialogOpen(true); }}>View Details</Button>
-                        <Button size="sm" onClick={() => handleEnrollCourse(course.id)}>
+                      <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                        <Button size="sm" variant="outline" className="w-full sm:w-auto" onClick={() => { setActiveCourse(course); setIsCourseDialogOpen(true); }}>View Details</Button>
+                        <Button size="sm" className="w-full sm:w-auto" onClick={() => handleEnrollCourse(course.id)}>
                           Enroll
                         </Button>
                       </div>
@@ -710,9 +710,9 @@ export function Training() {
             <CardContent>
               <div className="space-y-4">
                 {myTrainings.map((training) => (
-                  <div key={training.id} className="border rounded-lg p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div>
+                    <div key={training.id} className="border rounded-lg p-4 md:p-6">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-4 gap-3">
+                      <div className="min-w-0">
                         <h3 className="text-lg font-semibold">{training.title}</h3>
                         <p className="text-sm text-gray-500 dark:text-gray-400">{training.category}</p>
                       </div>
@@ -721,7 +721,7 @@ export function Training() {
                       </Badge>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-4 mb-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 mb-4">
                       <div>
                         <p className="text-sm text-gray-500">Modules Completed</p>
                         <p className="font-medium">
@@ -742,10 +742,10 @@ export function Training() {
                       <Progress value={training.progress} />
                     </div>
 
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2">
                       {training.status === 'Completed' ? (
                         <>
-                          <Button size="sm" variant="outline" onClick={() => {
+                          <Button size="sm" variant="outline" className="w-full sm:w-auto" onClick={() => {
                             setActiveCertificate({
                               id: training.id,
                               title: training.title,
@@ -757,12 +757,12 @@ export function Training() {
                             <Award className="w-4 h-4 mr-2" />
                             View Certificate
                           </Button>
-                          <Button size="sm" variant="outline" onClick={() => toast.success('5 stars rating submitted!')}>Review Course</Button>
+                          <Button size="sm" variant="outline" className="w-full sm:w-auto" onClick={() => toast.success('5 stars rating submitted!')}>Review Course</Button>
                         </>
                       ) : (
                         <>
-                          <Button size="sm" onClick={() => handleContinueLearning(training)}>Continue Learning</Button>
-                          <Button size="sm" variant="outline" onClick={() => toast.info(`Schedule: Complete by ${training.dueDate}`)}>View Schedule</Button>
+                          <Button size="sm" className="w-full sm:w-auto" onClick={() => handleContinueLearning(training)}>Continue Learning</Button>
+                          <Button size="sm" variant="outline" className="w-full sm:w-auto" onClick={() => toast.info(`Schedule: Complete by ${training.dueDate}`)}>View Schedule</Button>
                         </>
                       )}
                     </div>
@@ -784,17 +784,17 @@ export function Training() {
                   <p className="text-sm text-gray-500 dark:text-gray-400">No certificates available yet.</p>
                 )}
                 {certificates.map((cert) => (
-                  <div key={cert.id} className="border rounded-lg p-6">
-                    <div className="flex items-start gap-4">
+                    <div key={cert.id} className="border rounded-lg p-4 md:p-6">
+                    <div className="flex flex-col sm:flex-row items-start gap-4">
                       <div className={`p-3 ${getCertificateColorClasses(cert.colorClass).bg} rounded-lg`}>
                         <Award className={`w-8 h-8 ${getCertificateColorClasses(cert.colorClass).text}`} />
                       </div>
                       <div className="flex-1">
                         <h3 className="text-lg font-semibold">{cert.title}</h3>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Issued on {cert.issuedOn}</p>
-                        <div className="flex gap-2 mt-4">
-                          <Button size="sm" variant="outline" onClick={() => toast.success('Certificate downloaded')}>Download Certificate</Button>
-                          <Button size="sm" variant="outline" onClick={() => toast.success('Certificate link copied to clipboard')}>Share</Button>
+                        <div className="flex flex-col sm:flex-row gap-2 mt-4">
+                          <Button size="sm" variant="outline" className="w-full sm:w-auto" onClick={() => toast.success('Certificate downloaded')}>Download Certificate</Button>
+                          <Button size="sm" variant="outline" className="w-full sm:w-auto" onClick={() => toast.success('Certificate link copied to clipboard')}>Share</Button>
                         </div>
                       </div>
                     </div>

@@ -476,13 +476,13 @@ export function Employees() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Employee Management</h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm md:text-base">Manage employee records and information</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <Button onClick={openAddDialog}>
+          <Button onClick={openAddDialog} className="w-full sm:w-auto">
             <Plus className="w-4 h-4 mr-2" />
             Add Employee
           </Button>
@@ -829,9 +829,9 @@ export function Employees() {
 
       <Card>
         <CardHeader>
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <CardTitle className="text-lg md:text-xl">All Employees ({employees.length})</CardTitle>
-            <div className="flex flex-col sm:flex-row gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <Input placeholder="Search employees..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-9 w-full sm:w-64" />
@@ -851,7 +851,55 @@ export function Employees() {
           {loading ? (
             <div className="flex items-center justify-center py-8"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
           ) : (
-            <div className="overflow-x-auto">
+            <>
+            <div className="space-y-3 md:hidden">
+              {filteredEmployees.map((employee) => (
+                <div key={employee.id} className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-4 shadow-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-semibold text-sm text-slate-900 dark:text-slate-100 truncate">{employee.name}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{employee.employee_id} • {employee.email}</p>
+                    </div>
+                    <Badge variant={employee.status === 'Active' ? 'default' : 'secondary'} className="text-[10px] shrink-0">
+                      {employee.status}
+                    </Badge>
+                  </div>
+                  <div className="mt-4 grid grid-cols-2 gap-3 text-xs text-slate-500 dark:text-slate-400">
+                    <div>
+                      <p className="uppercase font-semibold tracking-wide">Department</p>
+                      <p className="text-sm text-slate-900 dark:text-slate-100">{employee.department}</p>
+                    </div>
+                    <div>
+                      <p className="uppercase font-semibold tracking-wide">Position</p>
+                      <p className="text-sm text-slate-900 dark:text-slate-100">{employee.position}</p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="uppercase font-semibold tracking-wide">Contact</p>
+                      <p className="text-sm text-slate-900 dark:text-slate-100">{employee.phone}</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Button variant="outline" size="sm" className="flex-1 min-w-[110px]" onClick={() => openViewDialog(employee)}>
+                      <Eye className="w-4 h-4 mr-2" />
+                      View
+                    </Button>
+                    <Button variant="outline" size="sm" className="flex-1 min-w-[110px]" onClick={() => openEditDialog(employee)}>
+                      <Edit className="w-4 h-4 mr-2" />
+                      Edit
+                    </Button>
+                    <Button variant="outline" size="sm" className="flex-1 min-w-[110px]" onClick={() => handleResetPassword(employee.email)}>
+                      <Key className="w-4 h-4 mr-2" />
+                      Reset
+                    </Button>
+                    <Button variant="ghost" size="sm" className="flex-1 min-w-[110px] text-red-600" onClick={() => handleDeleteEmployee(employee.id)}>
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="hidden md:block overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -907,6 +955,7 @@ export function Employees() {
                 </TableBody>
               </Table>
             </div>
+            </>
           )}
         </CardContent>
       </Card>

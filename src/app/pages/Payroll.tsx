@@ -606,9 +606,9 @@ export function Payroll() {
       </Dialog>
       {/* Adjustments Modal */}
       <Dialog open={showAdjustmentsModal} onOpenChange={setShowAdjustmentsModal}>
-        <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto p-0 border-none shadow-2xl rounded-3xl">
-          <div className="sticky top-0 z-10 bg-white dark:bg-slate-950 px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-            <div className="flex items-center gap-3">
+        <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto p-0 border-none shadow-2xl rounded-3xl w-[96vw] md:w-full">
+          <div className="sticky top-0 z-10 bg-white dark:bg-slate-950 px-4 py-4 md:px-6 border-b border-slate-100 dark:border-slate-800 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-start gap-3">
               <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
                 <Calculator className="w-6 h-6 text-white" />
               </div>
@@ -622,7 +622,7 @@ export function Payroll() {
               </div>
             </div>
             
-            <div className="flex items-center gap-4 flex-1 max-w-md mx-6">
+            <div className="flex w-full flex-1 items-center gap-4 md:max-w-md md:mx-6">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <Input 
@@ -634,17 +634,76 @@ export function Payroll() {
               </div>
             </div>
 
-            <button 
-              onClick={() => setShowAdjustmentsModal(false)}
-              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-full transition-colors text-slate-400"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex justify-end md:justify-start">
+              <button
+                onClick={() => setShowAdjustmentsModal(false)}
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-full transition-colors text-slate-400"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
           
           <div className="p-4 space-y-4 bg-slate-50/50 dark:bg-slate-900/20">
-            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 overflow-hidden shadow-sm">
-              <table className="w-full text-sm border-collapse">
+            <div className="space-y-3 md:hidden">
+              {employeesForAdjustments
+                .filter(emp => emp.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                .map((emp) => (
+                  <div key={emp.id} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-4 shadow-sm">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="font-bold text-slate-900 dark:text-slate-100 truncate">{emp.name}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">Payroll adjustments for this cycle</p>
+                      </div>
+                    </div>
+                    <div className="mt-4 grid grid-cols-2 gap-3">
+                      <label className="space-y-1">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Overtime</span>
+                        <Input
+                          type="number"
+                          min="0"
+                          className="h-9 rounded-lg border-slate-200 dark:border-slate-800 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
+                          value={adjustments[emp.id]?.overtimeHours || 0}
+                          onChange={(e) => updateAdjustment(emp.id, 'overtimeHours', e.target.value)}
+                        />
+                      </label>
+                      <label className="space-y-1">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Perf. bonus</span>
+                        <Input
+                          type="number"
+                          min="0"
+                          className="h-9 rounded-lg border-slate-200 dark:border-slate-800 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
+                          value={adjustments[emp.id]?.performanceBonus || 0}
+                          onChange={(e) => updateAdjustment(emp.id, 'performanceBonus', e.target.value)}
+                        />
+                      </label>
+                      <label className="space-y-1">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Other bonus</span>
+                        <Input
+                          type="number"
+                          min="0"
+                          className="h-9 rounded-lg border-slate-200 dark:border-slate-800 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
+                          value={adjustments[emp.id]?.otherBonus || 0}
+                          onChange={(e) => updateAdjustment(emp.id, 'otherBonus', e.target.value)}
+                        />
+                      </label>
+                      <label className="space-y-1">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Deduction</span>
+                        <Input
+                          type="number"
+                          min="0"
+                          className="h-9 rounded-lg border-slate-200 dark:border-slate-800 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
+                          value={adjustments[emp.id]?.manualDeduction || 0}
+                          onChange={(e) => updateAdjustment(emp.id, 'manualDeduction', e.target.value)}
+                        />
+                      </label>
+                    </div>
+                  </div>
+                ))}
+            </div>
+            <div className="hidden md:block rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 overflow-hidden shadow-sm">
+              <div className="overflow-x-auto">
+              <table className="w-full min-w-[760px] text-sm border-collapse">
                 <thead>
                   <tr className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
                     <th className="px-4 py-3 text-left font-bold text-slate-600 dark:text-slate-400">Employee</th>
@@ -699,12 +758,13 @@ export function Payroll() {
                           />
                         </td>
                       </tr>
-                    ))}
+                  ))}
                 </tbody>
               </table>
+              </div>
             </div>
             
-            <div className="sticky bottom-0 z-10 bg-white dark:bg-slate-950 px-6 py-4 border-t border-slate-100 dark:border-slate-800 mt-2 rounded-2xl overflow-hidden shadow-sm">
+            <div className="sticky bottom-0 z-10 bg-white dark:bg-slate-950 px-4 py-4 md:px-6 border-t border-slate-100 dark:border-slate-800 mt-2 rounded-2xl overflow-hidden shadow-sm">
               <FormActions
                 onCancel={() => setShowAdjustmentsModal(false)}
                 onSubmit={handleFinalProcess}
@@ -718,25 +778,25 @@ export function Payroll() {
 
       {/* Payslip Modal */}
       <Dialog open={showPayslipModal} onOpenChange={setShowPayslipModal}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl w-[96vw] md:w-full">
           <DialogHeader>
             <DialogTitle>Employee Payslip</DialogTitle>
           </DialogHeader>
           
           {selectedPayslipRecord && (
             <div className="space-y-6 p-4 border rounded-lg bg-white overflow-hidden" id="printable-payslip">
-              <div className="flex justify-between border-b pb-4">
-                <div>
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between border-b pb-4 gap-4">
+                <div className="min-w-0">
                   <h2 className="text-xl font-bold">HR Management System</h2>
                   <p className="text-sm text-gray-500">MRA & Pension Compliant Payroll</p>
                 </div>
-                <div className="text-right">
+                <div className="text-left sm:text-right">
                   <p className="font-bold">PAYSLIP</p>
                   <p className="text-sm text-gray-500">Period: {payrollCycles.find(c => c.id === selectedPayslipRecord.cycleId)?.cycleName}</p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-8 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-8 text-sm">
                 <div>
                   <p className="text-gray-500 uppercase text-xs font-bold mb-1">Employee Details</p>
                   <p className="font-bold">{selectedPayslipRecord.employees?.name}</p>

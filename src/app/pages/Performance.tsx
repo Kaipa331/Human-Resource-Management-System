@@ -162,26 +162,26 @@ export function Performance() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Performance Management</h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm md:text-base">Track organizational growth and individual excellence</p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           <Button variant="outline" onClick={() => toast.info('Exporting performance data...')} className="w-full sm:w-auto">
             <Download className="w-4 h-4 mr-2" />
             Export Data
           </Button>
           <Dialog open={isNewReviewOpen} onOpenChange={setIsNewReviewOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg shadow-blue-500/20 px-6">
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg shadow-blue-500/20 px-6 w-full sm:w-auto">
                 <Plus className="w-4 h-4 mr-2" />
                 New Goal
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl w-[95vw] md:w-full max-h-[90vh] overflow-y-auto p-0 border-none shadow-2xl">
-              <div className="sticky top-0 z-10 bg-white dark:bg-slate-950 px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                <div className="flex items-center gap-3">
+            <DialogContent className="max-w-2xl w-[96vw] md:w-full max-h-[90vh] overflow-y-auto p-0 border-none shadow-2xl">
+              <div className="sticky top-0 z-10 bg-white dark:bg-slate-950 px-4 py-4 md:px-6 border-b border-slate-100 dark:border-slate-800 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div className="flex items-start gap-3">
                   <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
                     <Target className="w-6 h-6 text-white" />
                   </div>
@@ -192,7 +192,7 @@ export function Performance() {
                 </div>
               </div>
 
-              <div className="p-6 space-y-6 bg-slate-50/50 dark:bg-slate-900/20">
+              <div className="p-4 md:p-6 space-y-6 bg-slate-50/50 dark:bg-slate-900/20">
                 <div className="flex gap-2 p-1.5 bg-slate-200/50 dark:bg-slate-800 rounded-2xl border border-slate-200/50 dark:border-slate-700/50">
                   <button 
                     className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all ${newGoal.assignmentType === 'individual' ? 'bg-white dark:bg-slate-700 text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
@@ -296,7 +296,7 @@ export function Performance() {
                 </FormSection>
               </div>
 
-              <div className="p-6 bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800">
+              <div className="p-4 md:p-6 bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800">
                 <FormActions
                   onCancel={() => setIsNewReviewOpen(false)}
                   onSubmit={handleAddGoal}
@@ -309,7 +309,7 @@ export function Performance() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Avg. Performance</CardTitle>
@@ -374,7 +374,7 @@ export function Performance() {
               <CardContent>
                 <div className="space-y-6">
                   {leaderboard.length > 0 ? leaderboard.map((emp, idx) => (
-                    <div key={idx} className="flex items-center gap-4 group">
+                    <div key={idx} className="flex flex-col sm:flex-row sm:items-center gap-4 group">
                       <div className="relative">
                         <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-bold border border-blue-100">
                           {emp.name.charAt(0)}
@@ -389,7 +389,7 @@ export function Performance() {
                         <p className="font-semibold text-gray-900 dark:text-white text-sm">{emp.name}</p>
                         <p className="text-xs text-gray-500">{emp.position} • {emp.department}</p>
                       </div>
-                      <div className="text-right">
+                      <div className="text-right sm:ml-auto">
                         <p className="text-sm font-bold text-gray-900">{emp.rating.toFixed(1)}/5.0</p>
                         <Badge variant="secondary" className="text-[10px] h-4">
                           {idx === 0 ? 'Top Tier' : 'High Performer'}
@@ -417,7 +417,7 @@ export function Performance() {
                   {upcomingReviews.length > 0 ? upcomingReviews.map((rev, idx) => {
                     const date = new Date(rev.next_review_date);
                     return (
-                      <div key={idx} className="flex items-center gap-4 p-3 border rounded-lg hover:bg-gray-50 transition-colors">
+                    <div key={idx} className="flex flex-col sm:flex-row sm:items-center gap-4 p-3 border rounded-lg hover:bg-gray-50 transition-colors">
                         <div className="w-12 h-12 bg-gray-50 border rounded-lg flex flex-col items-center justify-center text-gray-600">
                           <span className="text-[10px] font-bold uppercase">{date.toLocaleString('en-US', { month: 'short' })}</span>
                           <span className="text-lg font-bold leading-none">{date.getDate()}</span>
@@ -426,7 +426,7 @@ export function Performance() {
                           <p className="font-semibold text-sm">{rev.employee?.name}</p>
                           <p className="text-xs text-gray-500">{rev.review_type} Review • {rev.employee?.department}</p>
                         </div>
-                        <Button variant="ghost" size="icon">
+                        <Button variant="ghost" size="icon" className="self-start sm:self-auto">
                           <ChevronRight className="w-4 h-4" />
                         </Button>
                       </div>
@@ -472,7 +472,7 @@ export function Performance() {
 
             <div className="lg:col-span-2">
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
+              <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <CardTitle className="flex items-center gap-2">
                     <Target className="w-5 h-5 text-green-600" />
                     Goal Explorer
@@ -482,10 +482,10 @@ export function Performance() {
                   <div className="space-y-4">
                     {goals.length > 0 ? goals.map((goal: any) => (
                       <div key={goal.id} className="p-4 border rounded-xl hover:shadow-md transition-all group">
-                        <div className="flex items-start justify-between mb-2">
-                          <div>
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-2 gap-3">
+                          <div className="min-w-0">
                             <h4 className="font-bold text-gray-900 dark:text-white group-hover:text-blue-600 transition-colors uppercase text-sm tracking-tight">{goal.title}</h4>
-                            <div className="flex items-center gap-2 mt-1">
+                            <div className="flex flex-wrap items-center gap-2 mt-1">
                               <Badge variant="outline" className="text-[10px] uppercase font-bold py-0">{goal.category || 'General'}</Badge>
                               <span className="text-[10px] text-gray-400 font-medium">Assigned to: <span className="text-gray-600 dark:text-gray-300 font-bold">{goal.employees?.name || 'Unknown'}</span></span>
                               {goal.department && (
@@ -499,8 +499,8 @@ export function Performance() {
                           </div>
                         </div>
                         <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2 mb-3">{goal.description}</p>
-                        <div className="flex items-center justify-between">
-                          <div className="w-3/4">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                          <div className="w-full sm:w-3/4">
                             <Progress value={goal.progress} className="h-1.5 bg-gray-100" />
                           </div>
                           <span className="text-[10px] text-gray-400 font-bold">Due: {new Date(goal.due_date).toLocaleDateString()}</span>
@@ -526,8 +526,8 @@ export function Performance() {
             <CardContent>
               <div className="space-y-4">
                 {reviews.length > 0 ? reviews.map((review) => (
-                  <div key={review.id} className="flex items-center justify-between p-4 border rounded-lg hover:border-blue-200 transition-colors">
-                    <div className="flex items-center gap-4">
+                  <div key={review.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg hover:border-blue-200 transition-colors gap-4">
+                    <div className="flex items-center gap-4 min-w-0">
                       <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center">
                         <ClipboardList className="w-5 h-5 text-gray-400" />
                       </div>
@@ -536,7 +536,7 @@ export function Performance() {
                         <p className="text-sm text-gray-500">{review.review_type} Review • {review.review_period}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-3 sm:gap-6 sm:ml-auto">
                       <div className="text-right">
                         <p className="text-sm font-bold text-gray-900">{review.overall_rating}/5.0</p>
                         <Badge variant={review.status === 'Approved' ? 'default' : 'secondary'} className="text-[10px]">

@@ -697,18 +697,18 @@ export function EmployeeSelfService() {
           {/* Profile Summary Card */}
           <Card>
             <CardContent className="p-6">
-              <div className="flex items-start gap-6">
-                <div className="w-24 h-24 rounded-full bg-blue-600 flex items-center justify-center text-white text-3xl font-bold">
+              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
+                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-blue-600 flex items-center justify-center text-white text-2xl sm:text-3xl font-bold shrink-0">
                   {profileData.name.charAt(0)}
                 </div>
                 <div className="flex-1">
-                  <div className="flex items-start justify-between">
-                    <div>
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                    <div className="min-w-0">
                       <h2 className="text-2xl font-bold">{profileData.name}</h2>
                       <p className="text-gray-500 dark:text-gray-400">{profileData.position}</p>
                       <Badge className="mt-2">{profileData.employeeId}</Badge>
                     </div>
-                    <Button variant="outline" onClick={() => handleTabChange('settings')}>
+                    <Button variant="outline" onClick={() => handleTabChange('settings')} className="w-full sm:w-auto">
                       <Edit className="w-4 h-4 mr-2" />
                       Open Settings
                     </Button>
@@ -831,7 +831,7 @@ export function EmployeeSelfService() {
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                           <Label htmlFor="start-date">Start Date <span className="text-red-500">*</span></Label>
                           <Input
@@ -942,10 +942,10 @@ export function EmployeeSelfService() {
                 ) : (
                   <div className="space-y-3">
                     {leaveRequests.map((req) => (
-                      <div key={req.id} className="flex items-start justify-between border rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold text-gray-800">{req.type}</span>
+                    <div key={req.id} className="flex flex-col sm:flex-row sm:items-start justify-between border rounded-lg p-4 hover:bg-gray-50 transition-colors gap-4">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-gray-800">{req.type}</span>
                             <Badge className={getLeaveStatusColor(req.status)}>{req.status}</Badge>
                           </div>
                           <p className="text-sm text-gray-500">
@@ -956,7 +956,7 @@ export function EmployeeSelfService() {
                             <p className="text-sm text-gray-500 dark:text-gray-400 italic">"{req.reason}"</p>
                           )}
                         </div>
-                        <Calendar className="w-5 h-5 text-gray-300 mt-1 flex-shrink-0" />
+                        <Calendar className="w-5 h-5 text-gray-300 mt-1 flex-shrink-0 self-start" />
                       </div>
                     ))}
                   </div>
@@ -988,8 +988,8 @@ export function EmployeeSelfService() {
                 <div className="space-y-4">
                   {myTrainings.map((training) => (
                     <div key={training.id} className="border rounded-lg p-6 hover:bg-gray-50 transition-colors">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1">
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-4 gap-3">
+                        <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-3 mb-2">
                             <GraduationCap className="w-5 h-5 text-blue-600" />
                             <h3 className="text-lg font-semibold">{training.title}</h3>
@@ -1075,15 +1075,15 @@ export function EmployeeSelfService() {
                   <p className="text-center py-8 text-gray-500">No payslips found.</p>
                 ) : (
                   payslips.map((payslip, index) => (
-                    <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center gap-4">
+                    <div key={index} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg gap-4">
+                      <div className="flex items-center gap-4 min-w-0">
                         <FileText className="w-8 h-8 text-gray-400" />
                         <div>
                           <h4 className="font-medium">{payslip.month}</h4>
                           <p className="text-sm text-gray-500 dark:text-gray-400">Paid on {payslip.date}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-6">
+                      <div className="flex flex-wrap items-center gap-4 sm:gap-6">
                         <div className="text-right">
                           <p className="text-sm text-gray-500 dark:text-gray-400">Gross</p>
                           <p className="font-medium text-xs sm:text-base">{payslip.gross}</p>
